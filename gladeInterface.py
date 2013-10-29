@@ -72,7 +72,7 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 
 		self.win.show_all()
 
-	"""Opens up a file dialog to select a file then loads that file in to the assembler."""
+	"""Opens up a file dialog to select a file then loads that file in to the assembler. """
 	def openFile(self):
 		self.fileChooser = Gtk.FileChooserDialog(title="Choose A File",parent=self.win,buttons=(Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
 		self.response = self.fileChooser.run()
