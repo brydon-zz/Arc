@@ -1,6 +1,6 @@
 #!/usr/bin/python
 from gi.repository import Gtk, Gdk
-
+import thread
 """
 They have memory start
 and memory end 
@@ -15,7 +15,7 @@ class Assembler:
 	background:url('bg.jpg');
 }
 
-#As88Window #code, #As88Window #outText, #As88Window #entry, #As88Window #stack {
+#As88Window #code, #As88Window #outText, #As88Window #stack {
 	background-color:#2F0B24;
 	font-family:mono;
 	color:#FFF;
@@ -38,6 +38,9 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 			def onOpen(self, button):
 				A.openFile()
 
+			def onButtonClicked(self, button):
+				A.stepFn()
+
 		self.builder = Gtk.Builder()
 		self.builder.add_from_file("As88_Mockup.glade")
 		self.builder.connect_signals(Handler())
@@ -55,9 +58,11 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 		self.code = self.builder.get_object("code")
 		self.entry = self.builder.get_object("entry")
 		self.stack = self.builder.get_object("stack")
+		self.button = self.builder.get_object("button1")
 
 		self.outBuffer = self.outText.get_buffer()
 		self.codeBuffer = self.code.get_buffer()
+		self.stackBuffer = self.stack.get_buffer()
 
 		self.outText.set_name("outText")
 		self.code.set_name("code")
@@ -67,14 +72,20 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 		self.outText.set_wrap_mode(Gtk.WrapMode.WORD)
 		self.code.set_wrap_mode(Gtk.WrapMode.WORD)
 
-		self.outBuffer.set_text(lorem)
-		self.codeBuffer.set_text(lorem)
+		self.outputText = " "
+		self.outBuffer.set_text(self.outputText)
 
 		self.win.show_all()
 
+		self.step = False
+
+		thread.start_new_thread(self.openFile, ())
+	def entry_go(self,widget):
+		print "yolo"
+
 	"""Opens up a file dialog to select a file then loads that file in to the assembler. """
 	def openFile(self):
-		self.fileChooser = Gtk.FileChooserDialog(title="Choose A File",parent=self.win,buttons=(Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+		"""self.fileChooser = Gtk.FileChooserDialog(title="Choose A File",parent=self.win,buttons=(Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
 		self.response = self.fileChooser.run()
 
 		if self.response == Gtk.ResponseType.OK:
@@ -84,7 +95,8 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 
 		if self.fileName == None:
 			return None
-
+		"""
+		self.fileName = "/home/beewhy/Courses-Fall2013/OpSys/AS88/Final.s"
 		self.f = open(self.fileName,'r')
 		self.codeString = ""
 
@@ -92,7 +104,7 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 		while True:
 			lineIn = self.f.readline()
 			if lineIn == "": break
-			self.codeString += lineIn[:lineIn.find("!")]+"\n"
+			self.codeString += lineIn
 		self.f.close()
 
 		self.startRunning()
@@ -104,63 +116,185 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 
 		self.lookupTable = {}
 		self.localVars = {}
-		self.data = {}
+		self.stackData = []
+		self.DATA = {}
 		self.BSS = {}
+		self.registers = {"AX":0,"BX":0,"CX":0,"DX":0,"SP":0,"BP":0,"SI":0,"DI":0,"PC":0}
+		self.flags = {"Z":False,"S":False,"V":False,"C":False,"A":False,"P":False}
+		BSScount = 0
 
 		self.lineCount = 0
 
 		# This for Loop is gonna go thru the lines, set up a nice lookUp table for jumps 
 		# and record program start and end. and set up some memory stuff.
-		self.listType = type([1,1])
+		LIST_TYPE = type([1,1])
 		self.mode = "head"
 		self.codeBounds = [1,1]
+		
+		""" FIRST PASS """
+		
 		for line in self.lines:
+			# Looping thru every line
+			# we will go thru, at most, 4 modes
+			# a "head" mode - where constants are defined
+			#	 eg _EXIT = 1 etc.
+			# a "text" mode (".SECT .TEXT") where the code is located
+			#	 on the first loop thru we just keep track of where this is, and set up a jump table
+			# a "data" mode (".SECT .DATA") where variables are defined
+			#	 str: .ASCIZ "%s f"
+			# a "bss" mode (".SECT .BSS") where memory chunks are defined
+			#	 fdes: .SPACE 2
 			l = line.strip()
+			
+			if "!" in line:
+				l = line[:line.find("!")].strip() #ignore comments
+			
 			self.lineCount += 1
 
 			if self.mode == "head" and "=" in l:
-				l = line.split('=')
+				l = l.split('=')
 				l[0]=l[0].strip()
 				l[1]=l[1].strip()
 				if l[0] in self.localVars.keys():
-					print "Error on line "+self.lineCount+", cannot define ''"+l[0]+"'' more than once."
+					print "Error on line "+self.lineCount+", cannot define \''"+l[0]+"\' more than once."
 				else: self.localVars[l[0]] = l[1]
 				continue
 
 			if ".SECT" in l:
 
-				if self.mode == ".SECT .TEXT":
+				# record where the .SECT .TEXT section starts, and ends
+				if self.mode == ".SECT .TEXT": # ends, we've gone one too far
 					self.codeBounds[1] = self.lineCount-1
-				elif l == ".SECT .TEXT":
+				elif l == ".SECT .TEXT":  # starts, we're one too short
 					self.codeBounds[0] = self.lineCount+1
 
 				self.mode = l
 				print "|"+self.mode+"|"
 				continue
 
-			if ":" in l: 		#Defining tings
+			if ":" in l: 		# Spliting on a colon, for defining vars, or jump locations, etc.
 				temp = l.split(":")[0]
 				if self.mode == ".SECT .TEXT":
+					# a : in .SECT .TEXT means a jump location
+					# we can define multiple jump locations by digits
+					# but only one by ascii per each ascii name
+					
 					if temp not in self.lookupTable.keys():
 						self.lookupTable[temp] = self.lineCount
 					else:
-						if temp.isdigit():
-							if type(self.lookupTable[temp]) == self.listType:
+						if temp.isdigit(): # If we're defining multiple jump locations for one digit, keep a list nigga!
+							if type(self.lookupTable[temp]) == LIST_TYPE:
 								self.lookupTable[temp].append(self.lineCount)
 							else:
 								self.lookupTable[temp] = [self.lookupTable[temp],self.lineCount]
-
 						else:
 							print "Duplicate entry: \"" + temp + "\" on line " + str(self.lineCount) + " and line " + str(self.lookupTable[temp])
 				elif self.mode == ".SECT .DATA":
-					# DO STUFF
-					1+1
+					# info in .SECT .DATA follows the format
+					# str: .ASCIZ "hello world"
+					# where .ASCIZ means an ascii string with a zero at the end
+					# and .ASCII means an ascii string
+					
+					if ".ASCIZ" in l or ".ASCII" in l: # If we're dealing with a string
+						if l.count("\"") < 2: # each string to be defined should be in quotes, raise error if quotes are messed
+							print "fatal error on line "+str(self.lineCount)
+							return None
+						temp2 = l[l.find("\"")+1:l.rfind("\"")] # otherwise grab the stuff in quotes
+						self.DATA[temp] = [hex(ord(x)).split("x")[1] for x in temp2] # and set temp equal to a list of hex vals of each char
+						if ".ASCIZ" in l: self.DATA[temp].append("0") # if it's an asciz then append a 0 to the end.
+						
 				elif self.mode == ".SECT .BSS":
-					# DO STUFF
-					1+1
-		print self.lookupTable
-		print self.localVars
-		del temp
+					# info in .SECT .BSS follows the format
+					# fdes: .SPACE 2
+					# Where essentially .BSS just defines memory space
+					
+					temp2 = l.split(".SPACE")[1] #let's find the size of the mem chunk to def
+					self.BSS[temp.strip()]=[BSScount,BSScount+int(temp2.strip())-1] # and def it in bss as it's start and end pos
+					BSScount += int(temp2.strip())
+					
+		#TODO: error check before second pass
+		
+		""" SECOND PASS """
+		i = self.codeBounds[0]
+		while i  <= self.codeBounds[1]:
+			
+			if self.step == True:
+				self.step = False
+				line = self.lines[i].replace("\t","")
+				
+				if "!" in line:
+					line = line[:line.find("!")].strip() #ignore comments
+				
+				if ":" in line:
+					line = line[line.find(":")+1:].strip() # ignore jump points
+				
+				self.outPut(line,i)
+				
+				command = ",".join(line.split(" ")).split(",")
+				
+				if command[0] != '':
+					if command[0] == "PUSH":
+						if len(command) != 2:
+							print("Invalid number of arguments on line "+str(i)+". Push expects 1 argument and "+str(len(command))+" were given")
+							continue
+						if command[1].isdigit():					# pushing a number to the stack
+							self.stackPush(command[1])
+						elif command[1] in self.DATA.keys():		# pushing a string from .SECT .DATA to the stack
+							self.stackPush("foo")
+						elif command[1] in self.localVars.keys():	# pushing a local int to the stack
+							self.stackPush(self.localVars[command[1]])
+						elif "(" in command[1] and ")" in command[1]:
+							temp = command[1][command[1].find("(")+1:command[1].find(")")]
+							if temp in self.BSS.keys():
+								#TODO memory
+								1+1
+							else:
+								print("Error on line "+str(i)+". I don't understand what ("+temp+") is")
+						else:
+							print(command)
+							print("Unknown error on line "+str(i)+".")
+							print(line)
+					elif command[0] == "ADD":
+						if len(command) != 3:
+							print("Invalid number of arguments on line "+str(i)+". Add expects 2 argument and "+str(len(command))+" were given")
+							continue
+
+						if command[1] == "SP" and command[2].isdigit():
+							for j in range(int(command[2])/2):
+								self.stackData.pop()
+							self.stackPush("")
+						elif command[1].isdigit():
+							print "Error on line "+str(i)+". Add cannot have a numerical first argument."
+						elif command[1] in self.registers.keys():
+							if command[2].isdigit():
+								self.registers[command[1]] += int(command[2])
+							elif command[2] in self.localVars.keys():
+								self.registers[command[1]] += int(self.localVars[command[2]])
+					elif command[0] == "JMP":
+						if len(command) != 2:
+							print("Invalid number of arguments on line "+str(i)+". Jmp expects 2 argument and "+str(len(command))+" were given")
+							continue
+
+						if command[1] in self.lookupTable.keys():
+							if type(self.lookupTable[command[1]]) == LIST_TYPE:
+								1+1
+							else:
+								i = self.lookupTable[command[1]]
+				i += 1
+		print("huh")
+		del temp, temp2
+
+	def stackPush(self,data):
+		if data != "": self.stackData.append(data)
+		self.stackBuffer.set_text("\n".join(self.stackData))
+
+	def stepFn(self):
+		self.step = True
+		
+	def outPut(self,string,i):
+		self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(),string+"\n")
+		self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(),0.1,True,.5,.5)
+		self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(i),0.0,True,.5,.5)
 
 
 A=Assembler()
