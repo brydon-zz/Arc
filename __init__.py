@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 from gi.repository import Gtk, Gdk, GObject
 import threading
 
@@ -75,6 +75,9 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 
 		self.step = False
 		self.stepping = True
+		self.addressSpace = []
+		for i in range(1024):
+			self.addressSpace.append(0)
 
 	"""Opens up a file dialog to select a file then loads that file in to the assembler. """
 	def openFile(self):
@@ -133,10 +136,10 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 							"STOSB":0
 							}
 		self.do = {
-					"ADD":lambda x: self.add(x),
-					"PUSH":lambda x: self.push(x),
-					"JMP":lambda x: self.jmp(x),
-					"MOV":lambda x: self.mov(x)
+					"ADD":lambda x,i: self.add(x,i),
+					"PUSH":lambda x,i: self.push(x,i),
+					"JMP":lambda x,i: self.jmp(x,i),
+					"MOV":lambda x,i: self.mov(x,i)
 					}
 		self.jumpLocation = -1
 		BSScount = 0
@@ -273,7 +276,7 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 						return -1
 
 					if command[0] in self.do.keys():
-						self.do[command[0]](command)
+						self.do[command[0]](command,i)
 					else:
 						1+1 # we do nothing right now, once all are implemented we'll throw errors for this sorta thing TODO
 
@@ -295,10 +298,10 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 		
 	def outPut(self,string,i):
 		self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(),string+"\n")
-		self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(),0.1,True,.5,.5)
+		#self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(),0.1,True,.5,.5)
 		#self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(i),0.25,True,.5,.5)
 
-	def add(self,command):
+	def add(self,command,i):
 		if command[1] == "SP" and command[2].isdigit():
 			for j in range(int(command[2])/2):
 				self.stackData.pop()
@@ -311,7 +314,7 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 			elif command[2] in self.localVars.keys():
 				self.registers[command[1]] += int(self.localVars[command[2]])
 
-	def push(self,command):
+	def push(self,command,i):
 		if command[1].isdigit():					# pushing a number to the stack
 			self.stackPush(command[1])
 		elif command[1] in self.DATA.keys():		# pushing a string from .SECT .DATA to the stack
@@ -328,16 +331,15 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 		else:
 			print(command)
 			print("Unknown error on line "+str(i)+".")
-			print(line)
 
-	def jmp(self,command):
+	def jmp(self,command,i):
 		if command[1] in self.lookupTable.keys():
 			if type(self.lookupTable[command[1]]) == self.LIST_TYPE:
 				1+1
 			else:
 				self.jumpLocation = self.lookupTable[command[1]]
 
-	def mov(self,command):
+	def mov(self,command,i):
 		print "Moving "+command[0]+" to "+command[1]
 
 if __name__ == "__main__":
