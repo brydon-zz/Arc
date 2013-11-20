@@ -1,6 +1,6 @@
 #!/usr/bin/python2.7
 from gi.repository import Gtk, Gdk, GObject
-import threading, os
+import threading, os, as88
 
 """"Assembler Class for Intel 8088 Architecture"""
 class Assembler:
@@ -84,9 +84,10 @@ class Assembler:
 		self.DATA = {}
 		self.BSS = {}
 
-		self.registers = {"AX":0,"BX":0,"CX":0,"DX":0,"SP":0,"BP":0,"SI":0,"DI":0,"PC":0}
-
-		self.flags = {"Z":False,"S":False,"V":False,"C":False,"A":False,"P":False}
+		as88.newAssembler(self)
+		
+		self.registers = as88.getRegisters()
+		self.flags = as88.getFlags()
 		#				
 
 		self.commandArgs = {"ADD":2,
@@ -103,17 +104,7 @@ class Assembler:
 							"CMPB":2,
 							"STOSB":0
 							}
-		self.do = {
-					"ADD":lambda x,i: self.add(x,i),
-					"PUSH":lambda x,i: self.push(x,i),
-					"JMP":lambda x,i: self.jmp(x,i),
-					"MOV":lambda x,i: self.mov(x,i),
-					"JE":lambda x,i: self.je(x,i),
-					"JG":lambda x,i: self.jg(x,i),
-					"JL":lambda x,i: self.jl(x,i),
-					"JLE":lambda x,i: self.jle(x,i),
-					"JGE":lambda x,i: self.jge(x,i)
-					}
+		self.do = as88.getFunctionTable()
 
 		self.LIST_TYPE = type([1,1])
 		self.stepping = True # Change if we want to not single-step thru code
@@ -192,6 +183,7 @@ class Assembler:
 		self.clearGui()
 		
 		GObject.idle_add(lambda: self.codeBuffer.set_text(self.codeString))
+	
 		self.lines = self.codeString.split("\n")
 		
 		self.lookupTable = {}
@@ -373,74 +365,6 @@ class Assembler:
 	def clearGui(self):
 		GObject.idle_add(lambda: (self.outText.get_buffer().set_text(""),
 						self.code.get_buffer().set_text("")))
-		
-	def add(self,command,i):
-		if command[1] == "SP" and command[2].isdigit():
-			for j in range(int(command[2])/2):
-				if len(self.stackData) > 0:
-					self.stackData.pop()
-					self.stackPush("")
-		elif command[1].isdigit():
-			print "Error on line "+str(i)+". Add cannot have a numerical first argument."
-		elif command[1] in self.registers.keys():
-			if command[2].isdigit():
-				self.registers[command[1]] += int(command[2])
-			elif command[2] in self.localVars.keys():
-				self.registers[command[1]] += int(self.localVars[command[2]])
-
-	def push(self,command,i):
-		if command[1].isdigit():					# pushing a number to the stack
-			self.stackPush(command[1])
-		elif command[1] in self.DATA.keys():		# pushing a string from .SECT .DATA to the stack
-			self.stackPush("foo")
-		elif command[1] in self.localVars.keys():	# pushing a local int to the stack
-			self.stackPush(self.localVars[command[1]])
-		elif command[1] in self.BSS.keys():
-			self.stackPush(self.BSS[command[1]][0])
-		elif "(" in command[1] and ")" in command[1]:
-			temp = command[1][command[1].find("(")+1:command[1].find(")")]
-			if temp in self.BSS.keys():
-				#TODO memory
-				1+1
-			else:
-				print("Error on line "+str(i)+". I don't understand what ("+temp+") is")
-		else:
-			print(command)
-			print("Unknown error on line "+str(i)+".")
-
-	def jmp(self,command,i):
-		if command[1] in self.lookupTable.keys():
-			if type(self.lookupTable[command[1]]) == self.LIST_TYPE:
-				1+1
-			else:
-				self.jumpLocation = self.lookupTable[command[1]]
-
-	def mov(self,command,i):
-		if command[1] in self.registers.keys():
-			if command[2].isdigit():
-				self.registers[command[1]] += int(command[2])
-			elif command[2] in self.localVars.keys():
-				self.registers[command[1]] += int(self.localVars[command[2]])
-	
-	def je(self,command,i):
-		if 1+1:
-			self.jmp(command,i)
-	
-	def jg(self,command,i):
-		if 1+1:
-			self.jmp(command,i)
-			
-	def jge(self,command,i):
-		if 1+1:
-			self.jmp(command,i)
-	
-	def jle(self,command,i):
-		if 1+1:
-			self.jmp(command,i)
-	
-	def jl(self,command,i):
-		if 1+1:
-			self.jmp(command,i)	
 
 if __name__ == "__main__":
 
