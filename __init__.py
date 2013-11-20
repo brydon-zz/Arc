@@ -2,6 +2,12 @@
 from gi.repository import Gtk, Gdk, GObject
 import threading, os, as88
 
+# TODO: issues with restarting, issues with running certain things before we're ready for second pass, etc.
+# TODO: hex the reg output
+# TODO: AL and AH, etc.
+# TODO: Implement the WHOLE reg set
+# TODO: ASSEMBLE?
+
 """"Assembler Class for Intel 8088 Architecture"""
 class Assembler:
 
@@ -31,7 +37,7 @@ class Assembler:
 				A.openFile()
 
 			def onButtonClicked(self, button):
-				A.stepFn()
+				A.buttonClicked()
 
 		self.builder = Gtk.Builder()
 		self.builder.add_from_file("As88_Mockup.glade")
@@ -124,6 +130,7 @@ class Assembler:
 		self.codeBounds = [1, 1]
 
 		self.step = False
+		self.runUntil = -1
 
 		self.addressSpace = []
 
@@ -209,6 +216,8 @@ class Assembler:
 		self.codeBounds = [1, 1]
 
 		self.step = False
+		self.runUntil = -1
+		self.stepping = True
 
 		self.addressSpace = []
 
@@ -310,6 +319,15 @@ class Assembler:
 		while i < self.codeBounds[1]:
 			# So second pass thru the code is where the money is
 			# We have a boolean set up for single stepping or not.
+			if self.runUntil != -1:
+				if i == self.runUntil:
+					self.step = True
+					self.stepping = True
+					self.runUntil = -1
+				else:
+					self.step = True
+					self.stepping = False
+
 			if self.step == True:
 				if self.stepping: self.step = False
 				line = self.lines[i].replace("\t", "")  # clear out tabs
@@ -359,6 +377,8 @@ class Assembler:
 					i += 1
 
 		print "Loop is completed, all code is run."
+		if self.runUntil != -1:
+			print "Strange, the code never reached line " + str(self.runUntil) + " after your request, check your jumps!"
 
 	def stackPush(self, data):
 		if data != "": self.stackData.append(str(data))
@@ -401,6 +421,26 @@ class Assembler:
 								self.regFlags.get_buffer().set_text(flagStr)
 								# self.memory.get_buffer().set_text(str(self.addressSpace))
 								))
+
+	def buttonClicked(self):
+		text = self.entry.get_text()
+		if text == "":
+			self.stepFn()
+		else:
+			tempList = text.lower().strip().split()
+			if tempList[0] == "run" and tempList[1] == "until" and tempList[2].isdigit():
+				n = int(tempList[2])
+				if n >= self.codeBounds[0] and n < self.codeBounds[1]:
+					self.runUntil = int(tempList[2])
+				else:
+					print "That line number is not within the bounds of the program."
+			elif tempList[0] == "run" and tempList[1] == "all":
+				self.stepping = False
+				self.step = True
+
+			GObject.idle_add(lambda: self.entry.set_text(""))
+			del tempList, n
+
 
 if __name__ == "__main__":
 

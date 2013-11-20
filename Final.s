@@ -18,6 +18,7 @@ start:
 	SYS
 	ADD SP,6			! Print a velcome
 
+	MOV AX,2
 	MOV DI, fn
 	PUSH _GETCHAR
 getFile:				! Loopdy loop
