@@ -130,21 +130,29 @@ class Assembler:
 			self.addressSpace.append(0)
 
 	def on_key_press_event(self,widget, event):
+		""" Handles Key Down events, puts the corresponding keyval into a list self.keysDown.
+		Also checks for key combinations. """
 		keyname = Gdk.keyval_name(event.keyval)
+		print keyname
+		if keyname == 'Return' or keyname == 'KP_Enter':
+			self.stepFn()
+			return
 		
 		if not keyname in self.keysDown: self.keysDown.append(keyname)
-		print self.keysDown
+
 		if 'o' in self.keysDown and ('Control_L' in self.keysDown or 'Control_R' in self.keysDown):
 			self.keysDown = []
 			self.openFile()	
 		
 	def on_key_release_event(self,widget, event):
+		""" Handes Key Up events, removes the corresponding keyval from the list self.keysDown. """
 		keyname = Gdk.keyval_name(event.keyval)
 		
 		if keyname in self.keysDown: self.keysDown.remove(keyname)
 
-	"""Opens up a file dialog to select a file then loads that file in to the assembler. """
 	def openFile(self):
+		"""Opens up a file dialog to select a file then reads that file in to the assembler. """
+		
 		self.fileChooser = Gtk.FileChooserDialog(title="Choose A File",parent=self.win,buttons=(Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
 		response = self.fileChooser.run()
 
@@ -166,8 +174,11 @@ class Assembler:
 		thread = threading.Thread(target=self.startRunning)
 		thread.start()
 
-	"""Starts the whole sha-bang. Runs the code and everything."""
 	def startRunning(self):
+		"""Starts the whole sha-bang. Runs the code and everything. Goes thru 2 steps.
+		First pass for forward references, and setting up local vars, etc.
+		Second pass to run the code.  Intended to be run in separate thread, steps thru the loop
+		once at a time. Dependent upon receiving button clicks, or enter presses."""
 		
 		self.codeBuffer.set_text(self.codeString)
 		self.lines = self.codeString.split("\n")
@@ -202,7 +213,7 @@ class Assembler:
 				l[0]=l[0].strip()
 				l[1]=l[1].strip()
 				if l[0] in self.localVars.keys():
-					print "Error on line "+self.lineCount+", cannot define \''"+l[0]+"\' more than once."
+					print "Error on line "+str(self.lineCount)+", cannot define \''"+l[0]+"\' more than once."
 				else: self.localVars[l[0]] = l[1]
 				continue
 
@@ -315,7 +326,6 @@ class Assembler:
 					i += 1
 
 		print "Loop is completed, all code is run."
-		del temp, temp2
 
 	def stackPush(self,data):
 		if data != "": self.stackData.append(str(data))
@@ -410,6 +420,6 @@ if __name__ == "__main__":
 
 	GObject.threads_init()
 
-	A=Assembler()
+	A = Assembler()
 	print "Constructed"
 	Gtk.main()
