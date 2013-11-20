@@ -6,6 +6,8 @@ import threading
 class Assembler:
 
 	def __init__(self):
+		
+		""" Begin GUI """
 		styles = """
 #As88Window {
 	background:url('bg.jpg');
@@ -17,12 +19,6 @@ class Assembler:
 	color:#FFF;
 }
 """
-
-		lorem = """Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut ornare rhoncus neque eget hendrerit. Donec accumsan elementum est id egestas. Nulla dolor sem, tincidunt ut suscipit et, volutpat ut arcu. Sed rutrum dapibus nunc at lobortis. Cras in lorem interdum, fringilla magna a, condimentum mi. Donec hendrerit justo mauris, sed placerat quam aliquet sed. Ut convallis tristique porttitor.
-Aliquam euismod dui id placerat aliquam. Suspendisse purus ipsum, lacinia non vulputate non, faucibus non mi. Fusce eu metus lacinia, tempor arcu a, gravida tortor. Mauris lorem sem, ultrices vitae aliquam eu, tristique vel enim. Nam placerat mattis rutrum. Etiam vestibulum magna turpis, at rutrum erat imperdiet vitae. Nunc congue accumsan ante vel bibendum. Pellentesque quis tortor vel dolor auctor molestie. Vestibulum tincidunt elementum nibh vel imperdiet. Pellentesque et leo pulvinar, sodales erat ut, accumsan felis. In ultricies fermentum aliquet. Interdum et malesuada fames ac ante ipsum primis in faucibus. Sed tincidunt fringilla odio, vel iaculis libero rutrum sed. Pellentesque vel est consectetur, placerat sem accumsan, scelerisque purus. Aliquam sed velit varius, volutpat sapien id, sagittis tortor. Praesent eu velit erat.
-Ut cursus feugiat leo, vel posuere mi lobortis sit amet. Maecenas vitae aliquam turpis. In libero tortor, vulputate nec arcu luctus, porttitor tincidunt lectus. In hac habitasse platea dictumst. Suspendisse lobortis, nisi non dictum adipiscing, sapien quam malesuada mauris, sit amet faucibus erat dolor ut velit. Donec fringilla purus malesuada leo sollicitudin iaculis. Pellentesque vestibulum congue nisi nec vestibulum. Mauris eleifend tellus sit amet faucibus vulputate. Morbi bibendum ligula tristique eleifend rhoncus. Integer egestas accumsan tempus. Suspendisse sem arcu, sodales at nisl eget, imperdiet sagittis nibh. Aliquam ornare nisi ut purus tempor, ac fermentum libero condimentum. Sed eget mauris in mi malesuada varius. Vivamus nisi tellus, molestie ac neque a, consectetur gravida libero. Phasellus ut cursus lorem. In eu leo ullamcorper, rhoncus quam eu, ultrices elit.
-Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, porttitor nisl luctus, venenatis felis. Sed egestas sagittis tortor ut malesuada. Praesent aliquet augue hendrerit dolor euismod mattis. Nunc molestie iaculis dolor, sit amet ullamcorper mauris viverra vel. Vivamus in consequat risus. Etiam fermentum rutrum sapien eu rutrum. Cras quis sapien arcu. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Suspendisse egestas vitae nibh vitae sodales. Vivamus nisi magna, ultrices non dictum eget, imperdiet nec dolor"""
-
 		"""Handlers for the actions in the interface."""
 		class Handler:
 			def onDeleteWindow(self, *args):
@@ -70,46 +66,17 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 
 		self.outputText = " "
 		self.outBuffer.set_text(self.outputText)
+		
+		self.win.connect('key_press_event', self.on_key_press_event)	
+		self.win.connect('key_release_event', self.on_key_release_event)	
+		self.win.set_icon_from_file("icon.jpeg")
 
 		self.win.show_all()
+		
+		
+		""" End GUI """
 
-		self.step = False
-		self.stepping = True
-		self.addressSpace = []
-		for i in range(1024):
-			self.addressSpace.append(0)
-
-	"""Opens up a file dialog to select a file then loads that file in to the assembler. """
-	def openFile(self):
-		self.fileChooser = Gtk.FileChooserDialog(title="Choose A File",parent=self.win,buttons=(Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-		self.response = self.fileChooser.run()
-
-		if self.response == Gtk.ResponseType.OK:
-			self.fileName = self.fileChooser.get_filename()
-
-		self.fileChooser.destroy()
-
-		if self.fileName == None:
-			return None
-
-		self.f = open(self.fileName,'r')
-		self.codeString = ""
-
-		#this reads in the file
-		while True:
-			lineIn = self.f.readline()
-			if lineIn == "": break
-			self.codeString += lineIn
-		self.f.close()
-
-		print "Just about to start threading"
-		thread = threading.Thread(target=self.startRunning)
-		thread.start()
-
-	"""Starts the whole sha-bang. Runs the code and everything."""
-	def startRunning(self):
-		self.codeBuffer.set_text(self.codeString)
-		self.lines = self.codeString.split("\n")
+		self.fileName = None
 
 		self.lookupTable = {}
 		self.localVars = {}
@@ -148,15 +115,67 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 					"JGE":lambda x,i: self.jge(x,i)
 					}
 		self.jumpLocation = -1
-		BSScount = 0
 
 		self.lineCount = 0
-
-		# This for Loop is gonna go thru the lines, set up a nice lookUp table for jumps 
-		# and record program start and end. and set up some memory stuff.
 		self.LIST_TYPE = type([1,1])
 		self.mode = "head"
 		self.codeBounds = [1,1]
+				
+		self.step = False
+		self.stepping = True
+		self.addressSpace = []
+		self.keysDown = []
+		
+		for i in range(1024):
+			self.addressSpace.append(0)
+
+	def on_key_press_event(self,widget, event):
+		keyname = Gdk.keyval_name(event.keyval)
+		
+		if not keyname in self.keysDown: self.keysDown.append(keyname)
+		print self.keysDown
+		if 'o' in self.keysDown and ('Control_L' in self.keysDown or 'Control_R' in self.keysDown):
+			self.keysDown = []
+			self.openFile()	
+		
+	def on_key_release_event(self,widget, event):
+		keyname = Gdk.keyval_name(event.keyval)
+		
+		if keyname in self.keysDown: self.keysDown.remove(keyname)
+
+	"""Opens up a file dialog to select a file then loads that file in to the assembler. """
+	def openFile(self):
+		self.fileChooser = Gtk.FileChooserDialog(title="Choose A File",parent=self.win,buttons=(Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+		response = self.fileChooser.run()
+
+		if response == Gtk.ResponseType.OK:
+			self.fileName = self.fileChooser.get_filename()
+
+		self.fileChooser.destroy()
+
+		if self.fileName == None:
+			return None
+
+		f = open(self.fileName,'r')
+		
+		self.codeString = f.read() 
+		
+		f.close()
+
+		print "Just about to start threading"
+		thread = threading.Thread(target=self.startRunning)
+		thread.start()
+
+	"""Starts the whole sha-bang. Runs the code and everything."""
+	def startRunning(self):
+		
+		self.codeBuffer.set_text(self.codeString)
+		self.lines = self.codeString.split("\n")
+		
+		BSScount = 0
+		
+		# This for Loop is gonna go thru the lines, set up a nice lookUp table for jumps 
+		# and record program start and end. and set up some memory stuff.
 		
 		""" FIRST PASS """
 		
@@ -245,7 +264,7 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 		i = self.codeBounds[0]
 		print self.stepping
 		print self.step
-		while i  <= self.codeBounds[1]:
+		while i  < self.codeBounds[1]:
 			# So second pass thru the code is where the money is
 			# We have a boolean set up for single stepping or not.
 			if self.step == True:
@@ -295,7 +314,7 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 				else:
 					i += 1
 
-		print "Loop is completed"
+		print "Loop is completed, all code is run."
 		del temp, temp2
 
 	def stackPush(self,data):
@@ -309,7 +328,7 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 		self.step = True
 		
 	def outPut(self,string,i):
-		self.nextString = string+"\n"
+		self.nextString = str(i)+": "+string+"\n"
 		self.line = i
 		GObject.idle_add(self.output_call)
 	
