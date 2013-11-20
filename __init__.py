@@ -1,6 +1,6 @@
 #!/usr/bin/python2.7
 from gi.repository import Gtk, Gdk, GObject
-import threading
+import threading, os
 
 """"Assembler Class for Intel 8088 Architecture"""
 class Assembler:
@@ -75,7 +75,7 @@ class Assembler:
 		
 		
 		""" End GUI """
-
+		
 		self.fileName = None
 
 		self.lookupTable = {}
@@ -114,26 +114,31 @@ class Assembler:
 					"JLE":lambda x,i: self.jle(x,i),
 					"JGE":lambda x,i: self.jge(x,i)
 					}
+
+		self.LIST_TYPE = type([1,1])
+		self.stepping = True # Change if we want to not single-step thru code
+		
 		self.jumpLocation = -1
 
 		self.lineCount = 0
-		self.LIST_TYPE = type([1,1])
+
 		self.mode = "head"
 		self.codeBounds = [1,1]
 				
 		self.step = False
-		self.stepping = True
+		
 		self.addressSpace = []
-		self.keysDown = []
 		
 		for i in range(1024):
 			self.addressSpace.append(0)
+			
+		self.keysDown = []
 
 	def on_key_press_event(self,widget, event):
 		""" Handles Key Down events, puts the corresponding keyval into a list self.keysDown.
 		Also checks for key combinations. """
 		keyname = Gdk.keyval_name(event.keyval)
-		print keyname
+		#print keyname
 		if keyname == 'Return' or keyname == 'KP_Enter':
 			self.stepFn()
 			return
@@ -153,6 +158,8 @@ class Assembler:
 	def openFile(self):
 		"""Opens up a file dialog to select a file then reads that file in to the assembler. """
 		
+		self.fileName = None
+		
 		self.fileChooser = Gtk.FileChooserDialog(title="Choose A File",parent=self.win,buttons=(Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
 		response = self.fileChooser.run()
 
@@ -164,15 +171,17 @@ class Assembler:
 		if self.fileName == None:
 			return None
 
-		f = open(self.fileName,'r')
+		try:
+			f = open(self.fileName,'r')
 		
-		self.codeString = f.read() 
+			self.codeString = f.read() 
 		
-		f.close()
-
-		print "Just about to start threading"
-		thread = threading.Thread(target=self.startRunning)
-		thread.start()
+			f.close()
+			print "Just about to start threading"
+			thread = threading.Thread(target=self.startRunning)
+			thread.start()
+		except IOError:
+			print "There was a fatal issue opening "+self.fileName+". Are you sure it's a file?"
 
 	def startRunning(self):
 		"""Starts the whole sha-bang. Runs the code and everything. Goes thru 2 steps.
@@ -180,8 +189,31 @@ class Assembler:
 		Second pass to run the code.  Intended to be run in separate thread, steps thru the loop
 		once at a time. Dependent upon receiving button clicks, or enter presses."""
 		
-		self.codeBuffer.set_text(self.codeString)
+		self.clearGui()
+		
+		GObject.idle_add(lambda: self.codeBuffer.set_text(self.codeString))
 		self.lines = self.codeString.split("\n")
+		
+		self.lookupTable = {}
+		self.localVars = {}
+		self.stackData = []
+		self.DATA = {}
+		self.BSS = {}
+		
+		self.jumpLocation = -1
+
+		self.lineCount = 0
+
+		self.mode = "head"
+		self.codeBounds = [1,1]
+				
+		self.step = False
+		
+		self.addressSpace = []
+		
+		for i in range(1024):
+			self.addressSpace.append(0)
+
 		
 		BSScount = 0
 		
@@ -273,8 +305,7 @@ class Assembler:
 		print "Passing twice"
 		""" SECOND PASS """
 		i = self.codeBounds[0]
-		print self.stepping
-		print self.step
+
 		while i  < self.codeBounds[1]:
 			# So second pass thru the code is where the money is
 			# We have a boolean set up for single stepping or not.
@@ -329,23 +360,19 @@ class Assembler:
 
 	def stackPush(self,data):
 		if data != "": self.stackData.append(str(data))
-		GObject.idle_add(self.update_stack)
-	
-	def update_stack(self):
-		self.stackBuffer.set_text("\n".join(self.stackData))
+		GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(self.stackData)))
 
 	def stepFn(self):
 		self.step = True
 		
 	def outPut(self,string,i):
-		self.nextString = str(i)+": "+string+"\n"
-		self.line = i
-		GObject.idle_add(self.output_call)
+		GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(),str(i)+": "+string+"\n"),
+					self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(),0.1,True,.5,.5),
+					self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(i+1),0.25,True,.5,.5)))
 	
-	def output_call(self):
-		self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(),self.nextString)
-		self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(),0.1,True,.5,.5)
-		self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(self.line),0.25,True,.5,.5)
+	def clearGui(self):
+		GObject.idle_add(lambda: (self.outText.get_buffer().set_text(""),
+						self.code.get_buffer().set_text("")))
 		
 	def add(self,command,i):
 		if command[1] == "SP" and command[2].isdigit():
@@ -362,7 +389,6 @@ class Assembler:
 				self.registers[command[1]] += int(self.localVars[command[2]])
 
 	def push(self,command,i):
-		print str(self.localVars.keys())+" "+str(self.DATA.keys())
 		if command[1].isdigit():					# pushing a number to the stack
 			self.stackPush(command[1])
 		elif command[1] in self.DATA.keys():		# pushing a string from .SECT .DATA to the stack
