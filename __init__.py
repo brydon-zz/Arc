@@ -120,6 +120,7 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 		self.registers = {"AX":0,"BX":0,"CX":0,"DX":0,"SP":0,"BP":0,"SI":0,"DI":0,"PC":0}
 
 		self.flags = {"Z":False,"S":False,"V":False,"C":False,"A":False,"P":False}
+		#				
 
 		self.commandArgs = {"ADD":2,
 							"PUSH":1,
@@ -139,7 +140,12 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 					"ADD":lambda x,i: self.add(x,i),
 					"PUSH":lambda x,i: self.push(x,i),
 					"JMP":lambda x,i: self.jmp(x,i),
-					"MOV":lambda x,i: self.mov(x,i)
+					"MOV":lambda x,i: self.mov(x,i),
+					"JE":lambda x,i: self.je(x,i),
+					"JG":lambda x,i: self.jg(x,i),
+					"JL":lambda x,i: self.jl(x,i),
+					"JLE":lambda x,i: self.jle(x,i),
+					"JGE":lambda x,i: self.jge(x,i)
 					}
 		self.jumpLocation = -1
 		BSScount = 0
@@ -240,19 +246,22 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 		print self.stepping
 		print self.step
 		while i  <= self.codeBounds[1]:
+			# So second pass thru the code is where the money is
+			# We have a boolean set up for single stepping or not.
 			if self.step == True:
 				if self.stepping: self.step = False
-				line = self.lines[i].replace("\t","")
+				line = self.lines[i].replace("\t","") # clear out tabs
 
-				if "!" in line:
+				if "!" in line: # exclamations mean comments
 					line = line[:line.find("!")].strip() #ignore comments
 
-				if ":" in line:
+				if ":" in line: # colons mean labels, we dealt with those already.
 					line = line[line.find(":")+1:].strip() # ignore jump points
 
-				self.outPut(line,i)
+				self.outPut(line,i) # Now the line is ready to work with
 
-				if line.count(",") > 1:
+
+				if line.count(",") > 1: # any command can have at most 2 arguments.
 					print "What's up with all the commas on line "+str(i)+"?"
 					return -1
 
@@ -262,9 +271,9 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 
 				if command == None:
 					i += 1
-					continue
+					continue # skip nothing lines, yo.
 
-				if command[0] != '':
+				if command[0] != '': 
 					if command[0] not in self.commandArgs.keys():
 						print "Missing "+command[0]+" from self.commandArgs"
 						i += 1
@@ -290,22 +299,31 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 		del temp, temp2
 
 	def stackPush(self,data):
-		if data != "": self.stackData.append(data)
+		if data != "": self.stackData.append(str(data))
+		GObject.idle_add(self.update_stack)
+	
+	def update_stack(self):
 		self.stackBuffer.set_text("\n".join(self.stackData))
 
 	def stepFn(self):
 		self.step = True
 		
 	def outPut(self,string,i):
-		self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(),string+"\n")
-		#self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(),0.1,True,.5,.5)
-		#self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(i),0.25,True,.5,.5)
-
+		self.nextString = string+"\n"
+		self.line = i
+		GObject.idle_add(self.output_call)
+	
+	def output_call(self):
+		self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(),self.nextString)
+		self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(),0.1,True,.5,.5)
+		self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(self.line),0.25,True,.5,.5)
+		
 	def add(self,command,i):
 		if command[1] == "SP" and command[2].isdigit():
 			for j in range(int(command[2])/2):
-				self.stackData.pop()
-				self.stackPush("")
+				if len(self.stackData) > 0:
+					self.stackData.pop()
+					self.stackPush("")
 		elif command[1].isdigit():
 			print "Error on line "+str(i)+". Add cannot have a numerical first argument."
 		elif command[1] in self.registers.keys():
@@ -315,12 +333,15 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 				self.registers[command[1]] += int(self.localVars[command[2]])
 
 	def push(self,command,i):
+		print str(self.localVars.keys())+" "+str(self.DATA.keys())
 		if command[1].isdigit():					# pushing a number to the stack
 			self.stackPush(command[1])
 		elif command[1] in self.DATA.keys():		# pushing a string from .SECT .DATA to the stack
 			self.stackPush("foo")
 		elif command[1] in self.localVars.keys():	# pushing a local int to the stack
 			self.stackPush(self.localVars[command[1]])
+		elif command[1] in self.BSS.keys():
+			self.stackPush(self.BSS[command[1]][0])
 		elif "(" in command[1] and ")" in command[1]:
 			temp = command[1][command[1].find("(")+1:command[1].find(")")]
 			if temp in self.BSS.keys():
@@ -340,7 +361,31 @@ Donec pulvinar eros quis nisl congue accumsan. Sed vitae turpis scelerisque, por
 				self.jumpLocation = self.lookupTable[command[1]]
 
 	def mov(self,command,i):
-		print "Moving "+command[0]+" to "+command[1]
+		if command[1] in self.registers.keys():
+			if command[2].isdigit():
+				self.registers[command[1]] += int(command[2])
+			elif command[2] in self.localVars.keys():
+				self.registers[command[1]] += int(self.localVars[command[2]])
+	
+	def je(self,command,i):
+		if 1+1:
+			self.jmp(command,i)
+	
+	def jg(self,command,i):
+		if 1+1:
+			self.jmp(command,i)
+			
+	def jge(self,command,i):
+		if 1+1:
+			self.jmp(command,i)
+	
+	def jle(self,command,i):
+		if 1+1:
+			self.jmp(command,i)
+	
+	def jl(self,command,i):
+		if 1+1:
+			self.jmp(command,i)	
 
 if __name__ == "__main__":
 
