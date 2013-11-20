@@ -28,6 +28,7 @@ def getCommandArgs():
             "CMPB":2,
             "STOSB":0
             }
+
 def getFunctionTable():
     return {
             "ADD":lambda x,i: add(x,i),

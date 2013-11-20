@@ -88,22 +88,7 @@ class Assembler:
 		
 		self.registers = as88.getRegisters()
 		self.flags = as88.getFlags()
-		#				
-
-		self.commandArgs = {"ADD":2,
-							"PUSH":1,
-							"JMP":1,
-							"JE":1,
-							"JG":1,
-							"JL":1,
-							"JLE":1,
-							"JGE":1,
-							"MOV":2,
-							"SYS":0,
-							"POP":1,
-							"CMPB":2,
-							"STOSB":0
-							}
+		self.commandArgs = as88.getCommandArgs()
 		self.do = as88.getFunctionTable()
 
 		self.LIST_TYPE = type([1,1])
