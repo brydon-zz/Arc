@@ -119,6 +119,7 @@ class Assembler:
 		self.flags = as88.getFlags()
 		self.commandArgs = as88.getCommandArgs()
 		self.do = as88.getFunctionTable()
+		# self.sysCodes = as88.getSysCodes()
 
 		self.LIST_TYPE = type([1, 1])
 
@@ -151,6 +152,7 @@ class Assembler:
 		if not keyname in self.keysDown: self.keysDown.append(keyname)
 
 		if 'o' in self.keysDown and ('Control_L' in self.keysDown or 'Control_R' in self.keysDown):
+			print "Open?"
 			self.keysDown = []
 			self.openFile()
 
@@ -186,7 +188,7 @@ class Assembler:
 			print "Just about to start threading"
 			self.startRunning()
 		except IOError:
-			print "There was a fatal issue opening " + self.fileName + ". Are you sure it's a file?"
+			self.outPut("There was a fatal issue opening " + self.fileName + ". Are you sure it's a file?")
 
 	def startRunning(self):
 		"""Starts the whole sha-bang.
@@ -254,7 +256,7 @@ class Assembler:
 				l[0] = l[0].strip()
 				l[1] = l[1].strip()
 				if l[0] in self.localVars.keys():
-					print "Error on line " + str(self.lineCount) + ", cannot define \''" + l[0] + "\' more than once."
+					self.outPut("Error on line " + str(self.lineCount) + ", cannot define \''" + l[0] + "\' more than once.")
 					errorCount += 1
 				else: self.localVars[l[0]] = l[1]
 				continue
@@ -287,7 +289,7 @@ class Assembler:
 							else:
 								self.lookupTable[temp] = [self.lookupTable[temp], self.lineCount]
 						else:
-							print "Duplicate entry: \"" + temp + "\" on line " + str(self.lineCount) + " and line " + str(self.lookupTable[temp])
+							self.outPut("Duplicate entry: \"" + temp + "\" on line " + str(self.lineCount) + " and line " + str(self.lookupTable[temp]))
 							errorCount += 1
 				elif self.mode == ".SECT .DATA":
 					# info in .SECT .DATA follows the format
@@ -297,7 +299,7 @@ class Assembler:
 
 					if ".ASCIZ" in l or ".ASCII" in l:  # If we're dealing with a string
 						if l.count("\"") < 2:  # each string to be defined should be in quotes, raise error if quotes are messed
-							print "fatal error on line " + str(self.lineCount)
+							self.outPut("fatal error on line " + str(self.lineCount))
 							errorCount += 1
 							return None
 						temp2 = l[l.find("\"") + 1:l.rfind("\"")]  # otherwise grab the stuff in quotes
@@ -321,7 +323,7 @@ class Assembler:
 			self.lineNumber = self.codeBounds[0]
 			self.running = True
 		else:
-			print "Your code cannot be run, it contains %d errors" % errorCount
+			self.outPut("Your code cannot be run, it contains %d errors" % errorCount)
 
 	def updateStack(self, data=""):
 		if data != "": self.stackData.append(str(data))
@@ -379,16 +381,20 @@ class Assembler:
 		text = self.entry.get_text().lower().strip()
 		if text == "":
 			if self.ran:
-				self.outPut("Do you wish to restart? (y/n)")
-				self.restartPrompt = True
+				if not self.restartPrompt:
+					self.outPut("Do you wish to restart? (y/n)")
+					self.restartPrompt = True
 			elif self.running:
 				self.step()
 		else:
 			if text == "restart":
 				if self.running or self.ran: self.startRunning()
-			elif text == "y" and self.restartPrompt:
-				self.startRunning()
-				self.restartPrompt = False
+			elif text == "y":
+				if self.restartPrompt:
+					self.startRunning()
+					self.restartPrompt = False
+			elif text == "clear":
+				self.clearGui()
 			elif self.running:
 				tempList = text.split()
 				if tempList[0] == "run" and tempList[1] == "until" and tempList[2].isdigit():
@@ -401,9 +407,9 @@ class Assembler:
 							self.step()
 
 						if self.lineNumber != int(tempList[2]) + 1:
-							print "The program exited before it ever reached line " + tempList[2]
+							self.outPut("The program exited before it ever reached line " + tempList[2])
 					else:
-						print "That line number is not within the bounds of the program."
+						self.outPut("That line number is not within the bounds of the program.")
 				elif tempList[0] == "run" and tempList[1] == "all":
 					while self.running:
 						self.step()
@@ -415,9 +421,7 @@ class Assembler:
 		if self.running:
 
 			if self.lineNumber >= self.codeBounds[1]:
-				self.running = False
-				self.ran = True
-				# TODO: EOF, anything important like that should go here.
+				self.stopRunning()
 				return
 
 			line = self.lines[self.lineNumber].replace("\t", "")  # clear out tabs
@@ -432,8 +436,9 @@ class Assembler:
 
 
 			if line.count(",") > 1:  # any command can have at most 2 arguments.
-				print "What's up with all the commas on line " + str(self.lineNumber) + "?"
+				self.outPut("What's up with all the commas on line " + str(self.lineNumber) + "?")
 				self.running = False
+				self.ran = True
 				return -1
 
 			command = [x.strip() for x in line.replace(" ", ",").split(",")]
@@ -451,9 +456,10 @@ class Assembler:
 					return
 
 				if len(command) - 1 != self.commandArgs[command[0]]:
-					print "Invalid number of arguments on line " + str(self.lineNumber) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " arguments and " + str(len(command) - 1) + " were given"
+					self.outPut("Invalid number of arguments on line " + str(self.lineNumber) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " argument" + "s"*(self.commandArgs[command[0]] > 1) + " and " + str(len(command) - 1) + (" were " if len(command) - 1 > 1 else " was ") + "given.")
 					print command[:]
 					self.running = False
+					self.ran = True
 					return -1
 
 				if command[0] in self.do.keys():
@@ -469,10 +475,14 @@ class Assembler:
 				self.lineNumber += 1
 
 			if self.lineNumber >= self.codeBounds[1]:
-				self.running = False
-				self.ran = True
-				# TODO: EOF, anything important like that should go here.
+				self.stopRunning()
 				return
+
+	def stopRunning(self):
+		self.running = False
+		self.ran = True
+		self.outPut("\nCode executed succesfully.")
+		# TODO: EOF, anything important like that should go here.
 
 
 if __name__ == "__main__":

@@ -19,8 +19,13 @@ start:
 	ADD SP,6			! Print a velcome
 
 	MOV AX,2
+	MOV AX,2
+	ADD AX,4
 	MOV DI, fn
 	PUSH _GETCHAR
+
+	PUSH _EXIT
+	SYS
 getFile:				! Loopdy loop
 	SYS
 	CMPB AL,'\n'
