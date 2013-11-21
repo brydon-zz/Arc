@@ -130,6 +130,7 @@ class Assembler:
 		self.codeBounds = [1, 1]
 		self.running = False
 		self.ran = False
+		self.restartPrompt = False
 
 		self.addressSpace = []
 
@@ -328,7 +329,11 @@ class Assembler:
 
 	def outPut(self, string, i=""):
 		""" Outputs the arguments, in the fashion i: string"""
-		GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), str(i) + ": " + string + "\n"),
+		if i == "":
+			GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), string + "\n"),
+					self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(), 0.1, True, .5, .5)))
+		else:
+			GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), str(i) + ": " + string + "\n"),
 					self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(), 0.1, True, .5, .5),
 					self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(i + 1), 0.25, True, .5, .5)))
 
@@ -371,17 +376,21 @@ class Assembler:
 		If the entry text field has a command in it execute accordingly
 		If the entry text field has characters in it, that aren't recognised as a command, clear the entry and do nothing.
 		"""
-		text = self.entry.get_text()
+		text = self.entry.get_text().lower().strip()
 		if text == "":
 			if self.ran:
-				self.startRunning()
+				self.outPut("Do you wish to restart? (y/n)")
+				self.restartPrompt = True
 			elif self.running:
 				self.step()
 		else:
-			tempList = text.lower().strip().split()
-			if tempList[0] == "restart" and len(tempList) == 1:
+			if text == "restart":
 				if self.running or self.ran: self.startRunning()
+			elif text == "y" and self.restartPrompt:
+				self.startRunning()
+				self.restartPrompt = False
 			elif self.running:
+				tempList = text.split()
 				if tempList[0] == "run" and tempList[1] == "until" and tempList[2].isdigit():
 					n = int(tempList[2])
 					if n >= self.codeBounds[0] and n < self.codeBounds[1]:
