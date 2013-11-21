@@ -157,6 +157,7 @@ def add(command, i):
                 assembler.updateStack()
     elif command[1].isdigit():
         assembler.outPut("Error on line " + str(i) + ". Add cannot have a numerical first argument.")
+        assembler.stopRunning(-1)
     elif command[1] in assembler.registers.keys():
         if command[2].isdigit():
             assembler.registers[command[1]] += int(command[2])
@@ -167,7 +168,7 @@ def push(command, i):
     if command[1].isdigit():  # pushing a number to the stack
         assembler.updateStack(command[1])
     elif command[1] in assembler.DATA.keys():  # pushing a string from .SECT .DATA to the stack
-        assembler.updateStack("foo")
+        assembler.updateStack(assembler.DATA[command[1]][0])
     elif command[1] in assembler.localVars.keys():  # pushing a local int to the stack
         assembler.updateStack(assembler.localVars[command[1]])
     elif command[1] in assembler.BSS.keys():
@@ -179,9 +180,11 @@ def push(command, i):
             1 + 1
         else:
             assembler.outPut("Error on line " + str(i) + ". I don't understand what (" + temp + ") is")
+            assembler.stopRunning(-1)
     else:
         print(command)
         assembler.outPut("Unknown error on line " + str(i) + ".")
+        assembler.stopRunning(-1)
 
 def jmp(command, i):
     if command[1] in assembler.lookupTable.keys():
@@ -220,11 +223,34 @@ def jl(command, i):
 def sys(command, i):
     if len(assembler.stackData) == 0:
         assembler.outPut("Invalid system trap: SYS called on line %d without any arguments on stack." % i)
+        assembler.stopRunning(-1)
     elif not int(assembler.stackData[-1]) in sysCodes.values():
         assembler.outPut("Invalid system trap on line %d: The first argument \"%s\" on the stack is not understood" % (i, assembler.stackData[-1]))
+        assembler.stopRunning(-1)
     else:
         if int(assembler.stackData[-1]) == sysCodes["_EXIT"]:
             assembler.stopRunning()
+        if int(assembler.stackData[-1]) == sysCodes["_PRINTF"]:
+            try:
+                i = 2
+                args = []
+                while True:
+                    if assembler.addressSpace.count("0") == 0:
+                        formatStr = "".join(assembler.addressSpace[int(assembler.stackData[-i]):])
+                    else:
+                        formatStr = "".join(assembler.addressSpace[int(assembler.stackData[-i]):assembler.addressSpace.index("0", int(assembler.stackData[-i]))])
+
+                    numArgs = formatStr.count("%") - formatStr.count("\%")
+                    if numArgs != 0: break
+                    args.append(formatStr)
+                    i += 1
+                if numArgs != len(args):
+                    assembler.outPut("You have provided a format string that requires %d arguments yet have supplied %d arguments" % (numArgs, len(args)))
+                    raise
+                assembler.outPut(formatStr % tuple(args))
+            except:
+                assembler.stopRunning(-1)
+                assembler.outPut("Invalid system trap on line %d. Invalid number of arguments with _PRINTF." % i)
 
 def clc(comand, i):
     assembler.flags["C"] = False

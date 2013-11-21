@@ -7,7 +7,6 @@ import threading, os, as88, time
 # TODO: AL and AH, etc.
 # TODO: Implement the WHOLE reg set
 # TODO: ASSEMBLE?
-# TODO: Hexify the stack toooo!
 
 """"Assembler Class for Intel 8088 Architecture"""
 class Assembler:
@@ -30,9 +29,6 @@ class Assembler:
 		class Handler:
 			def onDeleteWindow(self, *args):
 				Gtk.main_quit(*args)
-
-			def onEntryActivate(self, button):
-				print "lol k"
 
 			def onOpen(self, button):
 				A.openFile()
@@ -92,6 +88,8 @@ class Assembler:
 
 		self.outText.set_wrap_mode(Gtk.WrapMode.WORD)
 		self.code.set_wrap_mode(Gtk.WrapMode.WORD)
+		self.memory.set_wrap_mode(Gtk.WrapMode.CHAR)
+		self.stack.set_justification(Gtk.Justification.CENTER)
 
 		self.outputText = " "
 		self.outBuffer.set_text(self.outputText)
@@ -136,7 +134,7 @@ class Assembler:
 		self.addressSpace = []
 
 		for i in range(1024):
-			self.addressSpace.append(0)
+			self.addressSpace.append(str(0))
 
 		self.keysDown = []
 
@@ -152,7 +150,6 @@ class Assembler:
 		if not keyname in self.keysDown: self.keysDown.append(keyname)
 
 		if 'o' in self.keysDown and ('Control_L' in self.keysDown or 'Control_R' in self.keysDown):
-			print "Open?"
 			self.keysDown = []
 			self.openFile()
 
@@ -221,7 +218,7 @@ class Assembler:
 		self.addressSpace = []
 
 		for i in range(1024):
-			self.addressSpace.append(0)
+			self.addressSpace.append(str(0))
 
 		errorCount = 0
 
@@ -303,8 +300,9 @@ class Assembler:
 							errorCount += 1
 							return None
 						temp2 = l[l.find("\"") + 1:l.rfind("\"")]  # otherwise grab the stuff in quotes
-						self.DATA[temp] = [hex(ord(x)).split("x")[1] for x in temp2]  # and set temp equal to a list of hex vals of each char
-						if ".ASCIZ" in l: self.DATA[temp].append("0")  # if it's an asciz then append a 0 to the end.
+						self.DATA[temp] = [BSScount, BSScount + len(temp2) + (".ASCIZ" in l) - 1]  # and set temp equal to a list of hex vals of each char
+						self.addressSpace[BSScount:BSScount + len(temp2)] = temp2 + "0"*(".ASCIZ" in l)
+						BSScount += len(temp2) + (".ASCIZ" in l)
 
 				elif self.mode == ".SECT .BSS":
 					# info in .SECT .BSS follows the format
@@ -316,6 +314,8 @@ class Assembler:
 					BSScount += int(temp2.strip())
 
 		# TODO: error check before second pass
+		print self.DATA
+		print self.BSS
 		print "Passing twice"
 		print self.codeBounds
 		""" SECOND PASS """
@@ -327,12 +327,12 @@ class Assembler:
 
 	def updateStack(self, data=""):
 		if data != "": self.stackData.append(str(data))
-		GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(self.stackData)))
+		GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join([hex(int(x)).split("x")[1] for x in self.stackData])))
 
 	def outPut(self, string, i=""):
 		""" Outputs the arguments, in the fashion i: string"""
 		if i == "":
-			GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), string + "\n"),
+			GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), ">> " + string + "\n"),
 					self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(), 0.1, True, .5, .5)))
 		else:
 			GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), str(i) + ": " + string + "\n"),
@@ -359,17 +359,17 @@ class Assembler:
 
 		flagStr = "  %-5s %-5s %-5s %-5s %-5s %-1s\n  %-6d%-6d%-6d%-6d%-6d%-1d" % (self.flags.keys()[0], self.flags.keys()[1], self.flags.keys()[2], self.flags.keys()[3], self.flags.keys()[4], self.flags.keys()[5], int(self.flags.values()[0]), int(self.flags.values()[1]), int(self.flags.values()[2]), int(self.flags.values()[3]), int(self.flags.values()[4]), int(self.flags.values()[5]))
 
-		GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: " + str(self.registers['AX'])),
-								self.regB.get_buffer().set_text("BX: " + str(self.registers['BX'])),
-								self.regC.get_buffer().set_text("CX: " + str(self.registers['CX'])),
-								self.regD.get_buffer().set_text("DX: " + str(self.registers['DX'])),
-								self.regBP.get_buffer().set_text("BP: " + str(self.registers['BP'])),
-								self.regSP.get_buffer().set_text("SP: " + str(self.registers['SP'])),
-								self.regDI.get_buffer().set_text("DI: " + str(self.registers['DI'])),
-								self.regSI.get_buffer().set_text("SI: " + str(self.registers['SI'])),
-								self.regPC.get_buffer().set_text("PC: " + str(self.registers['PC'])),
-								self.regFlags.get_buffer().set_text(flagStr)
-								# self.memory.get_buffer().set_text(str(self.addressSpace))
+		GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: " + str(hex(self.registers['AX']).split("x")[1])),
+								self.regB.get_buffer().set_text("BX: " + str(hex(self.registers['BX']).split("x")[1])),
+								self.regC.get_buffer().set_text("CX: " + str(hex(self.registers['CX']).split("x")[1])),
+								self.regD.get_buffer().set_text("DX: " + str(hex(self.registers['DX']).split("x")[1])),
+								self.regBP.get_buffer().set_text("BP: " + str(hex(self.registers['BP']).split("x")[1])),
+								self.regSP.get_buffer().set_text("SP: " + str(hex(self.registers['SP']).split("x")[1])),
+								self.regDI.get_buffer().set_text("DI: " + str(hex(self.registers['DI']).split("x")[1])),
+								self.regSI.get_buffer().set_text("SI: " + str(hex(self.registers['SI']).split("x")[1])),
+								self.regPC.get_buffer().set_text("PC: " + str(hex(self.registers['PC']).split("x")[1])),
+								self.regFlags.get_buffer().set_text(flagStr),
+								self.memory.get_buffer().set_text("".join([hex(ord(x)).split("x")[1] for x in self.addressSpace[:162]]))
 								))
 
 	def stepButtonClicked(self):
@@ -478,10 +478,13 @@ class Assembler:
 				self.stopRunning()
 				return
 
-	def stopRunning(self):
+	def stopRunning(self, i=1):
 		self.running = False
 		self.ran = True
-		self.outPut("\nCode executed succesfully.")
+		if i == 1:
+			self.outPut("\nCode executed succesfully.")
+		else:
+			self.outPut("\nCode execution terminated.")
 		# TODO: EOF, anything important like that should go here.
 
 

@@ -2,7 +2,7 @@
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
   <object class="GtkWindow" id="window1">
-    <property name="width_request">940</property>
+    <property name="width_request">890</property>
     <property name="height_request">600</property>
     <property name="can_focus">False</property>
     <property name="halign">start</property>
@@ -59,7 +59,7 @@
         </child>
         <child>
           <object class="GtkScrolledWindow" id="scrolledWindowStack">
-            <property name="width_request">100</property>
+            <property name="width_request">50</property>
             <property name="height_request">510</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
@@ -78,7 +78,7 @@
         </child>
         <child>
           <object class="GtkMenuBar" id="menubar1">
-            <property name="width_request">940</property>
+            <property name="width_request">890</property>
             <property name="height_request">10</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
@@ -193,7 +193,7 @@
             </child>
           </object>
           <packing>
-            <property name="x">596</property>
+            <property name="x">545</property>
             <property name="y">30</property>
           </packing>
         </child>
@@ -214,7 +214,7 @@
             </child>
           </object>
           <packing>
-            <property name="x">710</property>
+            <property name="x">660</property>
             <property name="y">30</property>
           </packing>
         </child>
@@ -235,7 +235,7 @@
             </child>
           </object>
           <packing>
-            <property name="x">825</property>
+            <property name="x">775</property>
             <property name="y">30</property>
           </packing>
         </child>
@@ -256,7 +256,7 @@
             </child>
           </object>
           <packing>
-            <property name="x">595</property>
+            <property name="x">545</property>
             <property name="y">125</property>
           </packing>
         </child>
@@ -277,7 +277,7 @@
             </child>
           </object>
           <packing>
-            <property name="x">710</property>
+            <property name="x">660</property>
             <property name="y">125</property>
           </packing>
         </child>
@@ -298,7 +298,7 @@
             </child>
           </object>
           <packing>
-            <property name="x">825</property>
+            <property name="x">775</property>
             <property name="y">125</property>
           </packing>
         </child>
@@ -319,7 +319,7 @@
             </child>
           </object>
           <packing>
-            <property name="x">595</property>
+            <property name="x">545</property>
             <property name="y">220</property>
           </packing>
         </child>
@@ -340,7 +340,7 @@
             </child>
           </object>
           <packing>
-            <property name="x">710</property>
+            <property name="x">660</property>
             <property name="y">220</property>
           </packing>
         </child>
@@ -361,7 +361,7 @@
             </child>
           </object>
           <packing>
-            <property name="x">825</property>
+            <property name="x">775</property>
             <property name="y">220</property>
           </packing>
         </child>
@@ -382,7 +382,7 @@
             </child>
           </object>
           <packing>
-            <property name="x">595</property>
+            <property name="x">545</property>
             <property name="y">315</property>
           </packing>
         </child>
@@ -403,7 +403,7 @@
             </child>
           </object>
           <packing>
-            <property name="x">595</property>
+            <property name="x">545</property>
             <property name="y">370</property>
           </packing>
         </child>
