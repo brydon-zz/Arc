@@ -1,6 +1,6 @@
 #!/usr/bin/python2.7
 from gi.repository import Gtk, Gdk, GObject
-import threading, os, as88
+import threading, os, as88, time
 
 # TODO: issues with restarting, issues with running certain things before we're ready for second pass, etc.
 # TODO: hex the reg output
@@ -120,7 +120,6 @@ class Assembler:
 		self.do = as88.getFunctionTable()
 
 		self.LIST_TYPE = type([1, 1])
-		self.stepping = True  # Change if we want to not single-step thru code
 
 		self.jumpLocation = -1
 
@@ -128,9 +127,7 @@ class Assembler:
 
 		self.mode = "head"
 		self.codeBounds = [1, 1]
-
-		self.step = False
-		self.runUntil = -1
+		self.running = False
 
 		self.addressSpace = []
 
@@ -145,7 +142,7 @@ class Assembler:
 		keyname = Gdk.keyval_name(event.keyval)
 		# print keyname
 		if keyname == 'Return' or keyname == 'KP_Enter':
-			self.stepFn()
+			self.step()
 			return
 
 		if not keyname in self.keysDown: self.keysDown.append(keyname)
@@ -214,10 +211,6 @@ class Assembler:
 
 		self.mode = "head"
 		self.codeBounds = [1, 1]
-
-		self.step = False
-		self.runUntil = -1
-		self.stepping = True
 
 		self.addressSpace = []
 
@@ -314,78 +307,33 @@ class Assembler:
 		# TODO: error check before second pass
 		print "Passing twice"
 		""" SECOND PASS """
-		i = self.codeBounds[0]
+		self.lineNumber = self.codeBounds[0]
+		self.running = True
 
-		while i < self.codeBounds[1]:
+		"""while lineNumber < self.codeBounds[1]:
 			# So second pass thru the code is where the money is
 			# We have a boolean set up for single stepping or not.
-			if self.runUntil != -1:
-				if i == self.runUntil:
-					self.step = True
-					self.stepping = True
-					self.runUntil = -1
-				else:
-					self.step = True
-					self.stepping = False
 
-			if self.step == True:
-				if self.stepping: self.step = False
-				line = self.lines[i].replace("\t", "")  # clear out tabs
+			if self.step:
 
-				if "!" in line:  # exclamations mean comments
-					line = line[:line.find("!")].strip()  # ignore comments
-
-				if ":" in line:  # colons mean labels, we dealt with those already.
-					line = line[line.find(":") + 1:].strip()  # ignore jump points
-
-				self.outPut(line, i)  # Now the line is ready to work with
-
-
-				if line.count(",") > 1:  # any command can have at most 2 arguments.
-					print "What's up with all the commas on line " + str(i) + "?"
-					return -1
-
-				command = [x.strip() for x in line.replace(" ", ",").split(",")]
-
-				if "" in command: command = command.remove("")
-
-				if command == None:
-					i += 1
-					continue  # skip nothing lines, yo.
-
-				if command[0] != '':
-					if command[0] not in self.commandArgs.keys():
-						print "Missing " + command[0] + " from self.commandArgs"
-						i += 1
-						continue
-
-					if len(command) - 1 != self.commandArgs[command[0]]:
-						print "Invalid number of arguments on line " + str(i) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " arguments and " + str(len(command) - 1) + " were given"
-						print command[:]
-						return -1
-
-					if command[0] in self.do.keys():
-						self.do[command[0]](command, i)
-						self.updateRegisters()
+				if self.runUntil != -1:
+					if lineNumber == self.runUntil:
+						self.stepping = True
+						self.runUntil = -1
 					else:
-						1 + 1  # we do nothing right now, once all are implemented we'll throw errors for this sorta thing TODO
+						self.stepping = False
 
-				if self.jumpLocation != -1:
-					i = self.jumpLocation
-					self.jumpLocation = -1
-				else:
-					i += 1
-
+				if self.stepping: self.step = False
+				
+		
 		print "Loop is completed, all code is run."
 		if self.runUntil != -1:
 			print "Strange, the code never reached line " + str(self.runUntil) + " after your request, check your jumps!"
+		"""
 
 	def stackPush(self, data):
 		if data != "": self.stackData.append(str(data))
 		GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(self.stackData)))
-
-	def stepFn(self):
-		self.step = True
 
 	def outPut(self, string, i):
 		GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), str(i) + ": " + string + "\n"),
@@ -425,21 +373,73 @@ class Assembler:
 	def buttonClicked(self):
 		text = self.entry.get_text()
 		if text == "":
-			self.stepFn()
+			self.step()
 		else:
 			tempList = text.lower().strip().split()
 			if tempList[0] == "run" and tempList[1] == "until" and tempList[2].isdigit():
 				n = int(tempList[2])
 				if n >= self.codeBounds[0] and n < self.codeBounds[1]:
-					self.runUntil = int(tempList[2])
+					while self.lineNumber <= int(tempList[2]):
+						self.step()
 				else:
 					print "That line number is not within the bounds of the program."
 			elif tempList[0] == "run" and tempList[1] == "all":
-				self.stepping = False
-				self.step = True
+				while self.lineNumber < self.codeBounds[1]:
+					self.step()
 
 			GObject.idle_add(lambda: self.entry.set_text(""))
-			del tempList, n
+
+	def step(self):
+		if self.running:
+			if self.lineNumber >= self.codeBounds[1]:
+				self.running = False
+				return
+
+			line = self.lines[self.lineNumber].replace("\t", "")  # clear out tabs
+
+			if "!" in line:  # exclamations mean comments
+				line = line[:line.find("!")].strip()  # ignore comments
+
+			if ":" in line:  # colons mean labels, we dealt with those already.
+				line = line[line.find(":") + 1:].strip()  # ignore jump points
+
+			self.outPut(line, self.lineNumber)  # Now the line is ready to work with
+
+
+			if line.count(",") > 1:  # any command can have at most 2 arguments.
+				print "What's up with all the commas on line " + str(self.lineNumber) + "?"
+				return -1
+
+			command = [x.strip() for x in line.replace(" ", ",").split(",")]
+
+			if "" in command: command = command.remove("")
+
+			if command == None:
+				self.lineNumber += 1
+				return  # skip nothing lines, yo.
+
+			if command[0] != '':
+				if command[0] not in self.commandArgs.keys():
+					print "Missing " + command[0] + " from self.commandArgs"
+					self.lineNumber += 1
+					return
+
+				if len(command) - 1 != self.commandArgs[command[0]]:
+					print "Invalid number of arguments on line " + str(self.lineNumber) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " arguments and " + str(len(command) - 1) + " were given"
+					print command[:]
+					return -1
+
+				if command[0] in self.do.keys():
+					self.do[command[0]](command, self.lineNumber)
+					self.updateRegisters()
+				else:
+					1 + 1  # we do nothing right now, once all are implemented we'll throw errors for this sorta thing TODO
+
+			if self.jumpLocation != -1:
+				self.lineNumber = self.jumpLocation
+				self.jumpLocation = -1
+			else:
+				self.lineNumber += 1
 
 
 if __name__ == "__main__":
