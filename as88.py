@@ -47,7 +47,7 @@ def add(command, i):
         for j in range(int(command[2]) / 2):
             if len(assembler.stackData) > 0:
                 assembler.stackData.pop()
-                assembler.stackPush("")
+                assembler.updateStack()
     elif command[1].isdigit():
         print "Error on line " + str(i) + ". Add cannot have a numerical first argument."
     elif command[1] in assembler.registers.keys():
@@ -58,13 +58,13 @@ def add(command, i):
 
 def push(command, i):
     if command[1].isdigit():  # pushing a number to the stack
-        assembler.stackPush(command[1])
+        assembler.updateStack(command[1])
     elif command[1] in assembler.DATA.keys():  # pushing a string from .SECT .DATA to the stack
-        assembler.stackPush("foo")
+        assembler.updateStack("foo")
     elif command[1] in assembler.localVars.keys():  # pushing a local int to the stack
-        assembler.stackPush(assembler.localVars[command[1]])
+        assembler.updateStack(assembler.localVars[command[1]])
     elif command[1] in assembler.BSS.keys():
-        assembler.stackPush(assembler.BSS[command[1]][0])
+        assembler.updateStack(assembler.BSS[command[1]][0])
     elif "(" in command[1] and ")" in command[1]:
         temp = command[1][command[1].find("(") + 1:command[1].find(")")]
         if temp in assembler.BSS.keys():
@@ -86,9 +86,9 @@ def jmp(command, i):
 def mov(command, i):
     if command[1] in assembler.registers.keys():
         if command[2].isdigit():
-            assembler.registers[command[1]] += int(command[2])
+            assembler.registers[command[1]] = int(command[2])
         elif command[2] in assembler.localVars.keys():
-            assembler.registers[command[1]] += int(assembler.localVars[command[2]])
+            assembler.registers[command[1]] = int(assembler.localVars[command[2]])
 
 def je(command, i):
     if 1 + 1:

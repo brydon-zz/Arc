@@ -2,11 +2,12 @@
 from gi.repository import Gtk, Gdk, GObject
 import threading, os, as88, time
 
-# TODO: issues with restarting, issues with running certain things before we're ready for second pass, etc.
+# TODO: issues with restarting
 # TODO: hex the reg output
 # TODO: AL and AH, etc.
 # TODO: Implement the WHOLE reg set
 # TODO: ASSEMBLE?
+# TODO: Hexify the stack toooo!
 
 """"Assembler Class for Intel 8088 Architecture"""
 class Assembler:
@@ -37,7 +38,7 @@ class Assembler:
 				A.openFile()
 
 			def onButtonClicked(self, button):
-				A.buttonClicked()
+				A.stepButtonClicked()
 
 		self.builder = Gtk.Builder()
 		self.builder.add_from_file("As88_Mockup.glade")
@@ -128,6 +129,7 @@ class Assembler:
 		self.mode = "head"
 		self.codeBounds = [1, 1]
 		self.running = False
+		self.ran = False
 
 		self.addressSpace = []
 
@@ -142,7 +144,7 @@ class Assembler:
 		keyname = Gdk.keyval_name(event.keyval)
 		# print keyname
 		if keyname == 'Return' or keyname == 'KP_Enter':
-			self.step()
+			self.stepButtonClicked()
 			return
 
 		if not keyname in self.keysDown: self.keysDown.append(keyname)
@@ -161,6 +163,7 @@ class Assembler:
 		"""Opens up a file dialog to select a file then reads that file in to the assembler. """
 
 		self.fileName = None
+		self.ran = False
 
 		self.fileChooser = Gtk.FileChooserDialog(title="Choose A File", parent=self.win, buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
 		response = self.fileChooser.run()
@@ -180,16 +183,16 @@ class Assembler:
 
 			f.close()
 			print "Just about to start threading"
-			thread = threading.Thread(target=self.startRunning)
-			thread.start()
+			self.startRunning()
 		except IOError:
 			print "There was a fatal issue opening " + self.fileName + ". Are you sure it's a file?"
 
 	def startRunning(self):
-		"""Starts the whole sha-bang. Runs the code and everything. Goes thru 2 steps.
+		"""Starts the whole sha-bang.
 		First pass for forward references, and setting up local vars, etc.
-		Second pass to run the code.  Intended to be run in separate thread, steps thru the loop
-		once at a time. Dependent upon receiving button clicks, or enter presses."""
+		Second loop to be done LATES."""
+
+		self.ran = False
 
 		self.clearGui()
 
@@ -216,6 +219,8 @@ class Assembler:
 
 		for i in range(1024):
 			self.addressSpace.append(0)
+
+		errorCount = 0
 
 
 		BSScount = 0
@@ -249,6 +254,7 @@ class Assembler:
 				l[1] = l[1].strip()
 				if l[0] in self.localVars.keys():
 					print "Error on line " + str(self.lineCount) + ", cannot define \''" + l[0] + "\' more than once."
+					errorCount += 1
 				else: self.localVars[l[0]] = l[1]
 				continue
 
@@ -281,6 +287,7 @@ class Assembler:
 								self.lookupTable[temp] = [self.lookupTable[temp], self.lineCount]
 						else:
 							print "Duplicate entry: \"" + temp + "\" on line " + str(self.lineCount) + " and line " + str(self.lookupTable[temp])
+							errorCount += 1
 				elif self.mode == ".SECT .DATA":
 					# info in .SECT .DATA follows the format
 					# str: .ASCIZ "hello world"
@@ -290,6 +297,7 @@ class Assembler:
 					if ".ASCIZ" in l or ".ASCII" in l:  # If we're dealing with a string
 						if l.count("\"") < 2:  # each string to be defined should be in quotes, raise error if quotes are messed
 							print "fatal error on line " + str(self.lineCount)
+							errorCount += 1
 							return None
 						temp2 = l[l.find("\"") + 1:l.rfind("\"")]  # otherwise grab the stuff in quotes
 						self.DATA[temp] = [hex(ord(x)).split("x")[1] for x in temp2]  # and set temp equal to a list of hex vals of each char
@@ -306,41 +314,26 @@ class Assembler:
 
 		# TODO: error check before second pass
 		print "Passing twice"
+		print self.codeBounds
 		""" SECOND PASS """
-		self.lineNumber = self.codeBounds[0]
-		self.running = True
+		if errorCount == 0:
+			self.lineNumber = self.codeBounds[0]
+			self.running = True
+		else:
+			print "Your code cannot be run, it contains %d errors" % errorCount
 
-		"""while lineNumber < self.codeBounds[1]:
-			# So second pass thru the code is where the money is
-			# We have a boolean set up for single stepping or not.
-
-			if self.step:
-
-				if self.runUntil != -1:
-					if lineNumber == self.runUntil:
-						self.stepping = True
-						self.runUntil = -1
-					else:
-						self.stepping = False
-
-				if self.stepping: self.step = False
-				
-		
-		print "Loop is completed, all code is run."
-		if self.runUntil != -1:
-			print "Strange, the code never reached line " + str(self.runUntil) + " after your request, check your jumps!"
-		"""
-
-	def stackPush(self, data):
+	def updateStack(self, data=""):
 		if data != "": self.stackData.append(str(data))
 		GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(self.stackData)))
 
-	def outPut(self, string, i):
+	def outPut(self, string, i=""):
+		""" Outputs the arguments, in the fashion i: string"""
 		GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), str(i) + ": " + string + "\n"),
 					self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(), 0.1, True, .5, .5),
 					self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(i + 1), 0.25, True, .5, .5)))
 
 	def clearGui(self):
+		""" Empties the text buffers of all relevant GUI elements"""
 		GObject.idle_add(lambda: (self.outText.get_buffer().set_text(""),
 							self.code.get_buffer().set_text(""),
 							self.regA.get_buffer().set_text(""),
@@ -355,6 +348,8 @@ class Assembler:
 							self.regFlags.get_buffer().set_text("")))
 
 	def updateRegisters(self):
+		""" Simply put, updates the register gui elements with the values of the registers. """
+
 		flagStr = "  %-5s %-5s %-5s %-5s %-5s %-1s\n  %-6d%-6d%-6d%-6d%-6d%-1d" % (self.flags.keys()[0], self.flags.keys()[1], self.flags.keys()[2], self.flags.keys()[3], self.flags.keys()[4], self.flags.keys()[5], int(self.flags.values()[0]), int(self.flags.values()[1]), int(self.flags.values()[2]), int(self.flags.values()[3]), int(self.flags.values()[4]), int(self.flags.values()[5]))
 
 		GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: " + str(self.registers['AX'])),
@@ -370,29 +365,50 @@ class Assembler:
 								# self.memory.get_buffer().set_text(str(self.addressSpace))
 								))
 
-	def buttonClicked(self):
+	def stepButtonClicked(self):
+		""" Defines what happens if the step button is clicked.
+		If the entry text field is empty, step like normal.
+		If the entry text field has a command in it execute accordingly
+		If the entry text field has characters in it, that aren't recognised as a command, clear the entry and do nothing.
+		"""
 		text = self.entry.get_text()
 		if text == "":
-			self.step()
+			if self.ran:
+				self.startRunning()
+			elif self.running:
+				self.step()
 		else:
 			tempList = text.lower().strip().split()
-			if tempList[0] == "run" and tempList[1] == "until" and tempList[2].isdigit():
-				n = int(tempList[2])
-				if n >= self.codeBounds[0] and n < self.codeBounds[1]:
-					while self.lineNumber <= int(tempList[2]):
+			if tempList[0] == "restart" and len(tempList) == 1:
+				if self.running or self.ran: self.startRunning()
+			elif self.running:
+				if tempList[0] == "run" and tempList[1] == "until" and tempList[2].isdigit():
+					n = int(tempList[2])
+					if n >= self.codeBounds[0] and n < self.codeBounds[1]:
+						while self.running:
+							if self.lineNumber == int(tempList[2]):
+								self.step()
+								break
+							self.step()
+
+						if self.lineNumber != int(tempList[2]) + 1:
+							print "The program exited before it ever reached line " + tempList[2]
+					else:
+						print "That line number is not within the bounds of the program."
+				elif tempList[0] == "run" and tempList[1] == "all":
+					while self.running:
 						self.step()
-				else:
-					print "That line number is not within the bounds of the program."
-			elif tempList[0] == "run" and tempList[1] == "all":
-				while self.lineNumber < self.codeBounds[1]:
-					self.step()
 
 			GObject.idle_add(lambda: self.entry.set_text(""))
 
 	def step(self):
+		""" The guts of the second pass. Where the magic happens! """
 		if self.running:
+
 			if self.lineNumber >= self.codeBounds[1]:
 				self.running = False
+				self.ran = True
+				# TODO: EOF, anything important like that should go here.
 				return
 
 			line = self.lines[self.lineNumber].replace("\t", "")  # clear out tabs
@@ -408,6 +424,7 @@ class Assembler:
 
 			if line.count(",") > 1:  # any command can have at most 2 arguments.
 				print "What's up with all the commas on line " + str(self.lineNumber) + "?"
+				self.running = False
 				return -1
 
 			command = [x.strip() for x in line.replace(" ", ",").split(",")]
@@ -427,6 +444,7 @@ class Assembler:
 				if len(command) - 1 != self.commandArgs[command[0]]:
 					print "Invalid number of arguments on line " + str(self.lineNumber) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " arguments and " + str(len(command) - 1) + " were given"
 					print command[:]
+					self.running = False
 					return -1
 
 				if command[0] in self.do.keys():
@@ -440,6 +458,12 @@ class Assembler:
 				self.jumpLocation = -1
 			else:
 				self.lineNumber += 1
+
+			if self.lineNumber >= self.codeBounds[1]:
+				self.running = False
+				self.ran = True
+				# TODO: EOF, anything important like that should go here.
+				return
 
 
 if __name__ == "__main__":
