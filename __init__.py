@@ -1,5 +1,5 @@
 #!/usr/bin/python2.7
-from gi.repository import Gtk, Gdk, GObject
+from gi.repository import Gtk, Gdk, GObject, Pango
 import threading, os, as88, time
 
 # TODO: issues with restarting
@@ -36,6 +36,7 @@ class Assembler:
 			def onButtonClicked(self, button):
 				A.stepButtonClicked()
 
+		# Make stuff from the GLADE file and setup events
 		self.builder = Gtk.Builder()
 		self.builder.add_from_file("As88_Mockup.glade")
 		self.builder.connect_signals(Handler())
@@ -43,12 +44,12 @@ class Assembler:
 		self.win = self.builder.get_object("window1")
 		self.win.set_name('As88Window')
 
+		# Set Up the CSS
 		self.style_provider = Gtk.CssProvider()
-
 		self.style_provider.load_from_data(styles)
-
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
+		# Creating local vars for gui elements
 		self.outText = self.builder.get_object("outText")
 		self.code = self.builder.get_object("code")
 		self.entry = self.builder.get_object("entry")
@@ -65,11 +66,15 @@ class Assembler:
 		self.regPC = self.builder.get_object("regPC")
 		self.regFlags = self.builder.get_object("regFlags")
 		self.memory = self.builder.get_object("memory")
+		self.hexSwitch = self.builder.get_object("hexSwitch")
 
+		# Text buffers for the big text-views
 		self.outBuffer = self.outText.get_buffer()
 		self.codeBuffer = self.code.get_buffer()
 		self.stackBuffer = self.stack.get_buffer()
+		self.memoryBuffer = self.memory.get_buffer()
 
+		# Names need set for CSS reasons only
 		self.outText.set_name("outText")
 		self.code.set_name("code")
 		self.entry.set_name("entry")
@@ -86,24 +91,54 @@ class Assembler:
 		self.regFlags.set_name("regFlags")
 		self.memory.set_name("memory")
 
+		# Set up the text behaviour
 		self.outText.set_wrap_mode(Gtk.WrapMode.WORD)
 		self.code.set_wrap_mode(Gtk.WrapMode.WORD)
 		self.memory.set_wrap_mode(Gtk.WrapMode.CHAR)
 		self.stack.set_justification(Gtk.Justification.CENTER)
 
-		self.outputText = " "
-		self.outBuffer.set_text(self.outputText)
-
+		# Hex Switch needs a special trigger signal that glade cannot understand
+		self.hexSwitch.connect('notify::active', self.hexSwitchClicked)
+		# Key events!
 		self.win.connect('key_press_event', self.on_key_press_event)
 		self.win.connect('key_release_event', self.on_key_release_event)
+		# Window Icon -> what shows up in unity bar/toolbar/etc.
 		self.win.set_icon_from_file("icon.jpeg")
 
 		self.win.show_all()
 
+		self.textTagBold = Gtk.TextTag()
+		self.textTagBold.set_property("weight", Pango.Weight.BOLD)
+		self.codeBuffer.get_tag_table().add(self.textTagBold)
 
+		self.textTagMagenta = Gtk.TextTag()
+		self.textTagMagenta.set_property("background", "magenta")
+		self.textTagOrange = Gtk.TextTag()
+		self.textTagOrange.set_property("background", "orange")
+		self.textTagRed = Gtk.TextTag()
+		self.textTagRed.set_property("background", "red")
+		self.textTagBlue = Gtk.TextTag()
+		self.textTagBlue.set_property("background", "blue")
+		self.textTagPurple = Gtk.TextTag()
+		self.textTagPurple.set_property("background", "purple")
+		self.textTagGreen = Gtk.TextTag()
+		self.textTagGreen.set_property("background", "green")
+		self.memoryBuffer.get_tag_table().add(self.textTagRed)
+		self.memoryBuffer.get_tag_table().add(self.textTagOrange)
+		self.memoryBuffer.get_tag_table().add(self.textTagMagenta)
+		self.memoryBuffer.get_tag_table().add(self.textTagGreen)
+		self.memoryBuffer.get_tag_table().add(self.textTagBlue)
+		self.memoryBuffer.get_tag_table().add(self.textTagPurple)
+
+		self.memoryColours = [self.textTagRed, self.textTagOrange, self.textTagMagenta, self.textTagGreen, self.textTagBlue, self.textTagPurple]
+
+		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagBlue)
 		""" End GUI """
 
+		self.inBuffer = ""
 		self.fileName = None
+		self.displayInHex = True
+		self.getCharFlag = False
 
 		self.lookupTable = {}
 		self.localVars = {}
@@ -138,13 +173,34 @@ class Assembler:
 
 		self.keysDown = []
 
+	def toolTipOption(self, widget, x, y, keyboard_tip, tooltip, data):
+		if keyboard_tip:
+			offset = widget.props.buffer.cursor_position
+			myiter = widget.props.buffer.get_iter_at_offset(offset)
+		else:
+			coords = widget.window_to_buffer_coords(Gtk.TEXT_WINDOW_TEXT, x, y)
+			ret = widget.get_iter_at_position(coords[0], coords[1])
+
+		if ret[0].has_tag(data):
+			tooltip.set_text("3 text tag")
+		else:
+			return False
+
+		return True
+
 	def on_key_press_event(self, widget, event):
 		""" Handles Key Down events, puts the corresponding keyval into a list self.keysDown.
 		Also checks for key combinations. """
 		keyname = Gdk.keyval_name(event.keyval)
 		# print keyname
 		if keyname == 'Return' or keyname == 'KP_Enter':
-			self.stepButtonClicked()
+			if not self.getCharFlag:
+				self.stepButtonClicked()
+			else:
+				self.inBuffer = self.entry.get_text() + "\n"
+				self.registers["AX"] = ord(self.inBuffer[0])
+				self.inBuffer = self.inBuffer[1:]
+				self.getCharFlag = False
 			return
 
 		if not keyname in self.keysDown: self.keysDown.append(keyname)
@@ -320,14 +376,18 @@ class Assembler:
 		print self.codeBounds
 		""" SECOND PASS """
 		if errorCount == 0:
-			self.lineNumber = self.codeBounds[0]
+			self.lineNumber = self.codeBounds[0] - 1
 			self.running = True
 		else:
 			self.outPut("Your code cannot be run, it contains %d errors" % errorCount)
 
 	def updateStack(self, data=""):
+		# self.outBuffer.apply_tag(self.textTagBold, self.outBuffer.get_start_iter(), self.outBuffer.get_end_iter())
 		if data != "": self.stackData.append(str(data))
-		GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join([hex(int(x)).split("x")[1] for x in self.stackData])))
+		if self.displayInHex:
+			GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(hex(int(x)).split("x")[1])) + hex(int(x)).split("x")[1] for x in self.stackData])))
+		else:
+			GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(x)) + x for x in self.stackData])))
 
 	def outPut(self, string, i=""):
 		""" Outputs the arguments, in the fashion i: string"""
@@ -337,7 +397,8 @@ class Assembler:
 		else:
 			GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), str(i) + ": " + string + "\n"),
 					self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(), 0.1, True, .5, .5),
-					self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(i + 1), 0.25, True, .5, .5)))
+					self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(i + 1), 0.25, True, .5, .5),
+					self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line(i), self.codeBuffer.get_iter_at_line(i + 1))))
 
 	def clearGui(self):
 		""" Empties the text buffers of all relevant GUI elements"""
@@ -354,22 +415,52 @@ class Assembler:
 							self.regPC.get_buffer().set_text(""),
 							self.regFlags.get_buffer().set_text("")))
 
+	def getChar(self):
+		if self.inBuffer == "":
+			self.getCharFlag = True
+			self.outPut("Waiting for input:")
+			self.outText.set_editable(True)
+		else:
+			self.registers['AX'] = self.inBuffer[0]
+			self.inBuffer = self.inBuffer[1:]
+
+	def colourMem(self):
+		# TODO: Optimize this so that it doesn't highlight things way off in memory that aren't displayed?
+		for index, location in enumerate(self.DATA.values() + self.BSS.values()):
+				self.memoryBuffer.apply_tag(self.memoryColours[index % 6], self.memoryBuffer.get_iter_at_offset(location[0] * (self.displayInHex + 1)), self.memoryBuffer.get_iter_at_offset((location[1] + 1) * (self.displayInHex + 1)))
+
 	def updateRegisters(self):
 		""" Simply put, updates the register gui elements with the values of the registers. """
 
 		flagStr = "  %-5s %-5s %-5s %-5s %-5s %-1s\n  %-6d%-6d%-6d%-6d%-6d%-1d" % (self.flags.keys()[0], self.flags.keys()[1], self.flags.keys()[2], self.flags.keys()[3], self.flags.keys()[4], self.flags.keys()[5], int(self.flags.values()[0]), int(self.flags.values()[1]), int(self.flags.values()[2]), int(self.flags.values()[3]), int(self.flags.values()[4]), int(self.flags.values()[5]))
 
-		GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: " + str(hex(self.registers['AX']).split("x")[1])),
-								self.regB.get_buffer().set_text("BX: " + str(hex(self.registers['BX']).split("x")[1])),
-								self.regC.get_buffer().set_text("CX: " + str(hex(self.registers['CX']).split("x")[1])),
-								self.regD.get_buffer().set_text("DX: " + str(hex(self.registers['DX']).split("x")[1])),
+		if self.displayInHex:
+			GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %s\nAH: %s\nAL: %s" % (self.intToHex(self.registers['AX']), self.intToHex(self.eightBitRegister("AH")), self.intToHex(self.eightBitRegister('AL')))),
+								self.regB.get_buffer().set_text("BX: %s\nBH: %s\nBL: %s" % (self.intToHex(self.registers['BX']), self.intToHex(self.eightBitRegister("BH")), self.intToHex(self.eightBitRegister("BL")))),
+								self.regC.get_buffer().set_text("CX: %s\nCH: %s\nCL: %s" % (self.intToHex(self.registers['CX']), self.intToHex(self.eightBitRegister("CH")), self.intToHex(self.eightBitRegister("CL")))),
+								self.regD.get_buffer().set_text("DX: %s\nDH: %s\nDL: %s" % (self.intToHex(self.registers['DX']), self.intToHex(self.eightBitRegister("DH")), self.intToHex(self.eightBitRegister("DL")))),
 								self.regBP.get_buffer().set_text("BP: " + str(hex(self.registers['BP']).split("x")[1])),
 								self.regSP.get_buffer().set_text("SP: " + str(hex(self.registers['SP']).split("x")[1])),
 								self.regDI.get_buffer().set_text("DI: " + str(hex(self.registers['DI']).split("x")[1])),
 								self.regSI.get_buffer().set_text("SI: " + str(hex(self.registers['SI']).split("x")[1])),
 								self.regPC.get_buffer().set_text("PC: " + str(hex(self.registers['PC']).split("x")[1])),
 								self.regFlags.get_buffer().set_text(flagStr),
-								self.memory.get_buffer().set_text("".join([hex(ord(x)).split("x")[1] for x in self.addressSpace[:162]]))
+								self.memoryBuffer.set_text("".join([hex(ord(x)).split("x")[1] for x in self.addressSpace[:144]])),
+								self.colourMem()
+								))
+		else:
+			GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %d\nAH: %d\nAL: %d" % (self.registers['AX'], self.eightBitRegister("AH"), self.eightBitRegister('AL'))),
+								self.regB.get_buffer().set_text("BX: %d\nBH: %d\nBL: %d" % (self.registers['BX'], self.eightBitRegister("BH"), self.eightBitRegister("BL"))),
+								self.regC.get_buffer().set_text("CX: %d\nCH: %d\nCL: %d" % (self.registers['CX'], self.eightBitRegister("CH"), self.eightBitRegister("CL"))),
+								self.regD.get_buffer().set_text("DX: %d\nDH: %d\nDL: %d" % (self.registers['DX'], self.eightBitRegister("DH"), self.eightBitRegister("DL"))),
+								self.regBP.get_buffer().set_text("BP: " + str(self.registers['BP'])),
+								self.regSP.get_buffer().set_text("SP: " + str(self.registers['SP'])),
+								self.regDI.get_buffer().set_text("DI: " + str(self.registers['DI'])),
+								self.regSI.get_buffer().set_text("SI: " + str(self.registers['SI'])),
+								self.regPC.get_buffer().set_text("PC: " + str(self.registers['PC'])),
+								self.regFlags.get_buffer().set_text(flagStr),
+								self.memory.get_buffer().set_text("".join(self.addressSpace[:287])),
+								self.colourMem()
 								))
 
 	def stepButtonClicked(self):
@@ -443,30 +534,30 @@ class Assembler:
 
 			command = [x.strip() for x in line.replace(" ", ",").split(",")]
 
-			if "" in command: command = command.remove("")
+			for x in range(command.count("")):
+				command.remove("")
 
-			if command == None:
+			if command == None or command == []:
 				self.lineNumber += 1
 				return  # skip nothing lines, yo.
 
-			if command[0] != '':
-				if command[0] not in self.commandArgs.keys():
-					print "Missing " + command[0] + " from self.commandArgs"
-					self.lineNumber += 1
-					return
+			if command[0] not in self.commandArgs.keys():
+				print "Missing " + command[0] + " from self.commandArgs"
+				self.lineNumber += 1
+				return
 
-				if len(command) - 1 != self.commandArgs[command[0]]:
-					self.outPut("Invalid number of arguments on line " + str(self.lineNumber) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " argument" + "s"*(self.commandArgs[command[0]] > 1) + " and " + str(len(command) - 1) + (" were " if len(command) - 1 > 1 else " was ") + "given.")
-					print command[:]
-					self.running = False
-					self.ran = True
-					return -1
+			if len(command) - 1 != self.commandArgs[command[0]]:
+				self.outPut("Invalid number of arguments on line " + str(self.lineNumber) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " argument" + "s"*(self.commandArgs[command[0]] > 1) + " and " + str(len(command) - 1) + (" were " if len(command) - 1 > 1 else " was ") + "given.")
+				print command[:]
+				self.running = False
+				self.ran = True
+				return -1
 
-				if command[0] in self.do.keys():
-					self.do[command[0]](command, self.lineNumber)
-					self.updateRegisters()
-				else:
-					1 + 1  # we do nothing right now, once all are implemented we'll throw errors for this sorta thing TODO
+			if command[0] in self.do.keys():
+				self.do[command[0]](command, self.lineNumber)
+				self.updateRegisters()
+			else:
+				1 + 1  # TODO: we do nothing right now, once all are implemented we'll throw errors for this sorta thing TODO
 
 			if self.jumpLocation != -1:
 				self.lineNumber = self.jumpLocation
@@ -486,6 +577,40 @@ class Assembler:
 		else:
 			self.outPut("\nCode execution terminated.")
 		# TODO: EOF, anything important like that should go here.
+
+	def hexSwitchClicked(self, button=None, data=None):
+		self.displayInHex = not self.displayInHex
+		self.updateRegisters()
+		self.updateStack()
+
+	def eightBitRegister(self, s):
+		try:
+			temp = ""
+
+			if s == "AH":
+				temp = self.intToHex(self.registers["AX"])[-4:-2]
+			elif s == "AL":
+				temp = self.intToHex(self.registers["AX"])[-2:]
+			elif s == "BH":
+				temp = self.intToHex(self.registers["BX"])[-4:-2]
+			elif s == "BL":
+				temp = self.intToHex(self.registers["BX"])[-2:]
+			elif s == "CH":
+				temp = self.intToHex(self.registers["CX"])[-4:-2]
+			elif s == "CL":
+				temp = self.intToHex(self.registers["CX"])[-2:]
+			elif s == "DH":
+				temp = self.intToHex(self.registers["DX"])[-4:-2]
+			elif s == "DL":
+				temp = self.intToHex(self.registers["DX"])[-2:]
+
+			return int(temp, 16)
+
+		except ValueError:
+			return 0
+
+	def intToHex(self, i):
+		return str(hex(i).split("x")[1])
 
 
 if __name__ == "__main__":

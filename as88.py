@@ -3,6 +3,7 @@ Created on 2013-11-20
 
 @author: beewhy
 '''
+import threading
 sysCodes = {"_EXIT":1, "_PRINTF":127, "_GETCHAR":117, "_SSCANF":125, "_READ":3, "_OPEN":5, "_CLOSE":6}
 
 def newAssembler(A):
@@ -31,6 +32,7 @@ def getCommandArgs():
             "CLI":0,  # Clear interrupt flag
             "CMC":0,  # Coplement carry flag
             "CMP":2,  # Compare operands
+            "CMPB":2,
             "CMPSB":-1,  # Compare bytes in memory
             "CMPSW":-1,  # Compare words in memory
             "CWD":-1,  # Convert word to doubleword
@@ -98,8 +100,8 @@ def getCommandArgs():
             "NOT":-1,  # Negate the opearand, logical NOT
             "OR":-1,  # Logical OR
             "OUT":-1,  # Output to port
-            "POP":0,  # Pop data from stack
-            "POPF":0,  # Pop data from flags register
+            "POP":1,  # Pop data from stack
+            "POPF":1,  # Pop data from flags register
             "PUSH":1,  # Push data to stack
             "PUSHF":-1,  # Push flags onto stack
             "RCL":-1,  # Rotate left with carry
@@ -146,8 +148,15 @@ def getFunctionTable():
             "MOV":lambda x, i: mov(x, i),
             "SYS":lambda x, i: sys(x, i),
             "CLC":lambda x, i: clc(x, i),
-            "STC":lambda x, i: stc(x, i)
+            "STC":lambda x, i: stc(x, i),
+            "POP":lambda x, i: pop(x, i),
+            "STOSB":lambda x, i: stosb(x, i),
+            "CMPB":lambda x, i: cmpb(x, i)
             }
+
+def stosb(command, i):
+    assembler.addressSpace[assembler.registers["DI"]] = assembler.registers["AX"]
+    assembler.registers["DI"] += 1
 
 def add(command, i):
     if command[1] == "SP" and command[2].isdigit():
@@ -164,9 +173,14 @@ def add(command, i):
         elif command[2] in assembler.localVars.keys():
             assembler.registers[command[1]] += int(assembler.localVars[command[2]])
 
+def pop(command, i):
+    if command[1] in getRegisters():
+        assembler.registers[command[1]] = int(assembler.stackData.pop())
+        assembler.updateStack()
+
 def push(command, i):
-    if command[1].isdigit():  # pushing a number to the stack
-        assembler.updateStack(command[1])
+    if command[1].strip("abcdef").isdigit():  # pushing a number to the stack
+        assembler.updateStack(int(command[1], 16))
     elif command[1] in assembler.DATA.keys():  # pushing a string from .SECT .DATA to the stack
         assembler.updateStack(assembler.DATA[command[1]][0])
     elif command[1] in assembler.localVars.keys():  # pushing a local int to the stack
@@ -176,7 +190,7 @@ def push(command, i):
     elif "(" in command[1] and ")" in command[1]:
         temp = command[1][command[1].find("(") + 1:command[1].find(")")]
         if temp in assembler.BSS.keys():
-            # TODO memory
+            # TODO: memory
             1 + 1
         else:
             assembler.outPut("Error on line " + str(i) + ". I don't understand what (" + temp + ") is")
@@ -194,14 +208,19 @@ def jmp(command, i):
             assembler.jumpLocation = assembler.lookupTable[command[1]]
 
 def mov(command, i):
+    print command
     if command[1] in assembler.registers.keys():
+        print command
         if command[2].isdigit():
             assembler.registers[command[1]] = int(command[2])
         elif command[2] in assembler.localVars.keys():
             assembler.registers[command[1]] = int(assembler.localVars[command[2]])
+        elif command[2] in assembler.BSS.keys():
+            print "wooo"
+            assembler.registers[command[1]] = int(assembler.BSS[command[2]][0])
 
 def je(command, i):
-    if 1 + 1:
+    if assembler.flags["Z"]:
         jmp(command, i)
 
 def jg(command, i):
@@ -230,7 +249,11 @@ def sys(command, i):
     else:
         if int(assembler.stackData[-1]) == sysCodes["_EXIT"]:
             assembler.stopRunning()
-        if int(assembler.stackData[-1]) == sysCodes["_PRINTF"]:
+        elif int(assembler.stackData[-1]) == sysCodes["_GETCHAR"]:
+            assembler.getChar()
+        elif int(assembler.stackData[-1]) == sysCodes["_OPEN"]:
+            1 + 1
+        elif int(assembler.stackData[-1]) == sysCodes["_PRINTF"]:
             try:
                 i = 2
                 args = []
@@ -245,8 +268,11 @@ def sys(command, i):
                     args.append(formatStr)
                     i += 1
                 if numArgs != len(args):
-                    assembler.outPut("You have provided a format string that requires %d arguments yet have supplied %d arguments" % (numArgs, len(args)))
-                    raise
+                    if len(args) == 0:
+                        for i in range(3, numArgs + 3): args.append(assembler.addressSpace[int(assembler.stackData[-i])])
+                    else:
+                        assembler.outPut("You have provided a format string that requires %d arguments yet have supplied %d arguments" % (numArgs, len(args)))
+                        raise
                 assembler.outPut(formatStr % tuple(args))
             except:
                 assembler.stopRunning(-1)
@@ -257,3 +283,33 @@ def clc(comand, i):
 
 def stc(command, i):
     assembler.flags["C"] = True
+
+def cmpb(command, i):
+    a = command[1:3]
+    b = []
+    for x in a:
+        if x in ['AH', 'AL', 'BH', 'BL', 'CH', 'CL', 'DH', 'DL']:
+            x = assembler.eightBitRegister(x)
+        elif x in ['AX', 'BX', 'CX', 'DX']:
+            assembler.outPut("Illegal argument for cmpb on line %d. %s is a 16 bit register, perhaps you meant one of the 8 bit %s or %s registers?" % (i, x, x[0] + "H", x[0] + "L"))
+            assembler.stopRunning(-1)
+            return
+        elif type(x) == type(""):
+            x = x.rstrip("'\"").lstrip("'\"").replace("\\n", "\n").replace("\\'", "'").replace('\\"', '"').replace("\\a", "\a").replace("\\b", "\b").replace("\\f", "\f").replace("\\r", "\r").replace("\\t", "\t").replace("\\v", "\v")
+
+            if len(x) != 1:
+                assembler.outPut("Illegal argument %s for cmpb on line %d. cmpb expects all strings to be ONE byte in length." % (x, i))
+                assembler.stopRunning(-1)
+                return
+            else:
+                try:
+                    x = int(x)
+                except ValueError:
+                    x = ord(x)
+        elif type(x) != type(1):
+            assembler.out("Illegal argument %s for cmpb on line %d. cmpb expects an argument to be a one byte register (ie: AH, AL, etc.), an integer, or a one byte string (ie: \"L\", etc.). Instead %s was given." % (x, i, x))
+        b.append(x)
+    print a
+    print b
+    assembler.flags["Z"] = b[0] == b[1]
+    print assembler.flags["Z"]
