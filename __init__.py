@@ -3,10 +3,9 @@ from gi.repository import Gtk, Gdk, GObject, Pango
 import threading, os, as88, time
 
 # TODO: issues with restarting
-# TODO: hex the reg output
-# TODO: AL and AH, etc.
 # TODO: Implement the WHOLE reg set
 # TODO: ASSEMBLE?
+# TODO: Run all and run untils with input
 
 """"Assembler Class for Intel 8088 Architecture"""
 class Assembler:
@@ -103,7 +102,7 @@ class Assembler:
 		self.win.connect('key_press_event', self.on_key_press_event)
 		self.win.connect('key_release_event', self.on_key_release_event)
 		# Window Icon -> what shows up in unity bar/toolbar/etc.
-		self.win.set_icon_from_file("icon.jpeg")
+		self.win.set_icon_from_file("icon.png")
 
 		self.win.show_all()
 
@@ -132,7 +131,13 @@ class Assembler:
 
 		self.memoryColours = [self.textTagRed, self.textTagOrange, self.textTagMagenta, self.textTagGreen, self.textTagBlue, self.textTagPurple]
 
+		self.memory.props.has_tooltip = True
+		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagRed)
+		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagOrange)
+		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagGreen)
 		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagBlue)
+		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagPurple)
+		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagMagenta)
 		""" End GUI """
 
 		self.inBuffer = ""
@@ -178,11 +183,22 @@ class Assembler:
 			offset = widget.props.buffer.cursor_position
 			myiter = widget.props.buffer.get_iter_at_offset(offset)
 		else:
-			coords = widget.window_to_buffer_coords(Gtk.TEXT_WINDOW_TEXT, x, y)
+			coords = widget.window_to_buffer_coords(Gtk.TextWindowType.TEXT, x, y)
 			ret = widget.get_iter_at_position(coords[0], coords[1])
 
 		if ret[0].has_tag(data):
-			tooltip.set_text("3 text tag")
+			offset = ret[0].get_offset() / (1 + self.displayInHex)
+			for element in self.BSS:
+				if self.BSS[element][0] <= offset <= self.BSS[element][1]:
+					tooltip.set_text("%s (from %s to %s)" % (element, self.intToHex(self.BSS[element][0]) if self.displayInHex else str(self.BSS[element][0]), self.intToHex(self.BSS[element][1]) if self.displayInHex else str(self.BSS[element][1])))
+					break
+			else:
+				for element in self.DATA:
+					if self.DATA[element][0] <= offset <= self.DATA[element][1]:
+						tooltip.set_text("%s (from %s to %s)" % (element, self.intToHex(self.DATA[element][0]) if self.displayInHex else str(self.DATA[element][0]), self.intToHex(self.DATA[element][1]) if self.displayInHex else str(self.DATA[element][1])))
+						break
+
+
 		else:
 			return False
 
@@ -205,7 +221,7 @@ class Assembler:
 
 		if not keyname in self.keysDown: self.keysDown.append(keyname)
 
-		if 'o' in self.keysDown and ('Control_L' in self.keysDown or 'Control_R' in self.keysDown):
+		if ('O' in self.keysDown or 'o' in self.keysDown) and ('Control_L' in self.keysDown or 'Control_R' in self.keysDown):
 			self.keysDown = []
 			self.openFile()
 
@@ -238,7 +254,7 @@ class Assembler:
 			self.codeString = f.read()
 
 			f.close()
-			print "Just about to start threading"
+
 			self.startRunning()
 		except IOError:
 			self.outPut("There was a fatal issue opening " + self.fileName + ". Are you sure it's a file?")
@@ -323,7 +339,6 @@ class Assembler:
 					self.codeBounds[0] = self.lineCount + 1
 
 				self.mode = l
-				print "|" + self.mode + "|"
 				continue
 
 			if ":" in l:  # Spliting on a colon, for defining vars, or jump locations, etc.
@@ -370,10 +385,6 @@ class Assembler:
 					BSScount += int(temp2.strip())
 
 		# TODO: error check before second pass
-		print self.DATA
-		print self.BSS
-		print "Passing twice"
-		print self.codeBounds
 		""" SECOND PASS """
 		if errorCount == 0:
 			self.lineNumber = self.codeBounds[0] - 1
@@ -392,7 +403,7 @@ class Assembler:
 	def outPut(self, string, i=""):
 		""" Outputs the arguments, in the fashion i: string"""
 		if i == "":
-			GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), ">> " + string + "\n"),
+			GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), ">> " + string),
 					self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(), 0.1, True, .5, .5)))
 		else:
 			GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), str(i) + ": " + string + "\n"),
@@ -419,15 +430,15 @@ class Assembler:
 		if self.inBuffer == "":
 			self.getCharFlag = True
 			self.outPut("Waiting for input:")
-			self.outText.set_editable(True)
 		else:
-			self.registers['AX'] = self.inBuffer[0]
+			self.outPut(self.inBuffer + "\n")
+			self.registers['AX'] = ord(self.inBuffer[0])
 			self.inBuffer = self.inBuffer[1:]
 
 	def colourMem(self):
 		# TODO: Optimize this so that it doesn't highlight things way off in memory that aren't displayed?
 		for index, location in enumerate(self.DATA.values() + self.BSS.values()):
-				self.memoryBuffer.apply_tag(self.memoryColours[index % 6], self.memoryBuffer.get_iter_at_offset(location[0] * (self.displayInHex + 1)), self.memoryBuffer.get_iter_at_offset((location[1] + 1) * (self.displayInHex + 1)))
+			self.memoryBuffer.apply_tag(self.memoryColours[index % len(self.memoryColours)], self.memoryBuffer.get_iter_at_offset(location[0] * (self.displayInHex + 1)), self.memoryBuffer.get_iter_at_offset((location[1] + 1) * (self.displayInHex + 1)))
 
 	def updateRegisters(self):
 		""" Simply put, updates the register gui elements with the values of the registers. """
@@ -435,24 +446,24 @@ class Assembler:
 		flagStr = "  %-5s %-5s %-5s %-5s %-5s %-1s\n  %-6d%-6d%-6d%-6d%-6d%-1d" % (self.flags.keys()[0], self.flags.keys()[1], self.flags.keys()[2], self.flags.keys()[3], self.flags.keys()[4], self.flags.keys()[5], int(self.flags.values()[0]), int(self.flags.values()[1]), int(self.flags.values()[2]), int(self.flags.values()[3]), int(self.flags.values()[4]), int(self.flags.values()[5]))
 
 		if self.displayInHex:
-			GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %s\nAH: %s\nAL: %s" % (self.intToHex(self.registers['AX']), self.intToHex(self.eightBitRegister("AH")), self.intToHex(self.eightBitRegister('AL')))),
-								self.regB.get_buffer().set_text("BX: %s\nBH: %s\nBL: %s" % (self.intToHex(self.registers['BX']), self.intToHex(self.eightBitRegister("BH")), self.intToHex(self.eightBitRegister("BL")))),
-								self.regC.get_buffer().set_text("CX: %s\nCH: %s\nCL: %s" % (self.intToHex(self.registers['CX']), self.intToHex(self.eightBitRegister("CH")), self.intToHex(self.eightBitRegister("CL")))),
-								self.regD.get_buffer().set_text("DX: %s\nDH: %s\nDL: %s" % (self.intToHex(self.registers['DX']), self.intToHex(self.eightBitRegister("DH")), self.intToHex(self.eightBitRegister("DL")))),
+			GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %s\n AH: %s\n AL: %s" % ("0"*(4 - len(self.intToHex(self.registers['AX']))) + self.intToHex(self.registers['AX']), "0"*(2 - len(self.intToHex(self.eightBitRegister('AH')))) + self.intToHex(self.eightBitRegister("AH")), "0"*(2 - len(self.intToHex(self.eightBitRegister('AL')))) + self.intToHex(self.eightBitRegister('AL')))),
+								self.regB.get_buffer().set_text("BX: %s\n BH: %s\n BL: %s" % ("0"*(4 - len(self.intToHex(self.registers['BX']))) + self.intToHex(self.registers['BX']), "0"*(2 - len(self.intToHex(self.eightBitRegister('BH')))) + self.intToHex(self.eightBitRegister("BH")), "0"*(2 - len(self.intToHex(self.eightBitRegister('BL')))) + self.intToHex(self.eightBitRegister("BL")))),
+								self.regC.get_buffer().set_text("CX: %s\n CH: %s\n CL: %s" % ("0"*(4 - len(self.intToHex(self.registers['CX']))) + self.intToHex(self.registers['CX']), "0"*(2 - len(self.intToHex(self.eightBitRegister('CH')))) + self.intToHex(self.eightBitRegister("CH")), "0"*(2 - len(self.intToHex(self.eightBitRegister('CL')))) + self.intToHex(self.eightBitRegister("CL")))),
+								self.regD.get_buffer().set_text("DX: %s\n DH: %s\n DL: %s" % ("0"*(4 - len(self.intToHex(self.registers['DX']))) + self.intToHex(self.registers['DX']), "0"*(2 - len(self.intToHex(self.eightBitRegister('DH')))) + self.intToHex(self.eightBitRegister("DH")), "0"*(2 - len(self.intToHex(self.eightBitRegister('DL')))) + self.intToHex(self.eightBitRegister("DL")))),
 								self.regBP.get_buffer().set_text("BP: " + str(hex(self.registers['BP']).split("x")[1])),
 								self.regSP.get_buffer().set_text("SP: " + str(hex(self.registers['SP']).split("x")[1])),
 								self.regDI.get_buffer().set_text("DI: " + str(hex(self.registers['DI']).split("x")[1])),
 								self.regSI.get_buffer().set_text("SI: " + str(hex(self.registers['SI']).split("x")[1])),
 								self.regPC.get_buffer().set_text("PC: " + str(hex(self.registers['PC']).split("x")[1])),
 								self.regFlags.get_buffer().set_text(flagStr),
-								self.memoryBuffer.set_text("".join([hex(ord(x)).split("x")[1] for x in self.addressSpace[:144]])),
+								self.memoryBuffer.set_text("".join([self.intToHex(ord(x)) for x in self.addressSpace[:144]])),
 								self.colourMem()
 								))
 		else:
-			GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %d\nAH: %d\nAL: %d" % (self.registers['AX'], self.eightBitRegister("AH"), self.eightBitRegister('AL'))),
-								self.regB.get_buffer().set_text("BX: %d\nBH: %d\nBL: %d" % (self.registers['BX'], self.eightBitRegister("BH"), self.eightBitRegister("BL"))),
-								self.regC.get_buffer().set_text("CX: %d\nCH: %d\nCL: %d" % (self.registers['CX'], self.eightBitRegister("CH"), self.eightBitRegister("CL"))),
-								self.regD.get_buffer().set_text("DX: %d\nDH: %d\nDL: %d" % (self.registers['DX'], self.eightBitRegister("DH"), self.eightBitRegister("DL"))),
+			GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %d\n AH: %d\n AL: %d" % (self.registers['AX'], self.eightBitRegister("AH"), self.eightBitRegister('AL'))),
+								self.regB.get_buffer().set_text("BX: %d\n BH: %d\n BL: %d" % (self.registers['BX'], self.eightBitRegister("BH"), self.eightBitRegister("BL"))),
+								self.regC.get_buffer().set_text("CX: %d\n CH: %d\n CL: %d" % (self.registers['CX'], self.eightBitRegister("CH"), self.eightBitRegister("CL"))),
+								self.regD.get_buffer().set_text("DX: %d\n DH: %d\n DL: %d" % (self.registers['DX'], self.eightBitRegister("DH"), self.eightBitRegister("DL"))),
 								self.regBP.get_buffer().set_text("BP: " + str(self.registers['BP'])),
 								self.regSP.get_buffer().set_text("SP: " + str(self.registers['SP'])),
 								self.regDI.get_buffer().set_text("DI: " + str(self.registers['DI'])),
@@ -610,7 +621,7 @@ class Assembler:
 			return 0
 
 	def intToHex(self, i):
-		return str(hex(i).split("x")[1])
+		return str(hex(i).split("x")[1]).upper()
 
 
 if __name__ == "__main__":

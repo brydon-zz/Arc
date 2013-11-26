@@ -155,7 +155,7 @@ def getFunctionTable():
             }
 
 def stosb(command, i):
-    assembler.addressSpace[assembler.registers["DI"]] = assembler.registers["AX"]
+    assembler.addressSpace[assembler.registers["DI"]] = chr(assembler.registers["AX"])
     assembler.registers["DI"] += 1
 
 def add(command, i):
@@ -262,19 +262,14 @@ def sys(command, i):
                         formatStr = "".join(assembler.addressSpace[int(assembler.stackData[-i]):])
                     else:
                         formatStr = "".join(assembler.addressSpace[int(assembler.stackData[-i]):assembler.addressSpace.index("0", int(assembler.stackData[-i]))])
-
-                    numArgs = formatStr.count("%") - formatStr.count("\%")
-                    if numArgs != 0: break
-                    args.append(formatStr)
                     i += 1
-                if numArgs != len(args):
-                    if len(args) == 0:
-                        for i in range(3, numArgs + 3): args.append(assembler.addressSpace[int(assembler.stackData[-i])])
-                    else:
-                        assembler.outPut("You have provided a format string that requires %d arguments yet have supplied %d arguments" % (numArgs, len(args)))
-                        raise
+                    print formatStr
+                    numArgs = formatStr.count("%") - formatStr.count("\\%")
+                    if numArgs == len(args): break
+                    if numArgs != 0: continue
+                    args.append(formatStr)
                 assembler.outPut(formatStr % tuple(args))
-            except:
+            except IndexError:
                 assembler.stopRunning(-1)
                 assembler.outPut("Invalid system trap on line %d. Invalid number of arguments with _PRINTF." % i)
 
@@ -309,7 +304,5 @@ def cmpb(command, i):
         elif type(x) != type(1):
             assembler.out("Illegal argument %s for cmpb on line %d. cmpb expects an argument to be a one byte register (ie: AH, AL, etc.), an integer, or a one byte string (ie: \"L\", etc.). Instead %s was given." % (x, i, x))
         b.append(x)
-    print a
-    print b
+
     assembler.flags["Z"] = b[0] == b[1]
-    print assembler.flags["Z"]
