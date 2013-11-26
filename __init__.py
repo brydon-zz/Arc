@@ -122,6 +122,10 @@ class Assembler:
 		self.textTagPurple.set_property("background", "purple")
 		self.textTagGreen = Gtk.TextTag()
 		self.textTagGreen.set_property("background", "green")
+		self.textTagGrey = Gtk.TextTag()
+		self.textTagGrey.set_property("background", "grey")
+
+		self.memoryBuffer.get_tag_table().add(self.textTagGrey)
 		self.memoryBuffer.get_tag_table().add(self.textTagRed)
 		self.memoryBuffer.get_tag_table().add(self.textTagOrange)
 		self.memoryBuffer.get_tag_table().add(self.textTagMagenta)
@@ -129,17 +133,16 @@ class Assembler:
 		self.memoryBuffer.get_tag_table().add(self.textTagBlue)
 		self.memoryBuffer.get_tag_table().add(self.textTagPurple)
 
-		self.memoryColours = [self.textTagRed, self.textTagOrange, self.textTagMagenta, self.textTagGreen, self.textTagBlue, self.textTagPurple]
+		self.memoryColours = [self.textTagRed, self.textTagOrange, self.textTagMagenta, self.textTagGreen, self.textTagBlue, self.textTagPurple, self.textTagGrey]
 
 		self.memory.props.has_tooltip = True
-		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagRed)
-		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagOrange)
-		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagGreen)
-		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagBlue)
-		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagPurple)
-		self.memory.connect("query-tooltip", self.toolTipOption, self.textTagMagenta)
-		""" End GUI """
 
+		for x in self.memoryColours:
+			self.memory.connect("query-tooltip", self.toolTipOption, x)
+
+		""" End GUI """
+		# return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
+		self.ESCAPE_CHARS = ['\b', '\n', '\v', '\t', '\f', "'", '"', '\a', '\r']
 		self.inBuffer = ""
 		self.fileName = None
 		self.displayInHex = True
@@ -150,6 +153,7 @@ class Assembler:
 		self.stackData = []
 		self.DATA = {}
 		self.BSS = {}
+		self.effectiveBSSandDATALocation = {}
 
 		as88.newAssembler(self)
 
@@ -187,18 +191,12 @@ class Assembler:
 			ret = widget.get_iter_at_position(coords[0], coords[1])
 
 		if ret[0].has_tag(data):
-			offset = ret[0].get_offset() / (1 + self.displayInHex)
-			for element in self.BSS:
-				if self.BSS[element][0] <= offset <= self.BSS[element][1]:
-					tooltip.set_text("%s (from %s to %s)" % (element, self.intToHex(self.BSS[element][0]) if self.displayInHex else str(self.BSS[element][0]), self.intToHex(self.BSS[element][1]) if self.displayInHex else str(self.BSS[element][1])))
+			offset = ret[0].get_offset()
+			for element in self.effectiveBSSandDATALocation:
+				if self.effectiveBSSandDATALocation[element][0] <= offset <= self.effectiveBSSandDATALocation[element][1]:
+					if element in self.BSS.keys(): tooltip.set_text("%s (from %s to %s)" % (element, self.intToHex(self.BSS[element][0]) if self.displayInHex else str(self.BSS[element][0]), self.intToHex(self.BSS[element][1]) if self.displayInHex else str(self.BSS[element][1])))
+					else: tooltip.set_text("%s (from %s to %s)" % (element, self.intToHex(self.DATA[element][0]) if self.displayInHex else str(self.DATA[element][0]), self.intToHex(self.DATA[element][1]) if self.displayInHex else str(self.DATA[element][1])))
 					break
-			else:
-				for element in self.DATA:
-					if self.DATA[element][0] <= offset <= self.DATA[element][1]:
-						tooltip.set_text("%s (from %s to %s)" % (element, self.intToHex(self.DATA[element][0]) if self.displayInHex else str(self.DATA[element][0]), self.intToHex(self.DATA[element][1]) if self.displayInHex else str(self.DATA[element][1])))
-						break
-
-
 		else:
 			return False
 
@@ -215,6 +213,7 @@ class Assembler:
 			else:
 				self.inBuffer = self.entry.get_text() + "\n"
 				self.registers["AX"] = ord(self.inBuffer[0])
+				self.outPut(self.inBuffer + "\n")
 				self.inBuffer = self.inBuffer[1:]
 				self.getCharFlag = False
 			return
@@ -313,36 +312,36 @@ class Assembler:
 			# 	 str: .ASCIZ "%s f"
 			# a "bss" mode (".SECT .BSS") where memory chunks are defined
 			# 	 fdes: .SPACE 2
-			l = line.strip()
+			line = line.strip()
 
 			if "!" in line:
-				l = line[:line.find("!")].strip()  # ignore comments
+				line = line[:line.find("!")].strip()  # ignore comments
 
 			self.lineCount += 1
 
-			if self.mode == "head" and "=" in l:
-				l = l.split('=')
-				l[0] = l[0].strip()
-				l[1] = l[1].strip()
-				if l[0] in self.localVars.keys():
-					self.outPut("Error on line " + str(self.lineCount) + ", cannot define \''" + l[0] + "\' more than once.")
+			if self.mode == "head" and "=" in line:
+				line = line.split('=')
+				line[0] = line[0].strip()
+				line[1] = line[1].strip()
+				if line[0] in self.localVars.keys():
+					self.outPut("Error on line " + str(self.lineCount) + ", cannot define \''" + line[0] + "\' more than once.")
 					errorCount += 1
-				else: self.localVars[l[0]] = l[1]
+				else: self.localVars[line[0]] = line[1]
 				continue
 
-			if ".SECT" in l:
+			if ".SECT" in line:
 
 				# record where the .SECT .TEXT section starts, and ends
 				if self.mode == ".SECT .TEXT":  # ends, we've gone one too far
 					self.codeBounds[1] = self.lineCount - 1
-				elif l == ".SECT .TEXT":  # starts, we're one too short
+				elif line == ".SECT .TEXT":  # starts, we're one too short
 					self.codeBounds[0] = self.lineCount + 1
 
-				self.mode = l
+				self.mode = line
 				continue
 
-			if ":" in l:  # Spliting on a colon, for defining vars, or jump locations, etc.
-				temp = l.split(":")[0]
+			if ":" in line:  # Spliting on a colon, for defining vars, or jump locations, etc.
+				temp = line.split(":")[0]
 				if self.mode == ".SECT .TEXT":
 					# a : in .SECT .TEXT means a jump location
 					# we can define multiple jump locations by digits
@@ -365,22 +364,22 @@ class Assembler:
 					# where .ASCIZ means an ascii string with a zero at the end
 					# and .ASCII means an ascii string
 
-					if ".ASCIZ" in l or ".ASCII" in l:  # If we're dealing with a string
-						if l.count("\"") < 2:  # each string to be defined should be in quotes, raise error if quotes are messed
+					if ".ASCIZ" in line or ".ASCII" in line:  # If we're dealing with a string
+						if line.count("\"") < 2:  # each string to be defined should be in quotes, raise error if quotes are messed
 							self.outPut("fatal error on line " + str(self.lineCount))
 							errorCount += 1
 							return None
-						temp2 = l[l.find("\"") + 1:l.rfind("\"")]  # otherwise grab the stuff in quotes
-						self.DATA[temp] = [BSScount, BSScount + len(temp2) + (".ASCIZ" in l) - 1]  # and set temp equal to a list of hex vals of each char
-						self.addressSpace[BSScount:BSScount + len(temp2)] = temp2 + "0"*(".ASCIZ" in l)
-						BSScount += len(temp2) + (".ASCIZ" in l)
+						temp2 = self.replaceEscapedSequences(line[line.find("\"") + 1:line.rfind("\"")])  # otherwise grab the stuff in quotes
+						self.DATA[temp] = [BSScount, BSScount + len(temp2) + (".ASCIZ" in line) - 1]  # and set temp equal to a list of hex vals of each char
+						self.addressSpace[BSScount:BSScount + len(temp2)] = temp2 + "0"*(".ASCIZ" in line)
+						BSScount += len(temp2) + (".ASCIZ" in line)
 
 				elif self.mode == ".SECT .BSS":
 					# info in .SECT .BSS follows the format
 					# fdes: .SPACE 2
 					# Where essentially .BSS just defines memory space
 
-					temp2 = l.split(".SPACE")[1]  # let's find the size of the mem chunk to def
+					temp2 = line.split(".SPACE")[1]  # let's find the size of the mem chunk to def
 					self.BSS[temp.strip()] = [BSScount, BSScount + int(temp2.strip()) - 1]  # and def it in bss as it's start and end pos
 					BSScount += int(temp2.strip())
 
@@ -435,10 +434,38 @@ class Assembler:
 			self.registers['AX'] = ord(self.inBuffer[0])
 			self.inBuffer = self.inBuffer[1:]
 
-	def colourMem(self):
+	def colourMemory(self):
 		# TODO: Optimize this so that it doesn't highlight things way off in memory that aren't displayed?
-		for index, location in enumerate(self.DATA.values() + self.BSS.values()):
-			self.memoryBuffer.apply_tag(self.memoryColours[index % len(self.memoryColours)], self.memoryBuffer.get_iter_at_offset(location[0] * (self.displayInHex + 1)), self.memoryBuffer.get_iter_at_offset((location[1] + 1) * (self.displayInHex + 1)))
+		backSlashOffsetBeforeTag = 0
+		backSlashOffsetAfterTag = 0
+		sortedBSSandDATAList = []
+
+		for index, name in enumerate(self.DATA.keys() + self.BSS.keys()):
+
+			if name in self.DATA.keys(): location = self.DATA[name]
+			else: location = self.BSS[name]
+
+			if len(sortedBSSandDATAList) == 0:
+				sortedBSSandDATAList.append([location[0], location[1], name])
+			else:
+				for index, element in enumerate(sortedBSSandDATAList):
+					if location[0] < element[1]:
+						sortedBSSandDATAList.insert(index, [location[0], location[1], name])
+						break
+				else:
+					sortedBSSandDATAList.append([location[0], location[1], name])
+
+		for index, location in enumerate(sortedBSSandDATAList):
+			backSlashOffsetBeforeTag = backSlashOffsetAfterTag
+			for x in self.addressSpace[location[0]:location[1]]:
+				if x in self.ESCAPE_CHARS:
+					backSlashOffsetAfterTag += 1
+			before = location[0] * (self.displayInHex + 1) + backSlashOffsetBeforeTag
+			after = (location[1] + 1) * (self.displayInHex + 1) + backSlashOffsetAfterTag
+
+			self.effectiveBSSandDATALocation[location[2]] = [before, after]
+
+			self.memoryBuffer.apply_tag(self.memoryColours[index % len(self.memoryColours)], self.memoryBuffer.get_iter_at_offset(before), self.memoryBuffer.get_iter_at_offset(after))
 
 	def updateRegisters(self):
 		""" Simply put, updates the register gui elements with the values of the registers. """
@@ -457,7 +484,7 @@ class Assembler:
 								self.regPC.get_buffer().set_text("PC: " + str(hex(self.registers['PC']).split("x")[1])),
 								self.regFlags.get_buffer().set_text(flagStr),
 								self.memoryBuffer.set_text("".join([self.intToHex(ord(x)) for x in self.addressSpace[:144]])),
-								self.colourMem()
+								self.colourMemory()
 								))
 		else:
 			GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %d\n AH: %d\n AL: %d" % (self.registers['AX'], self.eightBitRegister("AH"), self.eightBitRegister('AL'))),
@@ -470,8 +497,8 @@ class Assembler:
 								self.regSI.get_buffer().set_text("SI: " + str(self.registers['SI'])),
 								self.regPC.get_buffer().set_text("PC: " + str(self.registers['PC'])),
 								self.regFlags.get_buffer().set_text(flagStr),
-								self.memory.get_buffer().set_text("".join(self.addressSpace[:287])),
-								self.colourMem()
+								self.memory.get_buffer().set_text("".join([self.escapeSequences(x) for x in self.addressSpace[:287]])),
+								self.colourMemory()
 								))
 
 	def stepButtonClicked(self):
@@ -621,7 +648,14 @@ class Assembler:
 			return 0
 
 	def intToHex(self, i):
-		return str(hex(i).split("x")[1]).upper()
+		hexString = str(hex(i).split("x")[1]).upper()
+		return "0"*(2 - len(hexString)) + hexString
+
+	def replaceEscapedSequences(self, string):
+		return string.replace("\\n", "\n").replace("\\'", "'").replace('\\"', '"').replace("\\a", "\a").replace("\\b", "\b").replace("\\f", "\f").replace("\\r", "\r").replace("\\t", "\t").replace("\\v", "\v")
+
+	def escapeSequences(self, string):
+		return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
 
 
 if __name__ == "__main__":

@@ -290,7 +290,7 @@ def cmpb(command, i):
             assembler.stopRunning(-1)
             return
         elif type(x) == type(""):
-            x = x.rstrip("'\"").lstrip("'\"").replace("\\n", "\n").replace("\\'", "'").replace('\\"', '"').replace("\\a", "\a").replace("\\b", "\b").replace("\\f", "\f").replace("\\r", "\r").replace("\\t", "\t").replace("\\v", "\v")
+            x = assembler.replaceEscapedSequences(x.rstrip("'\"").lstrip("'\""))
 
             if len(x) != 1:
                 assembler.outPut("Illegal argument %s for cmpb on line %d. cmpb expects all strings to be ONE byte in length." % (x, i))
