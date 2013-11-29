@@ -10,7 +10,9 @@
 	STRINGOFFSET = 87
 
 .SECT .TEXT
-
+	PUSH 76
+	POP BX
+	CMPB BL, 'L'
 start:
 	PUSH str
 	PUSH inGreet
@@ -24,8 +26,6 @@ start:
 	MOV DI, fn
 	PUSH _GETCHAR
 
-	PUSH _EXIT
-	SYS
 getFile:				! Loopdy loop
 	SYS
 	CMPB AL,'\n'
@@ -223,7 +223,7 @@ exit:
 	pipestr:	.ASCIZ " |%s|\n"
 	spacenum:	.ASCIZ " %s"
 	num:	 	.ASCIZ "%d"
-	inGreet: 	.ASCIZ "Enter a filename pl0x: "
+	inGreet: 	.ASCIZ "Enter a filename plx:\n"
 	errStr:		.ASCIZ "There was an error opening the file: %s\n"
 	finStr:		.ASCIZ "Succesfully read %d bytes and %d lines from %s.\n"
 

@@ -206,10 +206,14 @@ class Assembler:
 		""" Handles Key Down events, puts the corresponding keyval into a list self.keysDown.
 		Also checks for key combinations. """
 		keyname = Gdk.keyval_name(event.keyval)
-		# print keyname
+
 		if keyname == 'Return' or keyname == 'KP_Enter':
 			if not self.getCharFlag:
-				self.stepButtonClicked()
+				if "Shift_R" in self.keysDown or "Shift_L" in self.keysDown:
+					self.stepButtonClicked(self.entry.get_text())
+					self.entry.set_text("")
+				else:
+					self.stepButtonClicked()
 			else:
 				self.inBuffer = self.entry.get_text() + "\n"
 				self.registers["AX"] = ord(self.inBuffer[0])
@@ -423,7 +427,8 @@ class Assembler:
 							self.regDI.get_buffer().set_text(""),
 							self.regSI.get_buffer().set_text(""),
 							self.regPC.get_buffer().set_text(""),
-							self.regFlags.get_buffer().set_text("")))
+							self.regFlags.get_buffer().set_text(""),
+							self.memory.get_buffer().set_text("")))
 
 	def getChar(self):
 		if self.inBuffer == "":
@@ -501,20 +506,20 @@ class Assembler:
 								self.colourMemory()
 								))
 
-	def stepButtonClicked(self):
+	def stepButtonClicked(self, injectedLine=""):
 		""" Defines what happens if the step button is clicked.
 		If the entry text field is empty, step like normal.
 		If the entry text field has a command in it execute accordingly
 		If the entry text field has characters in it, that aren't recognised as a command, clear the entry and do nothing.
 		"""
 		text = self.entry.get_text().lower().strip()
-		if text == "":
+		if injectedLine != "" or text == "":
 			if self.ran:
 				if not self.restartPrompt:
 					self.outPut("Do you wish to restart? (y/n)")
 					self.restartPrompt = True
 			elif self.running:
-				self.step()
+				self.step(injectedLine)
 		else:
 			if text == "restart":
 				if self.running or self.ran: self.startRunning()
@@ -545,7 +550,7 @@ class Assembler:
 
 			GObject.idle_add(lambda: self.entry.set_text(""))
 
-	def step(self):
+	def step(self, injectedLine=""):
 		""" The guts of the second pass. Where the magic happens! """
 		if self.running:
 
@@ -553,7 +558,10 @@ class Assembler:
 				self.stopRunning()
 				return
 
-			line = self.lines[self.lineNumber].replace("\t", "")  # clear out tabs
+			if injectedLine == "":
+				line = self.lines[self.lineNumber].replace("\t", "")  # clear out tabs
+			else:
+				line = injectedLine
 
 			if "!" in line:  # exclamations mean comments
 				line = line[:line.find("!")].strip()  # ignore comments
@@ -561,7 +569,10 @@ class Assembler:
 			if ":" in line:  # colons mean labels, we dealt with those already.
 				line = line[line.find(":") + 1:].strip()  # ignore jump points
 
-			self.outPut(line, self.lineNumber)  # Now the line is ready to work with
+			if injectedLine == "":
+				self.outPut(line, self.lineNumber)  # Now the line is ready to work with
+			else:
+				self.outPut(line + "\n")
 
 
 			if line.count(",") > 1:  # any command can have at most 2 arguments.
@@ -576,7 +587,7 @@ class Assembler:
 				command.remove("")
 
 			if command == None or command == []:
-				self.lineNumber += 1
+				if injectedLine == "": self.lineNumber += 1
 				return  # skip nothing lines, yo.
 
 			if command[0] not in self.commandArgs.keys():
@@ -600,7 +611,7 @@ class Assembler:
 			if self.jumpLocation != -1:
 				self.lineNumber = self.jumpLocation
 				self.jumpLocation = -1
-			else:
+			elif injectedLine == "":
 				self.lineNumber += 1
 
 			if self.lineNumber >= self.codeBounds[1]:
