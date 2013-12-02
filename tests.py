@@ -103,6 +103,7 @@ class Test(unittest.TestCase):
         print s
 
     def stopRunning(self, x=1):
+        self.fail("Stop running called")
         print "Fatal error"
 
     def updateStack(self):
