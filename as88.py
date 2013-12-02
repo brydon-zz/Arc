@@ -164,7 +164,7 @@ def add(command, i):
             if len(assembler.stackData) > 0:
                 assembler.stackData.pop()
                 assembler.updateStack()
-    elif command[1].isdigit():
+    if command[1].isdigit():
         assembler.outPut("Error on line " + str(i) + ". Add cannot have a numerical first argument.")
         assembler.stopRunning(-1)
     elif command[1] in assembler.registers.keys():
@@ -179,14 +179,21 @@ def pop(command, i):
         assembler.updateStack()
 
 def push(command, i):
-    if command[1].strip("abcdef").isdigit():  # pushing a number to the stack
-        assembler.updateStack(int(command[1], 16))
+    if command[1].strip("abcdef").isdigit():  # pushing a number to the stack, it's prolly hex so ignore DAT
+        assembler.stackData.append(int(command[1], 16))
+        assembler.updateStack()
+    elif command[1] in getRegisters():
+        assembler.stackData.append(int(assembler.registers[command[1]]))
+        assembler.updateStack()
     elif command[1] in assembler.DATA.keys():  # pushing a string from .SECT .DATA to the stack
-        assembler.updateStack(assembler.DATA[command[1]][0])
+        assembler.stackData.append(assembler.DATA[command[1]][0])
+        assembler.updateStack()
     elif command[1] in assembler.localVars.keys():  # pushing a local int to the stack
-        assembler.updateStack(assembler.localVars[command[1]])
+        assembler.stackData.append(assembler.localVars[command[1]])
+        assembler.updateStack()
     elif command[1] in assembler.BSS.keys():
-        assembler.updateStack(assembler.BSS[command[1]][0])
+        assembler.stackData.append(assembler.BSS[command[1]][0])
+        assembler.updateStack()
     elif "(" in command[1] and ")" in command[1]:
         temp = command[1][command[1].find("(") + 1:command[1].find(")")]
         if temp in assembler.BSS.keys():
@@ -203,20 +210,18 @@ def push(command, i):
 def jmp(command, i):
     if command[1] in assembler.lookupTable.keys():
         if type(assembler.lookupTable[command[1]]) == assembler.LIST_TYPE:
+            # Jumps where many are declared, gotta jump up or down, bit complicated. ie, jmp 1f
             1 + 1
         else:
             assembler.jumpLocation = assembler.lookupTable[command[1]]
 
 def mov(command, i):
-    print command
     if command[1] in assembler.registers.keys():
-        print command
         if command[2].isdigit():
             assembler.registers[command[1]] = int(command[2])
         elif command[2] in assembler.localVars.keys():
             assembler.registers[command[1]] = int(assembler.localVars[command[2]])
         elif command[2] in assembler.BSS.keys():
-            print "wooo"
             assembler.registers[command[1]] = int(assembler.BSS[command[2]][0])
 
 def je(command, i):
@@ -273,7 +278,7 @@ def sys(command, i):
                 assembler.stopRunning(-1)
                 assembler.outPut("Invalid system trap on line %d. Invalid number of arguments with _PRINTF." % i)
 
-def clc(comand, i):
+def clc(command, i):
     assembler.flags["C"] = False
 
 def stc(command, i):
