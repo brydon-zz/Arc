@@ -1,23 +1,27 @@
 '''
-Created on 2013-11-20
+Created on 2013-10-20
 
-@author: beewhy
+@author: Brydon
 '''
 import threading
 sysCodes = {"_EXIT":1, "_PRINTF":127, "_GETCHAR":117, "_SSCANF":125, "_READ":3, "_OPEN":5, "_CLOSE":6}
 
 def newAssembler(A):
+    """ Link's this module with the assembler instance """
     global assembler
     assembler = A
 
 def getRegisters():
+    """ 8088 registers (minus the flag register) """
     return {"AX":0, "BX":0, "CX":0, "DX":0, "SP":0, "BP":0, "SI":0, "DI":0, "PC":0}
 
 def getFlags():
+    """ 8088 flag registers """
     """Z: zero flag, S: sign flag, V: overflow flag, C: carry flag, A: auxillary flag, P: parity flag"""
     return {"Z":False, "S":False, "V":False, "C":False, "A":False, "P":False}
 
 def getCommandArgs():
+    """ A dict whose keys are commands and their values are the # of arguments they expect """
     return {"AAA":-1,  # Ascii adjust AL after addition
             "AAD":-1,  # Ascii adjust AX before division
             "AAM":-1,  # Ascii adjust AX after multiplication
@@ -71,7 +75,7 @@ def getCommandArgs():
             "JNO":1,  # Jump if not overflow
             "JNP":1,  # Jump if not ???
             "JNS":1,  # Jump if not ???
-            "JNZ":1,  # Jump if not zero
+            "JNZ":1,  # Jump if noscreet zero
             "JO":1,  # Jump if overflow
             "JP":1,  # Jump if ???
             "JPE":1,  # Jump if ???
@@ -102,7 +106,7 @@ def getCommandArgs():
             "OUT":-1,  # Output to port
             "POP":1,  # Pop data from stack
             "POPF":1,  # Pop data from flags register
-            "PUSH":1,  # Push data to stack
+            "PUSH":1,  # Push data to stacscreek
             "PUSHF":-1,  # Push flags onto stack
             "RCL":-1,  # Rotate left with carry
             "RCR":-1,  # Rotate right with carry
@@ -136,6 +140,7 @@ def getCommandArgs():
             }
 
 def getFunctionTable():
+    """ The jump table - the keys are commands and values are the functions that need called, i use anonymous lambda fnxns for argument passing """
     return {
             "ADD":lambda x, i: add(x, i),
             "PUSH":lambda x, i: push(x, i),
@@ -151,14 +156,19 @@ def getFunctionTable():
             "STC":lambda x, i: stc(x, i),
             "POP":lambda x, i: pop(x, i),
             "STOSB":lambda x, i: stosb(x, i),
-            "CMPB":lambda x, i: cmpb(x, i)
+            "CMPB":lambda x, i: cmpb(x, i),
+            "INC":lambda x, i: incdec(x, i, 1),
+            "DEC":lambda x, i: incdec(x, i, -1)
             }
 
 def stosb(command, i):
+    """ Stores contents of AX in the memory address contained in DI, then increments DI """
     assembler.addressSpace[assembler.registers["DI"]] = chr(assembler.registers["AX"])
     assembler.registers["DI"] += 1
 
 def add(command, i):
+    """ add x,y translates to x = x + y
+    where x is a register, y is a number, localvar, mem address, register, etc. """
     if command[1] == "SP" and command[2].isdigit():
         for j in range(int(command[2]) / 2):
             if len(assembler.stackData) > 0:
@@ -168,18 +178,20 @@ def add(command, i):
         assembler.outPut("Error on line " + str(i) + ". Add cannot have a numerical first argument.")
         assembler.stopRunning(-1)
     elif command[1] in assembler.registers.keys():
-        if command[2].isdigit():
-            assembler.registers[command[1]] += int(command[2])
+        if command[2].strip("abcdef").isdigit():
+            assembler.registers[command[1]] += int(command[2], 16)
         elif command[2] in assembler.localVars.keys():
             assembler.registers[command[1]] += int(assembler.localVars[command[2]])
 
 def pop(command, i):
+    """ pop x will pop an element from the stack into register x """
     if command[1] in getRegisters():
         assembler.registers[command[1]] = int(assembler.stackData.pop())
         assembler.updateStack()
 
 def push(command, i):
-    if command[1].strip("abcdef").isdigit():  # pushing a number to the stack, it's prolly hex so ignore DAT
+    """ Push x will push the argument x to the stack """
+    if command[1].strip("abcdef").isdigit():  # pushing a number to the stack, it's prolly hex so ignore the A-F chars
         assembler.stackData.append(int(command[1], 16))
         assembler.updateStack()
     elif command[1] in getRegisters():
@@ -208,6 +220,7 @@ def push(command, i):
         assembler.stopRunning(-1)
 
 def jmp(command, i):
+    """ jmp x jumps to position x in the program """
     if command[1] in assembler.lookupTable.keys():
         if type(assembler.lookupTable[command[1]]) == assembler.LIST_TYPE:
             # Jumps where many are declared, gotta jump up or down, bit complicated. ie, jmp 1f
@@ -216,15 +229,17 @@ def jmp(command, i):
             assembler.jumpLocation = assembler.lookupTable[command[1]]
 
 def mov(command, i):
+    """ Mov A,B  evaluates as A=B where A is a register """
     if command[1] in assembler.registers.keys():
-        if command[2].isdigit():
-            assembler.registers[command[1]] = int(command[2])
+        if command[2].strip("abcdef").isdigit():
+            assembler.registers[command[1]] = int(command[2], 16)
         elif command[2] in assembler.localVars.keys():
             assembler.registers[command[1]] = int(assembler.localVars[command[2]])
         elif command[2] in assembler.BSS.keys():
             assembler.registers[command[1]] = int(assembler.BSS[command[2]][0])
 
 def je(command, i):
+    """ Jump if the carry flag """
     if assembler.flags["Z"]:
         jmp(command, i)
 
@@ -245,6 +260,7 @@ def jl(command, i):
         jmp(command, i)
 
 def sys(command, i):
+    """ Call a system trap - evaluates based on the last piece of data on the stack """
     if len(assembler.stackData) == 0:
         assembler.outPut("Invalid system trap: SYS called on line %d without any arguments on stack." % i)
         assembler.stopRunning(-1)
@@ -279,12 +295,20 @@ def sys(command, i):
                 assembler.outPut("Invalid system trap on line %d. Invalid number of arguments with _PRINTF." % i)
 
 def clc(command, i):
+    """ set the carry flag to false """
     assembler.flags["C"] = False
 
 def stc(command, i):
+    """ set the carry flag to true """
     assembler.flags["C"] = True
 
+def incdec(command, i, p):
+    """ A function for incrementing or decermenting a register.  p is the polarity (-1 for dec, 1 for inc) """
+    if command[1] in getRegisters().keys():
+        assembler.registers[command[1]] += p;
+
 def cmpb(command, i):
+    """ cmpb x,y where x and y are bytes, if equal set the zero flag accordingly """
     a = command[1:3]
     b = []
     for x in a:

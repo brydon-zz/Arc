@@ -183,10 +183,11 @@ class Assembler:
 		self.keysDown = []
 
 	def toolTipOption(self, widget, x, y, keyboard_tip, tooltip, data):
-		if keyboard_tip:
+		""" For printing the tooltips in the memory textview """
+		if keyboard_tip:  # if the tooltip is focus from the keyboard, get those bounds
 			offset = widget.props.buffer.cursor_position
-			myiter = widget.props.buffer.get_iter_at_offset(offset)
-		else:
+			ret = widget.props.buffer.get_iter_at_offset(offset)
+		else:  # else get the bounds by the cursor
 			coords = widget.window_to_buffer_coords(Gtk.TextWindowType.TEXT, x, y)
 			ret = widget.get_iter_at_position(coords[0], coords[1])
 
@@ -396,12 +397,13 @@ class Assembler:
 			self.outPut("Your code cannot be run, it contains %d errors" % errorCount)
 
 	def updateStack(self, data=""):
+		""" Updates the stack gui element """
 		# self.outBuffer.apply_tag(self.textTagBold, self.outBuffer.get_start_iter(), self.outBuffer.get_end_iter())
 		if data != "": self.stackData.append(str(data))
 		if self.displayInHex:
 			GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(hex(int(x)).split("x")[1])) + hex(int(x)).split("x")[1] for x in self.stackData])))
 		else:
-			GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(x)) + x for x in self.stackData])))
+			GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(str(x))) + str(x) for x in self.stackData])))
 
 	def outPut(self, string, i=""):
 		""" Outputs the arguments, in the fashion i: string"""
@@ -431,6 +433,7 @@ class Assembler:
 							self.memory.get_buffer().set_text("")))
 
 	def getChar(self):
+		""" Get's chars from the entry element. Interfaces with as88 system trap """
 		if self.inBuffer == "":
 			self.getCharFlag = True
 			self.outPut("Waiting for input:")
@@ -440,6 +443,7 @@ class Assembler:
 			self.inBuffer = self.inBuffer[1:]
 
 	def colourMemory(self):
+		""" Colour codes the items in the memory for easy identification """
 		# TODO: Optimize this so that it doesn't highlight things way off in memory that aren't displayed?
 		backSlashOffsetBeforeTag = 0
 		backSlashOffsetAfterTag = 0
@@ -619,6 +623,7 @@ class Assembler:
 				return
 
 	def stopRunning(self, i=1):
+		""" Ends the current simulation, if i=1 then succesfully, otherwise there was an issue """
 		self.running = False
 		self.ran = True
 		if i == 1:
@@ -628,11 +633,14 @@ class Assembler:
 		# TODO: EOF, anything important like that should go here.
 
 	def hexSwitchClicked(self, button=None, data=None):
+		""" gets called when the hex switch is toggled """
 		self.displayInHex = not self.displayInHex
 		self.updateRegisters()
 		self.updateStack()
 
 	def eightBitRegister(self, s):
+		""" Returns the 8 bit register s, if it exists, otherwise returns 0.
+		i.e. self.eightBitRegister('BH') is the top 8 bits of BX """
 		try:
 			temp = ""
 
@@ -659,13 +667,17 @@ class Assembler:
 			return 0
 
 	def intToHex(self, i):
+		""" Converts integers to 0-padded hex.
+		i.e. 17 is returned as 11, 15 is returned as 0F """
 		hexString = str(hex(i).split("x")[1]).upper()
 		return "0"*(2 - len(hexString)) + hexString
 
 	def replaceEscapedSequences(self, string):
+		""" Replaces all escaped sequences with their unescaped counterparts """
 		return string.replace("\\n", "\n").replace("\\'", "'").replace('\\"', '"').replace("\\a", "\a").replace("\\b", "\b").replace("\\f", "\f").replace("\\r", "\r").replace("\\t", "\t").replace("\\v", "\v")
 
 	def escapeSequences(self, string):
+		""" Escapes all things that may need escaped. """
 		return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
 
 
