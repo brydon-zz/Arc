@@ -4,8 +4,10 @@ import threading, os, as88, time
 
 # TODO: issues with restarting
 # TODO: Implement the WHOLE reg set
-# TODO: ASSEMBLE?
+# TODO: ASSEMBLE? (i.e. opcodes)
 # TODO: Run all and run untils with input
+# TODO: Optimise the number of GUI interface calls. i.e. UpdateGUI should only update the gui parts who need updates
+# TODO: (possibly related to prev) have the parts of the gui updated
 
 """"Assembler Class for Intel 8088 Architecture"""
 class Assembler:
