@@ -158,23 +158,25 @@ def getFunctionTable():
             "PUSH":lambda x, i: push(x, i),
             "PUSHF":lambda x, i: pushf(x, i),
             "JMP":lambda x, i: jmp(x, i),
-            "JC":lambda x, i: jc(x, i),
-            "JCXZ":lambda x, i: jcxz(x, i),
-            "JE":lambda x, i: je(x, i),
-            "JG":lambda x, i: jg(x, i),
-            "JGE":lambda x, i: jge(x, i),
-            "JL":lambda x, i: jl(x, i),
-            "JLE":lambda x, i: jle(x, i),
-            "JNC":lambda x, i: jnc(x, i),
-            "JNE":lambda x, i: jne(x, i),
-            "JNG":lambda x, i: jle(x, i),
-            "JNGE":lambda x, i: jl(x, i),
-            "JNLE":lambda x, i: jg(x, i),
-            "JNL":lambda x, i: jge(x, i),
-            "JNO":lambda x, i: jno(x, i),
-            "JNZ":lambda x, i: jne(x, i),
-            "JO":lambda x, i: jo(x, i),
-            "JZ":lambda x, i: je(x, i),
+            "JC":lambda x, i: jf(x, i, assembler.flags['C'] == 1),
+            "JCXZ":lambda x, i: jf(x, i, assembler.registers['CX'] == 0),
+            "JE":lambda x, i: jf(x, i, assembler.flags['Z'] == 1),
+            "JG":lambda x, i: jf(x, i, assembler.flags['S'] == 0 and assembler.flags['Z'] == 0),
+            "JGE":lambda x, i: jf(x, i, assembler.flags['S'] == 0 or assembler.flags['Z'] == 1),
+            "JL":lambda x, i: jf(x, i, assembler.flags['S'] == 1 and assembler.flags['Z'] == 0),
+            "JLE":lambda x, i: jf(x, i, assembler.flags['S'] == 1 or assembler.flags['Z'] == 1),
+            "JNC":lambda x, i: jf(x, i, assembler.flags['C'] == 0),
+            "JNE":lambda x, i: jf(x, i, assembler.flags['Z'] == 0),
+            "JNG":lambda x, i: jf(x, i, assembler.flags['S'] == 1 or assembler.flags['Z'] == 1),
+            "JNGE":lambda x, i: jf(x, i, assembler.flags['S'] == 1 and assembler.flags['Z'] == 0),
+            "JNLE":lambda x, i: jf(x, i, assembler.flags['S'] == 0 and assembler.flags['Z'] == 0),
+            "JNL":lambda x, i: jf(x, i, assembler.flags['S'] == 0 or assembler.flags['Z'] == 1),
+            "JNO":lambda x, i: jf(x, i, assembler.flags["O"] == 0),
+            "JNP":lambda x, i: jf(x, i, assembler.flags['P'] == 0),
+            "JNZ":lambda x, i: jf(x, i, assembler.flags['Z'] == 0),
+            "JO":lambda x, i: jf(x, i, assembler.flags['O'] == 1),
+            "JP":lambda x, i: jf(x, i, assembler.flags['P'] == 1),
+            "JZ":lambda x, i: jf(x, i, assembler.flags['Z'] == 1),
             "LOOP":lambda x, i: loop(x, i),
             "LOOPE":lambda x, i: loop(x, i, assembler.flags["Z"]),
             "LOOPNE":lambda x, i: loop(x, i, not assembler.flags["Z"]),
@@ -336,32 +338,6 @@ def mov(command, i):
 
 def jf(command, i, flag):
     if flag:
-        jmp(command, i)
-
-def je(command, i):
-    """ Jump if the zero flag """
-    if assembler.flags["Z"]:
-        jmp(command, i)
-
-def jne(command, i):
-    """ Jump if not the zero flag """
-    if assembler.flags["Z"]:
-        jmp(command, i)
-
-def jg(command, i):
-    if 1 + 1:
-        jmp(command, i)
-
-def jge(command, i):
-    if 1 + 1:
-        jmp(command, i)
-
-def jle(command, i):
-    if 1 + 1:
-        jmp(command, i)
-
-def jl(command, i):
-    if 1 + 1:
         jmp(command, i)
 
 def sys(command, i):
