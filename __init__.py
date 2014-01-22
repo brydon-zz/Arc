@@ -669,10 +669,16 @@ class Assembler:
 			return 0
 
 	def intToHex(self, i):
-		""" Converts integers to 0-padded hex.
+		""" Converts integers to 0-padded hex. Does twos complement for negative numbers.
 		i.e. 17 is returned as 11, 15 is returned as 0F """
-		hexString = str(hex(i).split("x")[1]).upper()
-		return "0"*(2 - len(hexString)) + hexString
+		if i > 2 ** 16 - 1:
+			print "Overflow"
+		else:
+			if i < 0:
+				i += 2 ** 16  # 2s complement
+
+			hexString = str(hex(i).split("x")[1]).upper()
+			return "0"*(2 - len(hexString)) + hexString
 
 	def replaceEscapedSequences(self, string):
 		""" Replaces all escaped sequences with their unescaped counterparts """
