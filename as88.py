@@ -3,7 +3,7 @@ Created on 2013-10-20
 
 @author: Brydon
 '''
-import threading
+
 sysCodes = {"_EXIT":1, "_PRINTF":127, "_GETCHAR":117, "_SSCANF":125, "_READ":3, "_OPEN":5, "_CLOSE":6}
 
 def newAssembler(A):
@@ -90,16 +90,16 @@ def getCommandArgs():
             "LES":-1,  # Load ES with pointer
             "LODSB":-1,  # Load string byte
             "LODSW":-1,  # Load string word
-            "LOOP":-1,  # Loop control
-            "LOOPE":-1,  # Loop if equal
-            "LOOPNE":-1,  # Loop if not equal
-            "LOOPNZ":-1,  # Loop if not zero
-            "LOOPZ":-1,  # Loop if zero
+            "LOOP":1,  # Loop control
+            "LOOPE":1,  # Loop if equal
+            "LOOPNE":1,  # Loop if not equal
+            "LOOPNZ":1,  # Loop if not zero
+            "LOOPZ":1,  # Loop if zero
             "MOV":2,  # Move
             "MOVSB":-1,  # Move byte from string to string
             "MOVSW":-1,  # Move word from string to string
             "MUL":-1,  # Unsigned Multiply
-            "NEG":-1,  # Two's complement negation
+            "NEG":1,  # Two's complement negation
             "NOP":0,  # No Operation.
             "NOT":-1,  # Negate the opearand, logical NOT
             "OR":-1,  # Logical OR
@@ -195,20 +195,6 @@ def getFunctionTable():
             "XCHG":lambda x, i: xchg(x, i)
             }
 
-def xchg(command, i):
-    if command[1] in assembler.registers and command[2] in assembler.registers:
-        assembler.registers[command[1]], assembler.registers[command[2]] = assembler.registers[command[2]], assembler.registers[command[1]]
-    else:
-        assembler.outPut("Error on line " + str(i) + ". XCHG expects both its arguments to be registers.")
-
-def stosb(command, i):
-    """ Stores contents of AX in the memory address contained in DI, then increments DI """
-    assembler.addressSpace[assembler.registers["DI"]] = chr(assembler.registers["AX"])
-    assembler.registers["DI"] += 1
-
-def pushf(command, i):
-    """ Push the flags to the stack """
-
 def add(command, i):
     """ add x,y translates to x = x + y
     where x is a register or mem address, y is a number, localvar, mem address, or register. """
@@ -264,6 +250,96 @@ def cmc(command, i):
     """ Complements the carry flag, toggling it """
     assembler.flags['C'] = not assembler.flags["C"]
 
+def cmpb(command, i):
+    """ cmpb x,y where x and y are bytes, if equal set the zero flag accordingly """
+    a = command[1:3]
+    b = []
+    for x in a:
+        if x in ['AH', 'AL', 'BH', 'BL', 'CH', 'CL', 'DH', 'DL']:
+            x = assembler.eightBitRegister(x)
+        elif x in ['AX', 'BX', 'CX', 'DX']:
+            assembler.outPut("Illegal argument for cmpb on line %d. %s is a 16 bit register, perhaps you meant one of the 8 bit %s or %s registers?" % (i, x, x[0] + "H", x[0] + "L"))
+            assembler.stopRunning(-1)
+            return
+        elif type(x) == type(""):
+            x = assembler.replaceEscapedSequences(x.rstrip("'\"").lstrip("'\""))
+
+            if len(x) != 1:
+                assembler.outPut("Illegal argument %s for cmpb on line %d. cmpb expects all strings to be ONE byte in length." % (x, i))
+                assembler.stopRunning(-1)
+                return
+            else:
+                try:
+                    x = int(x)
+                except ValueError:
+                    x = ord(x)
+        elif type(x) != type(1):
+            assembler.out("Illegal argument %s for cmpb on line %d. cmpb expects an argument to be a one byte register (ie: AH, AL, etc.), an integer, or a one byte string (ie: \"L\", etc.). Instead %s was given." % (x, i, x))
+        b.append(x)
+
+    assembler.flags["Z"] = b[0] == b[1]
+
+def incdec(command, i, p):
+    """ A function for incrementing or decermenting a register.  p is the polarity (-1 for dec, 1 for inc) """
+    if command[1] in getRegisters().keys():
+        assembler.registers[command[1]] += p;
+    elif command[1] in assembler.BSS.keys():
+        assembler.addressSpace[assembler.BSS[command[1]][0]] += p
+    elif command[1] in assembler.DATA.keys():
+        assembler.addressSpace[assembler.DATA[command[1]][0]] += p
+    else:
+        assembler.outPut("Invalid " + ("inc" if p == 1 else "dec") + " on line " + str(i) + ". " + ("inc" if p == 1 else "dec") + " expects its argument to be either a register or memory address.")
+
+def jf(command, i, flag):
+    """ jmp if the flag is true, used for jo, jg, jge, etc. """
+    if flag:
+        jmp(command, i)
+
+def jmp(command, i, referer="jmp"):
+    """ jmp x jumps to position x in the program """
+    if command[1] in assembler.lookupTable.keys():
+        if type(assembler.lookupTable[command[1]]) == assembler.LIST_TYPE:
+            # Jumps where many are declared, gotta jump up or down, bit complicated. ie, jmp 1f
+            1 + 1
+        else:
+            assembler.jumpLocation = assembler.lookupTable[command[1]]
+    else:
+        assembler.outPut("Error on line " + str(i) + ". The label " + command[1] + " is not defined for " + referer + "-ing to.")
+
+def loop(command, i, flag=True):
+    """ Decrements CX and jumps to a label if CX is greater than zero and flag is true. """
+    assembler.registers["CX"] -= 1
+    if flag and assembler.registers["CX"] > 0:
+        jmp(command, i, "loop")
+
+def mov(command, i):
+    """ Mov A,B  evaluates as A=B where A is a register or memory address and B is a memory,
+        register address, local variable, or number. """
+
+    if command[2].strip("abcdef").isdigit():  # B is digit
+        b = int(command[2], 16)
+    elif command[2] in assembler.localVars.keys():  # B is local var
+        b = int(assembler.localVars[command[2]])
+    elif command[2] in assembler.BSS.keys():  # B is BSS mem address
+        b = int(assembler.BSS[command[2]][0])
+    elif command[2] in assembler.DATA.keys():  # B is DATA mem address
+        b = int(assembler.DATA[command[2]][0])
+
+    if command[1] in assembler.registers.keys():
+        assembler.registers[command[1]] = b
+    elif command[1] in assembler.DATA.keys():
+        assembler.addressSpace[assembler.DATA[command[1]][0]] = b
+    elif command[1] in assembler.BSS.keys():
+        assembler.addressSpace[assembler.BSS[command[1]][0]] = b
+    elif command[1].strip("abcdef").isdigit():
+        assembler.outPut("Error, you made your first argument a hex digit. MOV expects its first argument to be a register, or a memory address.")
+    else:
+        assembler.outPut("MOV expects its first argument to be a memory address or register, and second to be a memory address, register, immediate value, or local variable.")
+
+def neg(command, i):
+    """ Performs twos complement of the destination operand, and stores the result in the destination."""
+    if command[1] in assembler.registers.keys():
+        assembler.registers[command[1]] *= -1
 
 def pop(command, i):
     """ pop x will pop an element from the stack into register x """
@@ -301,44 +377,25 @@ def push(command, i):
         assembler.outPut("Unknown error on line " + str(i) + ".")
         assembler.stopRunning(-1)
 
-def jmp(command, i, referer="jmp"):
-    """ jmp x jumps to position x in the program """
-    if command[1] in assembler.lookupTable.keys():
-        if type(assembler.lookupTable[command[1]]) == assembler.LIST_TYPE:
-            # Jumps where many are declared, gotta jump up or down, bit complicated. ie, jmp 1f
-            1 + 1
-        else:
-            assembler.jumpLocation = assembler.lookupTable[command[1]]
-    else:
-        assembler.outPut("Error on line " + str(i) + ". The label " + command[1] + " is not defined for " + referer + "-ing to.")
+def pushf(command, i):
+    """ Push the flags to the stack """
 
-def mov(command, i):
-    """ Mov A,B  evaluates as A=B where A is a register or memory address and B is a memory,
-        register address, local variable, or number. """
+def stosb(command, i):
+    """ Stores contents of AX in the memory address contained in DI, then increments DI """
+    assembler.addressSpace[assembler.registers["DI"]] = chr(assembler.registers["AX"])
+    assembler.registers["DI"] += 1
 
-    if command[2].strip("abcdef").isdigit():  # B is digit
-        b = int(command[2], 16)
-    elif command[2] in assembler.localVars.keys():  # B is local var
-        b = int(assembler.localVars[command[2]])
-    elif command[2] in assembler.BSS.keys():  # B is BSS mem address
-        b = int(assembler.BSS[command[2]][0])
-    elif command[2] in assembler.DATA.keys():  # B is DATA mem address
-        b = int(assembler.DATA[command[2]][0])
+def stc(command, i):
+    """ set the carry flag to true """
+    assembler.flags["C"] = True
 
-    if command[1] in assembler.registers.keys():
-        assembler.registers[command[1]] = b
-    elif command[1] in assembler.DATA.keys():
-        assembler.addressSpace[assembler.DATA[command[1]][0]] = b
-    elif command[1] in assembler.BSS.keys():
-        assembler.addressSpace[assembler.BSS[command[1]][0]] = b
-    elif command[1].strip("abcdef").isdigit():
-        assembler.outPut("Error, you made your first argument a hex digit. MOV expects its first argument to be a register, or a memory address.")
-    else:
-        assembler.outPut("MOV expects its first argument to be a memory address or register, and second to be a memory address, register, immediate value, or local variable.")
+def std(command, i):
+    """ Set the direction flag to true """
+    assembler.flags["D"] = True
 
-def jf(command, i, flag):
-    if flag:
-        jmp(command, i)
+def sti(command, i):
+    """ Set the interrupt flag to true """
+    assembler.flags["I"] = True
 
 def sys(command, i):
     """ Call a system trap - evaluates based on the last piece of data on the stack """
@@ -375,65 +432,9 @@ def sys(command, i):
                 assembler.stopRunning(-1)
                 assembler.outPut("Invalid system trap on line %d. Invalid number of arguments with _PRINTF." % i)
 
-def stc(command, i):
-    """ set the carry flag to true """
-    assembler.flags["C"] = True
-
-def std(command, i):
-    """ Set the direction flag to true """
-    assembler.flags["D"] = True
-
-def sti(command, i):
-    """ Set the interrupt flag to true """
-    assembler.flags["I"] = True
-
-def neg(command, i):
-    """ Performs twos complement of the destination operand, and stores the result in the destination."""
-    if command[1] in assembler.registers.keys():
-        assembler.registers[command[1]] *= -1
-
-def incdec(command, i, p):
-    """ A function for incrementing or decermenting a register.  p is the polarity (-1 for dec, 1 for inc) """
-    if command[1] in getRegisters().keys():
-        assembler.registers[command[1]] += p;
-    elif command[1] in assembler.BSS.keys():
-        assembler.addressSpace[assembler.BSS[command[1]][0]] += p
-    elif command[1] in assembler.DATA.keys():
-        assembler.addressSpace[assembler.DATA[command[1]][0]] += p
+def xchg(command, i):
+    """ xchg, swaps two registers contents """
+    if command[1] in assembler.registers and command[2] in assembler.registers:
+        assembler.registers[command[1]], assembler.registers[command[2]] = assembler.registers[command[2]], assembler.registers[command[1]]
     else:
-        assembler.outPut("Invalid " + ("inc" if p == 1 else "dec") + " on line " + str(i) + ". " + ("inc" if p == 1 else "dec") + " expects its argument to be either a register or memory address.")
-
-def loop(command, i, flag=True):
-    """ Decrements CX and jumps to a label if CX is greater than zero and flag is true. """
-    assembler.registers["CX"] -= 1
-    if flag and assembler.registers["CX"] > 0:
-        jmp(command, i, "loop")
-
-def cmpb(command, i):
-    """ cmpb x,y where x and y are bytes, if equal set the zero flag accordingly """
-    a = command[1:3]
-    b = []
-    for x in a:
-        if x in ['AH', 'AL', 'BH', 'BL', 'CH', 'CL', 'DH', 'DL']:
-            x = assembler.eightBitRegister(x)
-        elif x in ['AX', 'BX', 'CX', 'DX']:
-            assembler.outPut("Illegal argument for cmpb on line %d. %s is a 16 bit register, perhaps you meant one of the 8 bit %s or %s registers?" % (i, x, x[0] + "H", x[0] + "L"))
-            assembler.stopRunning(-1)
-            return
-        elif type(x) == type(""):
-            x = assembler.replaceEscapedSequences(x.rstrip("'\"").lstrip("'\""))
-
-            if len(x) != 1:
-                assembler.outPut("Illegal argument %s for cmpb on line %d. cmpb expects all strings to be ONE byte in length." % (x, i))
-                assembler.stopRunning(-1)
-                return
-            else:
-                try:
-                    x = int(x)
-                except ValueError:
-                    x = ord(x)
-        elif type(x) != type(1):
-            assembler.out("Illegal argument %s for cmpb on line %d. cmpb expects an argument to be a one byte register (ie: AH, AL, etc.), an integer, or a one byte string (ie: \"L\", etc.). Instead %s was given." % (x, i, x))
-        b.append(x)
-
-    assembler.flags["Z"] = b[0] == b[1]
+        assembler.outPut("Error on line " + str(i) + ". XCHG expects both its arguments to be registers.")
