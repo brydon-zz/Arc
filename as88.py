@@ -141,8 +141,7 @@ def getCommandArgs():
 
 def getFunctionTable():
     """ The jump table - the keys are commands and values are the functions that need called, i use anonymous lambda fnxns for argument passing """
-    return {
-            """
+    """
             "JNA":1,  # Jump if not above
             "JNAE":1,  # Jump if not above or equal
             "JNB":1,  # Jump if not below
@@ -154,6 +153,7 @@ def getFunctionTable():
             "JPO":1,  # Jump if ???
             "JS":1,  # Jump if ???
             """
+    return {
             "ADD":lambda x, i: add(x, i),
             "PUSH":lambda x, i: push(x, i),
             "PUSHF":lambda x, i: pushf(x, i),
@@ -288,7 +288,7 @@ def incdec(command, i, p):
     elif command[1] in assembler.DATA.keys():
         assembler.addressSpace[assembler.DATA[command[1]][0]] += p
     else:
-        assembler.outPut("Invalid " + ("inc" if p == 1 else "dec") + " on line " + str(i) + ". " + ("inc" if p == 1 else "dec") + " expects its argument to be either a register or memory address.")
+        assembler.outPut("Invalid " + command[0] + " on line " + str(i) + ". " + command[0] + " expects its argument to be either a register or memory address.")
 
 def jf(command, i, flag):
     """ jmp if the flag is true, used for jo, jg, jge, etc. """

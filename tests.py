@@ -11,6 +11,8 @@ class Test(unittest.TestCase):
 
     def setUp(self):
         """ Just reset the basic properties of an assembler between tests """
+        global functionTable
+        functionTable = as88.getFunctionTable()
         self.LIST_TYPE = type([])
         self.lookupTable = {}
         self.localVars = {}
@@ -34,66 +36,66 @@ class Test(unittest.TestCase):
     def testMovPositiveSmallNumbers(self):
         """ Moving small positive integers - the easiest case """
         for x in self.registers.keys():
-            as88.mov(['MOV', x, '10'], 0)
+            functionTable["MOV"](['MOV', x, '10'], 0)
             self.assertEqual(self.registers[x], 16, x + ' failed mov')
 
     def testMovSmallHexNumbers(self):
         """ moving hexy small numbers, things with letters"""
         for x in self.registers.keys():
-            as88.mov(['MOV', x, '1f'], 0)
+            functionTable["MOV"](['MOV', x, '1f'], 0)
             self.assertEqual(self.registers[x], 31, x + ' failed mov')
 
     def testAddPositiveSmallNumbers(self):
-         """ Adding small positive integers - the easiest case """
-         for x in self.registers.keys():
+        """ Adding small positive integers - the easiest case """
+        for x in self.registers.keys():
             self.registers[x] = 10
-            as88.add(['ADD', x, '10'], 0)
+            functionTable["ADD"](['ADD', x, '10'], 0)
             self.assertEqual(self.registers[x], 26, x + ' failed add')
 
     def testAddSmallHexNumbers(self):
         """ Adding hexy small numbers, things with letters"""
         for x in self.registers.keys():
             self.registers[x] = 10
-            as88.add(['ADD', x, '1f'], 0)
+            functionTable["ADD"](['ADD', x, '1f'], 0)
             self.assertEqual(self.registers[x], 41, x + ' failed add')
 
     def testStc(self):
         """ Testing the stc - set carry flag - method """
         self.flags['C'] = False
-        as88.stc([], 0)
+        functionTable["STC"]([], 0)
         self.assertEqual(self.flags['C'], True)
 
     def testClc(self):
         """ Testing the clc - clear carry flag - method """
         self.flags['C'] = True
-        as88.clc([], 0)
+        functionTable["CLC"]([], 0)
         self.assertEqual(self.flags['C'], False)
 
     def testJmp(self):
         """ Testing the jump method """
         self.lookupTable = {"test":25}
-        as88.jmp(['jmp', 'test'], 0)
+        functionTable["JMP"](['jmp', 'test'], 0)
         self.assertEqual(self.jumpLocation, 25)
 
     def testJeTrue(self):
         """ testing the jump if equal method, if passed a true condition """
         self.flags['Z'] = True
         self.lookupTable = {"test":25}
-        as88.je(['je', 'test'], 0)
+        functionTable["JE"](['je', 'test'], 0)
         self.assertEqual(self.jumpLocation, 25)
 
     def testJeFalse(self):
         """ testing the jump if equal method, if passed a false condition """
         self.flags['Z'] = False
         self.lookupTable = {"test":25}
-        as88.je(['je', 'test'], 0)
+        functionTable["JE"](['je', 'test'], 0)
         self.assertNotEqual(self.jumpLocation, 25)
 
     def testPopInRegister(self):
         """ testing popping into a register """
         for x in self.registers.keys():
             self.stackData = [10]
-            as88.pop(['pop', x], 0)
+            functionTable["POP"](['pop', x], 0)
             self.assertEqual(self.registers[x], 10, x + " failed to Pop")
 
     def testPushRegister(self):
@@ -101,30 +103,30 @@ class Test(unittest.TestCase):
         for x in self.registers.keys():
             self.stackData = []
             self.registers[x] = 10
-            as88.push(['push', x], 0)
+            functionTable["PUSH"](['push', x], 0)
             self.assertEqual(self.stackData, [10])
 
     def testPushLocalvar(self):
         """ Teting pushing a LOCAL variable (i.e. an assembler level var) """
         self.localVars = {"test":25}
-        as88.push(['push', 'test'], 0)
+        functionTable["PUSH"](['push', 'test'], 0)
         self.assertEqual(self.stackData, [25])
 
     def testPushInt(self):
         """ Testing pushing a raw number """
-        as88.push(['push', '11'], 0)
+        functionTable["PUSH"](['push', '11'], 0)
         self.assertEqual(self.stackData, [17])
 
     def testPushHex(self):
         """ testing pushing a hex number, with letters in it """
-        as88.push(['push', '1f'], 0)
+        functionTable["PUSH"](['push', '1f'], 0)
         self.assertEqual(self.stackData, [31])
 
     def testStosb(self):
         """ Testing the STOSB command - store byte in string in memory """
         self.registers['AX'] = 102  # ord(f)=102 in dec
         self.registers['DI'] = 0
-        as88.stosb(['stosb'], 0)
+        functionTable["STOSB"](['stosb'], 0)
         self.assertEqual(self.addressSpace[0], 'f')
 
     def outPut(self, s):
