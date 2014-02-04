@@ -3,7 +3,8 @@ Created on 2013-10-01
 
 @author: Brydon Eastman
 '''
-import unittest, as88
+import unittest
+import as88 as AS88
 
 
 class Test(unittest.TestCase):
@@ -12,7 +13,6 @@ class Test(unittest.TestCase):
     def setUp(self):
         """ Just reset the basic properties of an assembler between tests """
         global functionTable
-        functionTable = as88.getFunctionTable()
         self.LIST_TYPE = type([])
         self.lookupTable = {}
         self.localVars = {}
@@ -24,12 +24,14 @@ class Test(unittest.TestCase):
 
         self.addressSpace = []
 
+        as88 = AS88.CommandInterpreter(self)
+        functionTable = as88.getFunctionTable()
         for i in range(1024):
             self.addressSpace.append(str(0))
 
         self.registers = as88.getRegisters()
         self.flags = as88.getFlags()
-        as88.newAssembler(self)
+
 
     # TODO: pop push mov and add with negative numbers, pop push move and add with digits, pop push move and add with overflow numbers,
 

@@ -1,6 +1,7 @@
 #!/usr/bin/python2.7
 from gi.repository import Gtk, Gdk, GObject, Pango
-import threading, os, as88, time
+import threading, os, time
+import as88 as AS88
 
 # TODO: issues with restarting
 # TODO: Implement the WHOLE reg set
@@ -157,7 +158,7 @@ class Assembler:
 		self.BSS = {}
 		self.effectiveBSSandDATALocation = {}
 
-		as88.newAssembler(self)
+		as88 = AS88.CommandInterpreter(self)
 
 		self.registers = as88.getRegisters()
 		self.flags = as88.getFlags()
