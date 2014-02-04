@@ -1,7 +1,7 @@
 #!/usr/bin/python2.7
 from gi.repository import Gtk, Gdk, GObject, Pango
 import threading, os, time
-import as88 as AS88
+import CommandInterpreter, Intel8088
 
 # TODO: issues with restarting
 # TODO: Implement the WHOLE reg set
@@ -11,7 +11,7 @@ import as88 as AS88
 # TODO: (possibly related to prev) have the parts of the gui updated
 
 """"Assembler Class for Intel 8088 Architecture"""
-class Assembler:
+class Assembler():
 
 	def __init__(self):
 
@@ -151,24 +151,15 @@ class Assembler:
 		self.displayInHex = True
 		self.getCharFlag = False
 
-		self.lookupTable = {}
-		self.localVars = {}
-		self.stackData = []
-		self.DATA = {}
-		self.BSS = {}
-		self.effectiveBSSandDATALocation = {}
+		self.machine = Intel8088.Intel8088()
 
-		as88 = AS88.CommandInterpreter(self)
+		as88 = CommandInterpreter.CommandInterpreter(self, self.machine)
 
-		self.registers = as88.getRegisters()
-		self.flags = as88.getFlags()
 		self.commandArgs = as88.getCommandArgs()
 		self.do = as88.getFunctionTable()
 		# self.sysCodes = as88.getSysCodes()
 
 		self.LIST_TYPE = type([1, 1])
-
-		self.jumpLocation = -1
 
 		self.lineCount = 0
 
@@ -177,11 +168,6 @@ class Assembler:
 		self.running = False
 		self.ran = False
 		self.restartPrompt = False
-
-		self.addressSpace = []
-
-		for i in range(1024):
-			self.addressSpace.append(str(0))
 
 		self.keysDown = []
 
@@ -196,10 +182,10 @@ class Assembler:
 
 		if ret[0].has_tag(data):
 			offset = ret[0].get_offset()
-			for element in self.effectiveBSSandDATALocation:
-				if self.effectiveBSSandDATALocation[element][0] <= offset <= self.effectiveBSSandDATALocation[element][1]:
-					if element in self.BSS.keys(): tooltip.set_text("%s (from %s to %s)" % (element, self.intToHex(self.BSS[element][0]) if self.displayInHex else str(self.BSS[element][0]), self.intToHex(self.BSS[element][1]) if self.displayInHex else str(self.BSS[element][1])))
-					else: tooltip.set_text("%s (from %s to %s)" % (element, self.intToHex(self.DATA[element][0]) if self.displayInHex else str(self.DATA[element][0]), self.intToHex(self.DATA[element][1]) if self.displayInHex else str(self.DATA[element][1])))
+			for element in self.machine.effectiveBSSandDATALocation:
+				if self.machine.effectiveBSSandDATALocation[element][0] <= offset <= self.machine.effectiveBSSandDATALocation[element][1]:
+					if element in self.machine.BSS.keys(): tooltip.set_text("%s (from %s to %s)" % (element, self.machine.intToHex(self.machine.BSS[element][0]) if self.displayInHex else str(self.machine.BSS[element][0]), self.machine.intToHex(self.machine.BSS[element][1]) if self.displayInHex else str(self.machine.BSS[element][1])))
+					else: tooltip.set_text("%s (from %s to %s)" % (element, self.machine.intToHex(self.machine.DATA[element][0]) if self.displayInHex else str(self.machine.DATA[element][0]), self.machine.intToHex(self.machine.DATA[element][1]) if self.displayInHex else str(self.machine.DATA[element][1])))
 					break
 		else:
 			return False
@@ -220,7 +206,7 @@ class Assembler:
 					self.stepButtonClicked()
 			else:
 				self.inBuffer = self.entry.get_text() + "\n"
-				self.registers["AX"] = ord(self.inBuffer[0])
+				self.machine.registers["AX"] = ord(self.inBuffer[0])
 				self.outPut(self.inBuffer + "\n")
 				self.inBuffer = self.inBuffer[1:]
 				self.getCharFlag = False
@@ -281,23 +267,15 @@ class Assembler:
 
 		self.lines = self.codeString.split("\n")
 
-		self.lookupTable = {}
-		self.localVars = {}
-		self.stackData = []
-		self.DATA = {}
-		self.BSS = {}
-
-		self.jumpLocation = -1
-
 		self.lineCount = 0
 
 		self.mode = "head"
 		self.codeBounds = [1, 1]
 
-		self.addressSpace = []
+		self.machine.addressSpace = []
 
 		for i in range(1024):
-			self.addressSpace.append(str(0))
+			self.machine.addressSpace.append(str(0))
 
 		errorCount = 0
 
@@ -331,10 +309,10 @@ class Assembler:
 				line = line.split('=')
 				line[0] = line[0].strip()
 				line[1] = line[1].strip()
-				if line[0] in self.localVars.keys():
+				if line[0] in self.machine.localVars.keys():
 					self.outPut("Error on line " + str(self.lineCount) + ", cannot define \''" + line[0] + "\' more than once.")
 					errorCount += 1
-				else: self.localVars[line[0]] = line[1]
+				else: self.machine.localVars[line[0]] = line[1]
 				continue
 
 			if ".SECT" in line:
@@ -355,16 +333,16 @@ class Assembler:
 					# we can define multiple jump locations by digits
 					# but only one by ascii per each ascii name
 
-					if temp not in self.lookupTable.keys():
-						self.lookupTable[temp] = self.lineCount
+					if temp not in self.machine.lookupTable.keys():
+						self.machine.lookupTable[temp] = self.lineCount
 					else:
 						if temp.isdigit():  # If we're defining multiple jump locations for one digit, keep a list
-							if type(self.lookupTable[temp]) == self.LIST_TYPE:
-								self.lookupTable[temp].append(self.lineCount)
+							if type(self.machine.lookupTable[temp]) == self.LIST_TYPE:
+								self.machine.lookupTable[temp].append(self.lineCount)
 							else:
-								self.lookupTable[temp] = [self.lookupTable[temp], self.lineCount]
+								self.machine.lookupTable[temp] = [self.machine.lookupTable[temp], self.lineCount]
 						else:
-							self.outPut("Duplicate entry: \"" + temp + "\" on line " + str(self.lineCount) + " and line " + str(self.lookupTable[temp]))
+							self.outPut("Duplicate entry: \"" + temp + "\" on line " + str(self.lineCount) + " and line " + str(self.machine.lookupTable[temp]))
 							errorCount += 1
 				elif self.mode == ".SECT .DATA":
 					# info in .SECT .DATA follows the format
@@ -378,8 +356,8 @@ class Assembler:
 							errorCount += 1
 							return None
 						temp2 = self.replaceEscapedSequences(line[line.find("\"") + 1:line.rfind("\"")])  # otherwise grab the stuff in quotes
-						self.DATA[temp] = [BSScount, BSScount + len(temp2) + (".ASCIZ" in line) - 1]  # and set temp equal to a list of hex vals of each char
-						self.addressSpace[BSScount:BSScount + len(temp2)] = temp2 + "0"*(".ASCIZ" in line)
+						self.machine.DATA[temp] = [BSScount, BSScount + len(temp2) + (".ASCIZ" in line) - 1]  # and set temp equal to a list of hex vals of each char
+						self.machine.addressSpace[BSScount:BSScount + len(temp2)] = temp2 + "0"*(".ASCIZ" in line)
 						BSScount += len(temp2) + (".ASCIZ" in line)
 
 				elif self.mode == ".SECT .BSS":
@@ -388,7 +366,7 @@ class Assembler:
 					# Where essentially .BSS just defines memory space
 
 					temp2 = line.split(".SPACE")[1]  # let's find the size of the mem chunk to def
-					self.BSS[temp.strip()] = [BSScount, BSScount + int(temp2.strip()) - 1]  # and def it in bss as it's start and end pos
+					self.machine.BSS[temp.strip()] = [BSScount, BSScount + int(temp2.strip()) - 1]  # and def it in bss as it's start and end pos
 					BSScount += int(temp2.strip())
 
 		# TODO: error check before second pass
@@ -402,11 +380,11 @@ class Assembler:
 	def updateStack(self, data=""):
 		""" Updates the stack gui element """
 		# self.outBuffer.apply_tag(self.textTagBold, self.outBuffer.get_start_iter(), self.outBuffer.get_end_iter())
-		if data != "": self.stackData.append(str(data))
+		if data != "": self.machine.stackData.append(str(data))
 		if self.displayInHex:
-			GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(hex(int(x)).split("x")[1])) + hex(int(x)).split("x")[1] for x in self.stackData])))
+			GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(hex(int(x)).split("x")[1])) + hex(int(x)).split("x")[1] for x in self.machine.stackData])))
 		else:
-			GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(str(x))) + str(x) for x in self.stackData])))
+			GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(str(x))) + str(x) for x in self.machine.stackData])))
 
 	def outPut(self, string, i=""):
 		""" Outputs the arguments, in the fashion i: string"""
@@ -442,7 +420,7 @@ class Assembler:
 			self.outPut("Waiting for input:")
 		else:
 			self.outPut(self.inBuffer + "\n")
-			self.registers['AX'] = ord(self.inBuffer[0])
+			self.machine.registers['AX'] = ord(self.inBuffer[0])
 			self.inBuffer = self.inBuffer[1:]
 
 	def colourMemory(self):
@@ -452,10 +430,10 @@ class Assembler:
 		backSlashOffsetAfterTag = 0
 		sortedBSSandDATAList = []
 
-		for index, name in enumerate(self.DATA.keys() + self.BSS.keys()):
+		for index, name in enumerate(self.machine.DATA.keys() + self.machine.BSS.keys()):
 
-			if name in self.DATA.keys(): location = self.DATA[name]
-			else: location = self.BSS[name]
+			if name in self.machine.DATA.keys(): location = self.machine.DATA[name]
+			else: location = self.machine.BSS[name]
 
 			if len(sortedBSSandDATAList) == 0:
 				sortedBSSandDATAList.append([location[0], location[1], name])
@@ -469,47 +447,47 @@ class Assembler:
 
 		for index, location in enumerate(sortedBSSandDATAList):
 			backSlashOffsetBeforeTag = backSlashOffsetAfterTag
-			for x in self.addressSpace[location[0]:location[1]]:
+			for x in self.machine.addressSpace[location[0]:location[1]]:
 				if x in self.ESCAPE_CHARS:
 					backSlashOffsetAfterTag += 1
 			before = location[0] * (self.displayInHex + 1) + backSlashOffsetBeforeTag
 			after = (location[1] + 1) * (self.displayInHex + 1) + backSlashOffsetAfterTag
 
-			self.effectiveBSSandDATALocation[location[2]] = [before, after]
+			self.machine.effectiveBSSandDATALocation[location[2]] = [before, after]
 
 			self.memoryBuffer.apply_tag(self.memoryColours[index % len(self.memoryColours)], self.memoryBuffer.get_iter_at_offset(before), self.memoryBuffer.get_iter_at_offset(after))
 
 	def updateRegisters(self):
 		""" Simply put, updates the register gui elements with the values of the registers. """
 
-		flagStr = "  %-5s %-5s %-5s %-5s %-5s %-1s\n  %-6d%-6d%-6d%-6d%-6d%-1d" % (self.flags.keys()[0], self.flags.keys()[1], self.flags.keys()[2], self.flags.keys()[3], self.flags.keys()[4], self.flags.keys()[5], int(self.flags.values()[0]), int(self.flags.values()[1]), int(self.flags.values()[2]), int(self.flags.values()[3]), int(self.flags.values()[4]), int(self.flags.values()[5]))
+		flagStr = "  %-5s %-5s %-5s %-5s %-5s %-1s\n  %-6d%-6d%-6d%-6d%-6d%-1d" % (self.machine.flags.keys()[0], self.machine.flags.keys()[1], self.machine.flags.keys()[2], self.machine.flags.keys()[3], self.machine.flags.keys()[4], self.machine.flags.keys()[5], int(self.machine.flags.values()[0]), int(self.machine.flags.values()[1]), int(self.machine.flags.values()[2]), int(self.machine.flags.values()[3]), int(self.machine.flags.values()[4]), int(self.machine.flags.values()[5]))
 
 		if self.displayInHex:
-			GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %s\n AH: %s\n AL: %s" % ("0"*(4 - len(self.intToHex(self.registers['AX']))) + self.intToHex(self.registers['AX']), "0"*(2 - len(self.intToHex(self.eightBitRegister('AH')))) + self.intToHex(self.eightBitRegister("AH")), "0"*(2 - len(self.intToHex(self.eightBitRegister('AL')))) + self.intToHex(self.eightBitRegister('AL')))),
-								self.regB.get_buffer().set_text("BX: %s\n BH: %s\n BL: %s" % ("0"*(4 - len(self.intToHex(self.registers['BX']))) + self.intToHex(self.registers['BX']), "0"*(2 - len(self.intToHex(self.eightBitRegister('BH')))) + self.intToHex(self.eightBitRegister("BH")), "0"*(2 - len(self.intToHex(self.eightBitRegister('BL')))) + self.intToHex(self.eightBitRegister("BL")))),
-								self.regC.get_buffer().set_text("CX: %s\n CH: %s\n CL: %s" % ("0"*(4 - len(self.intToHex(self.registers['CX']))) + self.intToHex(self.registers['CX']), "0"*(2 - len(self.intToHex(self.eightBitRegister('CH')))) + self.intToHex(self.eightBitRegister("CH")), "0"*(2 - len(self.intToHex(self.eightBitRegister('CL')))) + self.intToHex(self.eightBitRegister("CL")))),
-								self.regD.get_buffer().set_text("DX: %s\n DH: %s\n DL: %s" % ("0"*(4 - len(self.intToHex(self.registers['DX']))) + self.intToHex(self.registers['DX']), "0"*(2 - len(self.intToHex(self.eightBitRegister('DH')))) + self.intToHex(self.eightBitRegister("DH")), "0"*(2 - len(self.intToHex(self.eightBitRegister('DL')))) + self.intToHex(self.eightBitRegister("DL")))),
-								self.regBP.get_buffer().set_text("BP: " + str(hex(self.registers['BP']).split("x")[1])),
-								self.regSP.get_buffer().set_text("SP: " + str(hex(self.registers['SP']).split("x")[1])),
-								self.regDI.get_buffer().set_text("DI: " + str(hex(self.registers['DI']).split("x")[1])),
-								self.regSI.get_buffer().set_text("SI: " + str(hex(self.registers['SI']).split("x")[1])),
-								self.regPC.get_buffer().set_text("PC: " + str(hex(self.registers['PC']).split("x")[1])),
+			GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %s\n AH: %s\n AL: %s" % ("0"*(4 - len(self.machine.intToHex(self.machine.registers['AX']))) + self.machine.intToHex(self.machine.registers['AX']), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('AH')))) + self.machine.intToHex(self.machine.eightBitRegister("AH")), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('AL')))) + self.machine.intToHex(self.machine.eightBitRegister('AL')))),
+								self.regB.get_buffer().set_text("BX: %s\n BH: %s\n BL: %s" % ("0"*(4 - len(self.machine.intToHex(self.machine.registers['BX']))) + self.machine.intToHex(self.machine.registers['BX']), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('BH')))) + self.machine.intToHex(self.machine.eightBitRegister("BH")), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('BL')))) + self.machine.intToHex(self.machine.eightBitRegister("BL")))),
+								self.regC.get_buffer().set_text("CX: %s\n CH: %s\n CL: %s" % ("0"*(4 - len(self.machine.intToHex(self.machine.registers['CX']))) + self.machine.intToHex(self.machine.registers['CX']), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('CH')))) + self.machine.intToHex(self.machine.eightBitRegister("CH")), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('CL')))) + self.machine.intToHex(self.machine.eightBitRegister("CL")))),
+								self.regD.get_buffer().set_text("DX: %s\n DH: %s\n DL: %s" % ("0"*(4 - len(self.machine.intToHex(self.machine.registers['DX']))) + self.machine.intToHex(self.machine.registers['DX']), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('DH')))) + self.machine.intToHex(self.machine.eightBitRegister("DH")), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('DL')))) + self.machine.intToHex(self.machine.eightBitRegister("DL")))),
+								self.regBP.get_buffer().set_text("BP: " + str(hex(self.machine.registers['BP']).split("x")[1])),
+								self.regSP.get_buffer().set_text("SP: " + str(hex(self.machine.registers['SP']).split("x")[1])),
+								self.regDI.get_buffer().set_text("DI: " + str(hex(self.machine.registers['DI']).split("x")[1])),
+								self.regSI.get_buffer().set_text("SI: " + str(hex(self.machine.registers['SI']).split("x")[1])),
+								self.regPC.get_buffer().set_text("PC: " + str(hex(self.machine.registers['PC']).split("x")[1])),
 								self.regFlags.get_buffer().set_text(flagStr),
-								self.memoryBuffer.set_text("".join([self.intToHex(ord(x)) for x in self.addressSpace[:144]])),
+								self.memoryBuffer.set_text("".join([self.machine.intToHex(ord(x)) for x in self.machine.addressSpace[:144]])),
 								self.colourMemory()
 								))
 		else:
-			GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %d\n AH: %d\n AL: %d" % (self.registers['AX'], self.eightBitRegister("AH"), self.eightBitRegister('AL'))),
-								self.regB.get_buffer().set_text("BX: %d\n BH: %d\n BL: %d" % (self.registers['BX'], self.eightBitRegister("BH"), self.eightBitRegister("BL"))),
-								self.regC.get_buffer().set_text("CX: %d\n CH: %d\n CL: %d" % (self.registers['CX'], self.eightBitRegister("CH"), self.eightBitRegister("CL"))),
-								self.regD.get_buffer().set_text("DX: %d\n DH: %d\n DL: %d" % (self.registers['DX'], self.eightBitRegister("DH"), self.eightBitRegister("DL"))),
-								self.regBP.get_buffer().set_text("BP: " + str(self.registers['BP'])),
-								self.regSP.get_buffer().set_text("SP: " + str(self.registers['SP'])),
-								self.regDI.get_buffer().set_text("DI: " + str(self.registers['DI'])),
-								self.regSI.get_buffer().set_text("SI: " + str(self.registers['SI'])),
-								self.regPC.get_buffer().set_text("PC: " + str(self.registers['PC'])),
+			GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %d\n AH: %d\n AL: %d" % (self.machine.registers['AX'], self.machine.eightBitRegister("AH"), self.machine.eightBitRegister('AL'))),
+								self.regB.get_buffer().set_text("BX: %d\n BH: %d\n BL: %d" % (self.machine.registers['BX'], self.machine.eightBitRegister("BH"), self.machine.eightBitRegister("BL"))),
+								self.regC.get_buffer().set_text("CX: %d\n CH: %d\n CL: %d" % (self.machine.registers['CX'], self.machine.eightBitRegister("CH"), self.machine.eightBitRegister("CL"))),
+								self.regD.get_buffer().set_text("DX: %d\n DH: %d\n DL: %d" % (self.machine.registers['DX'], self.machine.eightBitRegister("DH"), self.machine.eightBitRegister("DL"))),
+								self.regBP.get_buffer().set_text("BP: " + str(self.machine.registers['BP'])),
+								self.regSP.get_buffer().set_text("SP: " + str(self.machine.registers['SP'])),
+								self.regDI.get_buffer().set_text("DI: " + str(self.machine.registers['DI'])),
+								self.regSI.get_buffer().set_text("SI: " + str(self.machine.registers['SI'])),
+								self.regPC.get_buffer().set_text("PC: " + str(self.machine.registers['PC'])),
 								self.regFlags.get_buffer().set_text(flagStr),
-								self.memory.get_buffer().set_text("".join([self.escapeSequences(x) for x in self.addressSpace[:287]])),
+								self.memory.get_buffer().set_text("".join([self.escapeSequences(x) for x in self.machine.addressSpace[:287]])),
 								self.colourMemory()
 								))
 
@@ -615,9 +593,9 @@ class Assembler:
 			else:
 				1 + 1  # TODO: we do nothing right now, once all are implemented we'll throw errors for this sorta thing TODO
 
-			if self.jumpLocation != -1:
-				self.lineNumber = self.jumpLocation
-				self.jumpLocation = -1
+			if self.machine.jumpLocation != -1:
+				self.lineNumber = self.machine.jumpLocation
+				self.machine.jumpLocation = -1
 			elif injectedLine == "":
 				self.lineNumber += 1
 
@@ -640,46 +618,6 @@ class Assembler:
 		self.displayInHex = not self.displayInHex
 		self.updateRegisters()
 		self.updateStack()
-
-	def eightBitRegister(self, s):
-		""" Returns the 8 bit register s, if it exists, otherwise returns 0.
-		i.e. self.eightBitRegister('BH') is the top 8 bits of BX """
-		try:
-			temp = ""
-
-			if s == "AH":
-				temp = self.intToHex(self.registers["AX"])[-4:-2]
-			elif s == "AL":
-				temp = self.intToHex(self.registers["AX"])[-2:]
-			elif s == "BH":
-				temp = self.intToHex(self.registers["BX"])[-4:-2]
-			elif s == "BL":
-				temp = self.intToHex(self.registers["BX"])[-2:]
-			elif s == "CH":
-				temp = self.intToHex(self.registers["CX"])[-4:-2]
-			elif s == "CL":
-				temp = self.intToHex(self.registers["CX"])[-2:]
-			elif s == "DH":
-				temp = self.intToHex(self.registers["DX"])[-4:-2]
-			elif s == "DL":
-				temp = self.intToHex(self.registers["DX"])[-2:]
-
-			return int(temp, 16)
-
-		except ValueError:
-			return 0
-
-	def intToHex(self, i):
-		""" Converts integers to 0-padded hex. Does twos complement for negative numbers.
-		i.e. 17 is returned as 11, 15 is returned as 0F """
-		if i > 2 ** 16 - 1:
-			print "Overflow"
-		else:
-			if i < 0:
-				i += 2 ** 16  # 2s complement
-
-			hexString = str(hex(i).split("x")[1]).upper()
-			return "0"*(2 - len(hexString)) + hexString
 
 	def replaceEscapedSequences(self, string):
 		""" Replaces all escaped sequences with their unescaped counterparts """
