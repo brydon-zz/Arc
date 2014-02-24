@@ -15,15 +15,15 @@ class CommandInterpreter():
 
     def getCommandArgs(self):
         """ A dict whose keys are commands and their values are the # of arguments they expect """
-        return {"AAA":-1,  # Ascii adjust AL after addition
-                "AAD":-1,  # Ascii adjust AX before division
-                "AAM":-1,  # Ascii adjust AX after multiplication
-                "AAS":-1,  # Ascii adjust AL after subtraction
-                "ADC":-1,  # Add with carry
+        return {"AAA":0,  # Ascii adjust AL after addition
+                "AAD":0,  # Ascii adjust AX before division
+                "AAM":0,  # Ascii adjust AX after multiplication
+                "AAS":0,  # Ascii adjust AL after subtraction
+                "ADC":2,  # Add with carry
                 "ADD":2,  # Add
                 "AND":2,  # Logical and
                 "CALL":1,  # Call procedure
-                "CBW":-1,  # Convert byte to word
+                "CBW":0,  # Convert byte to word
                 "CLC":0,  # Clear carry flag
                 "CLD":0,  # Clear direction flag
                 "CLI":0,  # Clear interrupt flag
@@ -32,19 +32,14 @@ class CommandInterpreter():
                 "CMPB":2,
                 "CMPSB":-1,  # Compare bytes in memory
                 "CMPSW":-1,  # Compare words in memory
-                "CWD":-1,  # Convert word to doubleword
-                "DAA":-1,  # Decimal adjust AL after addition
-                "DAS":-1,  # Decimal adjust AL after subtraction
+                "CWD":0,  # Convert word to doubleword
+                "DAA":0,  # Decimal adjust AL after addition
+                "DAS":0,  # Decimal adjust AL after subtraction
                 "DEC":1,  # Decrement by 1
                 "DIV":2,  # Unsigned divide
-                "HLT":-1,  # Enter halt state
-                "IDIV":-1,  # Signed divide
-                "IMUL":-1,  # Signed multiply
-                "IN":-1,  # Input from port
+                "IDIV":1,  # Signed divide
+                "IMUL":1,  # Signed multiply
                 "INC":1,  # Increment by 1
-                "INT":-1,  # Call to interrupt
-                "INTO":-1,  # Call to interrupt if overflow
-                "IRET":-1,  # Return from interrupt
                 "JA":1,  # Jump if above
                 "JAE":1,  # Jump if above or equal
                 "JB":1,  # Jump if below
@@ -77,59 +72,57 @@ class CommandInterpreter():
                 "JZ":1,  # Jump if zero
                 "JCXZ":1,  # Jump if CX is zero
                 "JMP":1,  # Jump
-                "LAHF":-1,  # Load flags into AH register
-                "LDS":-1,  # Load pointer using DS
-                "LEA":-1,  # Load effective address
-                "LES":-1,  # Load ES with pointer
-                "LODSB":-1,  # Load string byte
-                "LODSW":-1,  # Load string word
+                "LAHF":0,  # Load flags into AH register
+                "LDS":2,  # Load pointer using DS
+                "LEA":2,  # Load effective address
+                "LES":2,  # Load ES with pointer
+                "LODSB":0,  # Load string byte
+                "LODSW":0,  # Load string word
                 "LOOP":1,  # Loop control
                 "LOOPE":1,  # Loop if equal
                 "LOOPNE":1,  # Loop if not equal
                 "LOOPNZ":1,  # Loop if not zero
                 "LOOPZ":1,  # Loop if zero
                 "MOV":2,  # Move
-                "MOVSB":-1,  # Move byte from string to string
-                "MOVSW":-1,  # Move word from string to string
-                "MUL":-1,  # Unsigned Multiply
+                "MOVSB":0,  # Move byte from string to string
+                "MOVSW":0,  # Move word from string to string
+                "MUL":2,  # Unsigned Multiply
                 "NEG":1,  # Two's complement negation
                 "NOP":0,  # No Operation.
-                "NOT":-1,  # Negate the opearand, logical NOT
-                "OR":-1,  # Logical OR
-                "OUT":-1,  # Output to port
+                "NOT":1,  # Negate the opearand, logical NOT
+                "OR":2,  # Logical OR
                 "POP":1,  # Pop data from stack
-                "POPF":1,  # Pop data from flags register
+                "POPF":0,  # Pop data from flags register
                 "PUSH":1,  # Push data to stacscreek
-                "PUSHF":-1,  # Push flags onto stack
-                "RCL":-1,  # Rotate left with carry
-                "RCR":-1,  # Rotate right with carry
-                "REP":-1,  # Repeat MOVS/STOS/CMPS/LODS/SCAS
-                "REPE":-1,  # Repeat if equal
-                "REPNE":-1,  # Repeat if not equal
-                "REPNZ":-1,  # Repeat if not zero
-                "REPZ":-1,  # Repeat if zero
+                "PUSHF":0,  # Push flags onto stack
+                "RCL":2,  # Rotate left with carry
+                "RCR":2,  # Rotate right with carry
+                # "REP":-1,  # Repeat MOVS/STOS/CMPS/LODS/SCAS
+                # "REPE":-1,  # Repeat if equal
+                # "REPNE":-1,  # Repeat if not equal
+                # "REPNZ":-1,  # Repeat if not zero
+                # "REPZ":-1,  # Repeat if zero
                 "RET":0,  # Return from procedure
-                "ROL":-1,  # Rotate left
-                "ROR":-1,  # Rotate right
-                "SAHF":-1,  # Store AH into flags
-                "SAL":-1,  # Shift Arithmetically Left
-                "SAR":-1,  # Shift Arithmetically Right
-                "SBB":-1,  # Subtraction with borrow
-                "SCASB":-1,  # Compare byte string
-                "SCASW":-1,  # Compare word string
-                "SHL":-1,  # unsigned Shift left
-                "SHR":-1,  # unsigned Shift right
+                "ROL":2,  # Rotate left
+                "ROR":2,  # Rotate right
+                "SAHF":0,  # Store AH into flags
+                "SAL":2,  # Shift Arithmetically Left
+                "SAR":2,  # Shift Arithmetically Right
+                "SBB":2,  # Subtraction with borrow
+                "SCASB":0,  # Compare byte string
+                "SCASW":0,  # Compare word string
+                "SHL":2,  # unsigned Shift left
+                "SHR":2,  # unsigned Shift right
                 "STC":0,  # Set carry flag
                 "STD":0,  # Set direction flag
                 "STI":0,  # Set interrupt flag
                 "STOSB":0,  # Store byte in string
                 "STOSW":0,  # Store word in string
-                "SUB":-1,  # Subtraction
+                "SUB":2,  # Subtraction
                 "SYS":0,  # System trap
-                "TEST":-1,  # Logical compare (AND)
+                "TEST":2,  # Logical compare (AND)
                 "XCHG":2,  # Exchange data
-                "XLAT":-1,  # Table look-up translation ?
-                "XOR":-1  # Logical XOR
+                "XOR":2  # Logical XOR
                 }
 
     def getFunctionTable(self):
@@ -139,12 +132,6 @@ class CommandInterpreter():
                 "JNAE":1,  # Jump if not above or equal
                 "JNB":1,  # Jump if not below
                 "JNBE":1,  # Jump if not below or equal
-                "JNP":1,  # Jump if not ???
-                "JNS":1,  # Jump if not ???
-                "JP":1,  # Jump if ???
-                "JPE":1,  # Jump if ???
-                "JPO":1,  # Jump if ???
-                "JS":1,  # Jump if ???
                 """
         return {
                 "ADD":lambda x, i: self.add(x, i),
@@ -166,9 +153,13 @@ class CommandInterpreter():
                 "JNL":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 or self.assembler.flags['Z'] == 1),
                 "JNO":lambda x, i: self.jf(x, i, self.assembler.flags["O"] == 0),
                 "JNP":lambda x, i: self.jf(x, i, self.assembler.flags['P'] == 0),
+                "JNS":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0),
                 "JNZ":lambda x, i: self.jf(x, i, self.assembler.flags['Z'] == 0),
                 "JO":lambda x, i: self.jf(x, i, self.assembler.flags['O'] == 1),
                 "JP":lambda x, i: self.jf(x, i, self.assembler.flags['P'] == 1),
+                "JPE":lambda x, i: self.jf(x, i, self.assembler.flags['P'] == 1 or self.assembler.flags['Z'] == 1),
+                "JPO":lambda x, i: self.jf(x, i, self.assembler.flags['P'] == 1 or self.assembler.flags['O'] == 1),
+                "JS":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1),
                 "JZ":lambda x, i: self.jf(x, i, self.assembler.flags['Z'] == 1),
                 "LOOP":lambda x, i: self.loop(x, i),
                 "LOOPE":lambda x, i: self.loop(x, i, self.assembler.flags["Z"]),
@@ -431,3 +422,62 @@ class CommandInterpreter():
             self.assembler.registers[command[1]], self.assembler.registers[command[2]] = self.assembler.registers[command[2]], self.assembler.registers[command[1]]
         else:
             self.gui.outPut("Error on line " + str(i) + ". XCHG expects both its arguments to be registers.")
+
+"""
+"AAA":0,  # Ascii adjust AL after addition
+"AAD":0,  # Ascii adjust AX before division
+"AAM":0,  # Ascii adjust AX after multiplication
+"AAS":0,  # Ascii adjust AL after subtraction
+"ADC":2,  # Add with carry
+"AND":2,  # Logical and
+"CALL":1,  # Call procedure
+"CBW":0,  # Convert byte to word
+"CMP":2,  # Compare operands
+"CMPSB":-1,  # Compare bytes in memory
+"CMPSW":-1,  # Compare words in memory
+"CWD":0,  # Convert word to doubleword
+"DAA":0,  # Decimal adjust AL after addition
+"DAS":0,  # Decimal adjust AL after subtraction
+"DIV":2,  # Unsigned divide
+"IDIV":1,  # Signed divide
+"IMUL":1,  # Signed multiply
+"JA":1,  # Jump if above
+"JAE":1,  # Jump if above or equal
+"JB":1,  # Jump if below
+"JBE":1,  # Jump if below or equal
+"JNA":1,  # Jump if not above
+"JNAE":1,  # Jump if not above or equal
+"JNB":1,  # Jump if not below
+"JNBE":1,  # Jump if not below or equal
+"LAHF":0,  # Load flags into AH register
+"LDS":2,  # Load pointer using DS
+"LEA":2,  # Load effective address
+"LES":2,  # Load ES with pointer
+"LODSB":0,  # Load string byte
+"LODSW":0,  # Load string word
+"MOVSB":0,  # Move byte from string to string
+"MOVSW":0,  # Move word from string to string
+"MUL":2,  # Unsigned Multiply
+"NOP":0,  # No Operation.
+"NOT":1,  # Negate the opearand, logical NOT
+"OR":2,  # Logical OR
+"POPF":0,  # Pop data from flags register
+"PUSHF":0,  # Push flags onto stack
+"RCL":2,  # Rotate left with carry
+"RCR":2,  # Rotate right with carry
+"RET":0,  # Return from procedure
+"ROL":2,  # Rotate left
+"ROR":2,  # Rotate right
+"SAHF":0,  # Store AH into flags
+"SAL":2,  # Shift Arithmetically Left
+"SAR":2,  # Shift Arithmetically Right
+"SBB":2,  # Subtraction with borrow
+"SCASB":0,  # Compare byte string
+"SCASW":0,  # Compare word string
+"SHL":2,  # unsigned Shift left
+"SHR":2,  # unsigned Shift right
+"STOSW":0,  # Store word in string
+"SUB":2,  # Subtraction
+"TEST":2,  # Logical compare (AND)
+"XOR":2  # Logical XOR
+"""
