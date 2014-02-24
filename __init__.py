@@ -3,9 +3,8 @@ from gi.repository import Gtk, Gdk, GObject, Pango
 import threading, os, time
 import CommandInterpreter, Intel8088
 
-# TODO: issues with restarting
 # TODO: Implement the WHOLE reg set
-# TODO: ASSEMBLE? (i.e. opcodes)
+# TODO: ASSEMBLE? (i.e. opcodes) maybe not
 # TODO: Run all and run untils with input
 # TODO: Optimise the number of GUI interface calls. i.e. UpdateGUI should only update the gui parts who need updates
 # TODO: (possibly related to prev) have the parts of the gui updated
