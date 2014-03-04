@@ -371,7 +371,7 @@ class Assembler():
         # TODO: error check before second pass
         """ SECOND PASS """
         if errorCount == 0:
-            self.lineNumber = self.codeBounds[0] - 1
+            self.machine.registers['PC'] = self.codeBounds[0] - 1
             self.running = True
         else:
             self.outPut("Your code cannot be run, it contains %d errors" % errorCount)
@@ -519,12 +519,12 @@ class Assembler():
                     n = int(tempList[2])
                     if n >= self.codeBounds[0] and n < self.codeBounds[1]:
                         while self.running:
-                            if self.lineNumber == int(tempList[2]):
+                            if self.machine.registers['PC'] == int(tempList[2]):
                                 self.step()
                                 break
                             self.step()
 
-                        if self.lineNumber != int(tempList[2]) + 1:
+                        if self.machine.registers['PC'] != int(tempList[2]) + 1:
                             self.outPut("The program exited before it ever reached line " + tempList[2])
                     else:
                         self.outPut("That line number is not within the bounds of the program.")
@@ -538,12 +538,12 @@ class Assembler():
         """ The guts of the second pass. Where the magic happens! """
         if self.running:
 
-            if self.lineNumber >= self.codeBounds[1]:
+            if self.machine.registers['PC'] >= self.codeBounds[1]:
                 self.stopRunning()
                 return
 
             if injectedLine == "":
-                line = self.lines[self.lineNumber].replace("\t", "")  # clear out tabs
+                line = self.lines[self.machine.registers['PC']].replace("\t", "")  # clear out tabs
             else:
                 line = injectedLine
 
@@ -554,13 +554,13 @@ class Assembler():
                 line = line[line.find(":") + 1:].strip()  # ignore jump points
 
             if injectedLine == "":
-                self.outPut(line, self.lineNumber)  # Now the line is ready to work with
+                self.outPut(line, self.machine.registers['PC'])  # Now the line is ready to work with
             else:
                 self.outPut(line + "\n")
 
 
             if line.count(",") > 1:  # any command can have at most 2 arguments.
-                self.outPut("What's up with all the commas on line " + str(self.lineNumber) + "?")
+                self.outPut("What's up with all the commas on line " + str(self.machine.registers['PC']) + "?")
                 self.running = False
                 self.ran = True
                 return -1
@@ -571,34 +571,34 @@ class Assembler():
                 command.remove("")
 
             if command == None or command == []:
-                if injectedLine == "": self.lineNumber += 1
+                if injectedLine == "": self.machine.registers['PC'] += 1
                 return  # skip nothing lines, yo.
 
             if command[0] not in self.commandArgs.keys():
                 print "Missing " + command[0] + " from self.commandArgs"
-                self.lineNumber += 1
+                self.machine.registers['PC'] += 1
                 return
 
             if len(command) - 1 != self.commandArgs[command[0]]:
-                self.outPut("Invalid number of arguments on line " + str(self.lineNumber) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " argument" + "s"*(self.commandArgs[command[0]] > 1) + " and " + str(len(command) - 1) + (" were " if len(command) - 1 > 1 else " was ") + "given.")
+                self.outPut("Invalid number of arguments on line " + str(self.machine.registers['PC']) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " argument" + "s"*(self.commandArgs[command[0]] > 1) + " and " + str(len(command) - 1) + (" were " if len(command) - 1 > 1 else " was ") + "given.")
                 print command[:]
                 self.running = False
                 self.ran = True
                 return -1
 
             if command[0] in self.do.keys():
-                self.do[command[0]](command, self.lineNumber)
+                self.do[command[0]](command, self.machine.registers['PC'])
                 self.updateRegisters()
             else:
                 1 + 1  # TODO: we do nothing right now, once all are implemented we'll throw errors for this sorta thing TODO
 
             if self.machine.jumpLocation != -1:
-                self.lineNumber = self.machine.jumpLocation
+                self.machine.registers['PC'] = self.machine.jumpLocation
                 self.machine.jumpLocation = -1
             elif injectedLine == "":
-                self.lineNumber += 1
+                self.machine.registers['PC'] += 1
 
-            if self.lineNumber >= self.codeBounds[1]:
+            if self.machine.registers['PC'] >= self.codeBounds[1]:
                 self.stopRunning()
                 return
 
