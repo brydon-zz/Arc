@@ -33,14 +33,14 @@ class Test(unittest.TestCase):
 
     def testAddPositiveSmallNumbers(self):
         """ Adding small positive integers - the easiest case """
-        for x in self.machine.registers.keys():
+        for x in ['AX','BX','CX','DX']:
             self.machine.registers[x] = 10
             self.functionTable["ADD"](['ADD', x, '10'], 0)
             self.assertEqual(self.machine.registers[x], 26, x + ' failed add')
 
     def testAddSmallHexNumbers(self):
         """ Adding hexy small numbers, things with letters"""
-        for x in self.machine.registers.keys():
+        for x in ['AX','BX','CX','DX']:
             self.machine.registers[x] = 10
             self.functionTable["ADD"](['ADD', x, '1f'], 0)
             self.assertEqual(self.machine.registers[x], 41, x + ' failed add')
@@ -414,7 +414,7 @@ class Test(unittest.TestCase):
 
     def testPopInRegister(self):
         """ testing popping into a register """
-        for x in self.machine.registers.keys():
+        for x in ['AX','BX','CX','DX']:
             self.machine.stackData = [10]
             self.functionTable["POP"](['pop', x], 0)
             self.assertEqual(self.machine.registers[x], 10, x + " failed to Pop")

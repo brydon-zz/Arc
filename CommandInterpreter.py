@@ -195,7 +195,7 @@ class CommandInterpreter():
                 if len(self.assembler.stackData) > 0:
                     self.assembler.stackData.pop()
                     self.gui.updateStack()
-            self.assembler.stackData['SP'] += command[1]
+            self.assembler.registers['SP'] += int(command[2])
             return
         if command[1].isdigit():
             self.gui.outPut("Error on line " + str(i) + ". Add cannot have a numerical first argument.")
