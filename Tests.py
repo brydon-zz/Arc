@@ -450,6 +450,352 @@ class Test(unittest.TestCase):
         self.functionTable["STOSB"](['stosb'], 0)
         self.assertEqual(self.machine.addressSpace[0], 'f')
 
+    def testStosbd7(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosbd8(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosbd0(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosbd1(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosbd4(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosbd3(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosbdddd(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosbssss(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosbsdf(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosbnab(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosbhan(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosbha(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosbhh(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb8888(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosbg(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosbf(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosbe(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosbd(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosbc(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosbb(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosba(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosbff(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb44444(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb555(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb444(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb08(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb99(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb98(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb92(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb4242(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb2323(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb22222(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb1111(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb111(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb11f1(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb19(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb15(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb21(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb25(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb24(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb33(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb22(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb11(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb00(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb9(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb8(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb7(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb6(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb5(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb4(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb3(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+    def testStosb2(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
+    def testStosb1(self):
+        """ Testing the STOSB command - store byte in string in memory """
+        self.machine.registers['AX'] = 102  # ord(f)=102 in dec
+        self.machine.registers['DI'] = 0
+        self.functionTable["STOSB"](['stosb'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 'f')
+
     def outPut(self, s):
         """ Necessary - the as88 interpreter calls the assemblers output methods when errors happen """
         print s
@@ -462,6 +808,25 @@ class Test(unittest.TestCase):
     def updateStack(self):
         """ Necessary - the as88 interpreter calls this method to inform the GUI stack guis need changing """
         1 + 1
+
+    def testRcrWithCarry(self):
+        self.machine.registers['AX'] = 103
+        self.machine.flags['C'] = 1
+        self.functionTable["RCR"](['rcr', 'AX'], 0)
+        self.assertEqual(self.machine.registers['AX'], -32717)
+        self.assertTrue(self.machine.flags['C'])
+
+    def testRcrWithoutCarry(self):
+        self.machine.registers['AX'] = 102
+        self.machine.flags['C'] = 0
+        self.functionTable["RCR"](['rcr', 'AX'], 0)
+        self.assertEqual(self.machine.registers['AX'], 51)
+        self.assertFalse(self.machine.flags['C'])
+
+    def testPushf(self):
+        self.machine.flags = {"Z":True, "S":True, "O":True, "C":True, "A":True, "P":True, "D":True, "I":True}
+        self.functionTable['PUSHF'](['PUSHF'], 0)
+        self.assertEqual(self.machine.stackData[-1], 255)
 
 if __name__ == "__main__":
     unittest.main()
