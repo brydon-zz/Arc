@@ -32,7 +32,6 @@ class CommandInterpreter():
                 "CMPB":2,
                 "CMPSB":-1,  # Compare bytes in memory
                 "CMPSW":-1,  # Compare words in memory
-                "CWD":0,  # Convert word to doubleword
                 "DAA":0,  # Decimal adjust AL after addition
                 "DAS":0,  # Decimal adjust AL after subtraction
                 "DEC":1,  # Decrement by 1
@@ -136,8 +135,12 @@ class CommandInterpreter():
         return {
                 "ADD":lambda x, i: self.add(x, i),
                 "PUSH":lambda x, i: self.push(x, i),
-                "PUSHF":lambda x, i: self.pushf(x, i),
+                "PUSHF":lambda x, i: self.PUSHF(x, i),
                 "JMP":lambda x, i: self.jmp(x, i),
+                "JA":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 and self.assembler.flags['Z'] == 0),
+                "JAE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 or self.assembler.flags['Z'] == 1),
+                "JB":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 and self.assembler.flags['Z'] == 0),
+                "JBE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 or self.assembler.flags['Z'] == 1),
                 "JC":lambda x, i: self.jf(x, i, self.assembler.flags['C'] == 1),
                 "JCXZ":lambda x, i: self.jf(x, i, self.assembler.registers['CX'] == 0),
                 "JE":lambda x, i: self.jf(x, i, self.assembler.flags['Z'] == 1),
@@ -145,6 +148,10 @@ class CommandInterpreter():
                 "JGE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 or self.assembler.flags['Z'] == 1),
                 "JL":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 and self.assembler.flags['Z'] == 0),
                 "JLE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 or self.assembler.flags['Z'] == 1),
+                "JNA":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 or self.assembler.flags['Z'] == 1),
+                "JNAE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 and self.assembler.flags['Z'] == 0),
+                "JNB":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 or self.assembler.flags['Z'] == 1),
+                "JNBE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 and self.assembler.flags['Z'] == 0),
                 "JNC":lambda x, i: self.jf(x, i, self.assembler.flags['C'] == 0),
                 "JNE":lambda x, i: self.jf(x, i, self.assembler.flags['Z'] == 0),
                 "JNG":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 or self.assembler.flags['Z'] == 1),
@@ -168,6 +175,7 @@ class CommandInterpreter():
                 "LOOPZ":lambda x, i: self.loop(x, i, self.assembler.flags["Z"]),
                 "MOV":lambda x, i: self.mov(x, i),
                 "NOP":lambda x, i: 1 + 1,  # best instruction
+                "RCR":lambda x, i: self.RCR(x, i),
                 "SYS":lambda x, i: self.sys(x, i),
                 "CLC":lambda x, i: self.clc(x, i),
                 "STC":lambda x, i: self.stc(x, i),
@@ -187,6 +195,8 @@ class CommandInterpreter():
                 if len(self.assembler.stackData) > 0:
                     self.assembler.stackData.pop()
                     self.gui.updateStack()
+            self.assembler.stackData['SP'] += command[1]
+            return
         if command[1].isdigit():
             self.gui.outPut("Error on line " + str(i) + ". Add cannot have a numerical first argument.")
             self.gui.stopRunning(-1)
@@ -217,6 +227,9 @@ class CommandInterpreter():
             self.assembler.flags['Z'] = 1
         elif result < 0:
             self.assembler.flags['S'] = 1
+        elif result >= 2 ** 15 and command[1] in self.assembler.registers.keys():
+            self.assembler.registers[command[1]] -= 2 ** 16
+            self.assembler.flags['O'] = 1
 
     def clc(self, command, i):
         """ set the carry flag to false """
@@ -329,24 +342,30 @@ class CommandInterpreter():
         """ pop x will pop an element from the stack into register x """
         if command[1] in self.assembler.registers:
             self.assembler.registers[command[1]] = int(self.assembler.stackData.pop())
+            self.assembler.registers['SP'] += 2
             self.gui.updateStack()
 
     def push(self, command, i):
         """ Push x will push the argument x to the stack """
         if command[1].strip("abcdef").isdigit():  # pushing a number to the stack, it's prolly hex so ignore the A-F chars
             self.assembler.stackData.append(int(command[1], 16))
+            self.assembler.registers['SP'] -= 2
             self.gui.updateStack()
         elif command[1] in self.assembler.registers:
             self.assembler.stackData.append(int(self.assembler.registers[command[1]]))
+            self.assembler.registers['SP'] -= 2
             self.gui.updateStack()
         elif command[1] in self.assembler.DATA.keys():  # pushing a string from .SECT .DATA to the stack
             self.assembler.stackData.append(self.assembler.DATA[command[1]][0])
+            self.assembler.registers['SP'] -= 2
             self.gui.updateStack()
         elif command[1] in self.assembler.localVars.keys():  # pushing a local int to the stack
             self.assembler.stackData.append(self.assembler.localVars[command[1]])
+            self.assembler.registers['SP'] -= 2
             self.gui.updateStack()
         elif command[1] in self.assembler.BSS.keys():
             self.assembler.stackData.append(self.assembler.BSS[command[1]][0])
+            self.assembler.registers['SP'] -= 2
             self.gui.updateStack()
         elif "(" in command[1] and ")" in command[1]:
             temp = command[1][command[1].find("(") + 1:command[1].find(")")]
@@ -360,9 +379,6 @@ class CommandInterpreter():
             print(command)
             self.gui.outPut("Unknown error on line " + str(i) + ".")
             self.gui.stopRunning(-1)
-
-    def pushf(self, command, i):
-        """ Push the flags to the stack """
 
     def stosb(self, command, i):
         """ Stores contents of AX in the memory address contained in DI, then increments DI """
@@ -423,32 +439,203 @@ class CommandInterpreter():
         else:
             self.gui.outPut("Error on line " + str(i) + ". XCHG expects both its arguments to be registers.")
 
-"""
+    def xor(self, command, i):
+        """ XOR [register or memory location],[register, memory location, local variable, or hex value]
+        
+        XOR A, B --> A = xor(A,B)
+        Exclusive OR: Each bit in B is exclusive ORed with its corresponding bit in A. The result is stored in A."""
+
+        if command[2].strip("abcdef").isdigit():  # y is a digit
+            t = int(command[2], 16)
+        elif command[2] in self.assembler.localVars.keys():  # y is a local var
+            t = self.assembler.localVars[command[2]]
+        elif command[2] in self.assembler.registers:
+            t = self.assembler.registers[command[2]]
+        elif command[2] in self.assembler.DATA.keys():
+            t = self.assembler.DATA[self.assembler.registers[command[2]]]
+        elif command[2] in self.assembler.BSS.keys():
+            t = self.assembler.BSS[self.assembler.registers[command[2]]]
+
+        if command[1] in self.assembler.registers:
+            self.assembler.registers[command[1]] ^= t
+        elif command[1] in self.assembler.BSS.keys():
+            self.assembler.BSS[command[1]] ^= t
+        elif command[1] in self.assembler.DATA.keys():
+            self.assembler.DATA[command[1]] ^= t
+
+    def AND(self, command, i):
+        """ AND [register or memory address], [register, memory address, local variable, or hex value]
+        
+        AND A, B --> A = A & B
+        
+        Logical AND: Each bit in A is anded with the corresponding bit in B."""
+
+        if command[2].strip("abcdef").isdigit():  # y is a digit
+            t = int(command[2], 16)
+        elif command[2] in self.assembler.localVars.keys():  # y is a local var
+            t = self.assembler.localVars[command[2]]
+        elif command[2] in self.assembler.registers:
+            t = self.assembler.registers[command[2]]
+        elif command[2] in self.assembler.DATA.keys():
+            t = self.assembler.DATA[self.assembler.registers[command[2]]]
+        elif command[2] in self.assembler.BSS.keys():
+            t = self.assembler.BSS[self.assembler.registers[command[2]]]
+
+        if command[1] in self.assembler.registers:
+            self.assembler.registers[command[1]] &= t
+        elif command[1] in self.assembler.BSS.keys():
+            self.assembler.BSS[command[1]] &= t
+        elif command[1] in self.assembler.DATA.keys():
+            self.assembler.DATA[command[1]] &= t
+
+    def NOT(self, command, i):
+        """NOT [register or memory address]
+        
+        NOT A --> A = not A
+        
+        Performs a logical NOT on an operand by reversing each of its bits."""
+        if command[1] in self.assembler.registers:
+            self.assembler.registers[command[1]] = ~self.assembler.registers[command[1]]
+        elif command[1] in self.assembler.BSS.keys():
+            self.assembler.BSS[command[1]] = ~self.assembler.BSS[command[1]]
+        elif command[1] in self.assembler.DATA.keys():
+            self.assembler.DATA[command[1]] = ~self.assembler.DATA[command[1]]
+
+    def OR(self, command, i):
+        """ OR [register or memory address], [register, memory address, local variable, or hex value]
+        
+        OR A, B --> A = A or B
+        
+        Inclusive OR: Performs a logical OR between each bit in A and each bit in B. If either bit is a 1 in each position, the resulting bit is a 1."""
+
+        if command[2].strip("abcdef").isdigit():  # y is a digit
+            t = int(command[2], 16)
+        elif command[2] in self.assembler.localVars.keys():  # y is a local var
+            t = self.assembler.localVars[command[2]]
+        elif command[2] in self.assembler.registers:
+            t = self.assembler.registers[command[2]]
+        elif command[2] in self.assembler.DATA.keys():
+            t = self.assembler.DATA[self.assembler.registers[command[2]]]
+        elif command[2] in self.assembler.BSS.keys():
+            t = self.assembler.BSS[self.assembler.registers[command[2]]]
+
+        if command[1] in self.assembler.registers:
+            self.assembler.registers[command[1]] |= t
+        elif command[1] in self.assembler.BSS.keys():
+            self.assembler.BSS[command[1]] |= t
+        elif command[1] in self.assembler.DATA.keys():
+            self.assembler.DATA[command[1]] |= t
+
+    def RCR(self, command, i):
+        """ RCR [register]
+        
+        Rotates the operand right. The carry flag is copied into the highest bit, and the lowest bit is copied into the carry flag."""
+        if command[1] in self.assembler.registers:
+            temp = self.assembler.registers[command[1]] % 2
+
+            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] >> 1
+            self.assembler.registers[command[1]] -= (self.assembler.flags['C']) * (2 ** 15)
+
+            self.assembler.flags['C'] = temp
+        else:
+            self.gui.outPut("RCR expects its argument to be a register.")
+            self.gui.stopRunning(-1)
+            return
+
+    def RCL(self, command, i):
+        """ RCR [register]
+        
+        Rotates the operand left. The carry flag is copied into the lowest bit, and the highest bit is copied into the carry flag."""
+        if command[1] in self.assembler.registers:
+            temp = self.assembler.registers[command[1]] < 0
+
+            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] << 1
+            self.assembler.registers[command[1]] += self.assembler.flags['C']
+
+            self.assembler.flags['C'] = temp
+        else:
+            self.gui.outPut("RCL expects its argument to be a register.")
+            self.gui.stopRunning(-1)
+            return
+
+    def ROL(self, command, i):
+        """ ROL [register]
+        
+        Rotates the operand left, the highest bit is copied into the carry flag and moved into the lowest bit position."""
+        if command[1] in self.assembler.registers:
+            temp = self.assembler.registers[command[1]] < 0
+
+            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] << 1
+            self.assembler.registers[command[1]] += temp
+
+            self.assembler.flags['C'] = temp
+        else:
+            self.gui.outPut("RCL expects its argument to be a register.")
+            self.gui.stopRunning(-1)
+            return
+
+    def ROR(self, command, i):
+        """ ROR [register]
+        
+        Rotates the operand right, the lowest bit is copied into the carry flag and moved into the highest bit position."""
+        if command[1] in self.assembler.registers:
+            temp = self.assembler.registers[command[1]] % 2
+
+            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] >> 1
+            self.assembler.registers[command[1]] -= temp * (2 ** 15)
+
+            self.assembler.flags['C'] = temp
+        else:
+            self.gui.outPut("RCL expects its argument to be a register.")
+            self.gui.stopRunning(-1)
+            return
+
+    def PUSHF(self, command, i):
+        """ PUSHF
+        
+        Pushes the flags register onto the stack."""
+        flags = self.assembler.flags['O'] * (2 ** 7) + self.assembler.flags['D'] * (2 ** 6) + self.assembler.flags['I'] * (2 ** 5) + self.assembler.flags['S'] * (2 ** 4) + self.assembler.flags['Z'] * (2 ** 3) + self.assembler.flags['A'] * (2 ** 2) + self.assembler.flags['P'] * (2) + self.assembler.flags['C']
+        self.assembler.stackData.append(flags)
+        self.assembler.registers['SP'] -= 2
+        self.gui.updateStack()
+
+    def POPF(self, command, i):
+        """ POPF
+        
+        Pops the data from the top of the stack into the flags register."""
+        flags = self.assembler.stackData.pop()
+        for f in ['C', 'P', 'A', 'Z', 'S', 'I', 'D', 'O']:
+            self.assembler.flags[f] = self.flags % 2
+            flags /= 2
+        self.gui.updateStack()
+        self.assembler.registers['SP'] += 2
+
+    def SAHF(self, command, i):
+        """ SAHF
+        
+        Store AH into flags: Copies AH into bits 0 through 7 into the flags register."""
+        flags = self.assembler.eightBitRegister('AH')
+        for f in ['C', 'P', 'A', 'Z', 'S', 'I', 'D', 'O']:
+            self.assembler.flags[f] = self.flags % 2
+            flags /= 2
+        self.gui.updateStack()
+
+"""            
 "AAA":0,  # Ascii adjust AL after addition
 "AAD":0,  # Ascii adjust AX before division
 "AAM":0,  # Ascii adjust AX after multiplication
 "AAS":0,  # Ascii adjust AL after subtraction
 "ADC":2,  # Add with carry
-"AND":2,  # Logical and
 "CALL":1,  # Call procedure
 "CBW":0,  # Convert byte to word
 "CMP":2,  # Compare operands
 "CMPSB":-1,  # Compare bytes in memory
 "CMPSW":-1,  # Compare words in memory
-"CWD":0,  # Convert word to doubleword
 "DAA":0,  # Decimal adjust AL after addition
 "DAS":0,  # Decimal adjust AL after subtraction
-"DIV":2,  # Unsigned divide
+"DIV":2,  # Unsigned divide 
 "IDIV":1,  # Signed divide
 "IMUL":1,  # Signed multiply
-"JA":1,  # Jump if above
-"JAE":1,  # Jump if above or equal
-"JB":1,  # Jump if below
-"JBE":1,  # Jump if below or equal
-"JNA":1,  # Jump if not above
-"JNAE":1,  # Jump if not above or equal
-"JNB":1,  # Jump if not below
-"JNBE":1,  # Jump if not below or equal
 "LAHF":0,  # Load flags into AH register
 "LDS":2,  # Load pointer using DS
 "LEA":2,  # Load effective address
@@ -458,17 +645,6 @@ class CommandInterpreter():
 "MOVSB":0,  # Move byte from string to string
 "MOVSW":0,  # Move word from string to string
 "MUL":2,  # Unsigned Multiply
-"NOP":0,  # No Operation.
-"NOT":1,  # Negate the opearand, logical NOT
-"OR":2,  # Logical OR
-"POPF":0,  # Pop data from flags register
-"PUSHF":0,  # Push flags onto stack
-"RCL":2,  # Rotate left with carry
-"RCR":2,  # Rotate right with carry
-"RET":0,  # Return from procedure
-"ROL":2,  # Rotate left
-"ROR":2,  # Rotate right
-"SAHF":0,  # Store AH into flags
 "SAL":2,  # Shift Arithmetically Left
 "SAR":2,  # Shift Arithmetically Right
 "SBB":2,  # Subtraction with borrow
@@ -479,5 +655,4 @@ class CommandInterpreter():
 "STOSW":0,  # Store word in string
 "SUB":2,  # Subtraction
 "TEST":2,  # Logical compare (AND)
-"XOR":2  # Logical XOR
 """
