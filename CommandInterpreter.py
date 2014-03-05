@@ -168,6 +168,8 @@ class CommandInterpreter():
                 "JPO":lambda x, i: self.jf(x, i, self.assembler.flags['P'] == 1 or self.assembler.flags['O'] == 1),
                 "JS":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1),
                 "JZ":lambda x, i: self.jf(x, i, self.assembler.flags['Z'] == 1),
+                "LODSB":lambda x, i: self.LODSB(x, i),
+                "LODSW":lambda x, i: self.LODSW(x, i),
                 "LOOP":lambda x, i: self.loop(x, i),
                 "LOOPE":lambda x, i: self.loop(x, i, self.assembler.flags["Z"]),
                 "LOOPNE":lambda x, i: self.loop(x, i, not self.assembler.flags["Z"]),
@@ -176,9 +178,20 @@ class CommandInterpreter():
                 "MOV":lambda x, i: self.mov(x, i),
                 "NOP":lambda x, i: 1 + 1,  # best instruction
                 "RCR":lambda x, i: self.RCR(x, i),
+                "RCL":lambda x, i: self.RCL(x, i),
+                "ROR":lambda x, i: self.ROR(x, i),
+                "ROL":lambda x, i: self.ROL(x, i),
+                "SAR":lambda x, i: self.SAR(x, i),
+                "SAL":lambda x, i: self.SAL(x, i),
+                "SHR":lambda x, i: self.SHR(x, i),
+                "SHL":lambda x, i: self.SHL(x, i),
                 "SYS":lambda x, i: self.sys(x, i),
                 "CLC":lambda x, i: self.clc(x, i),
                 "STC":lambda x, i: self.stc(x, i),
+                "CLI":lambda x, i: self.cli(x, i),
+                "STI":lambda x, i: self.sti(x, i),
+                "CLD":lambda x, i: self.cld(x, i),
+                "STD":lambda x, i: self.std(x, i),
                 "POP":lambda x, i: self.pop(x, i),
                 "STOSB":lambda x, i: self.stosb(x, i),
                 "CMPB":lambda x, i: self.cmpb(x, i),
@@ -565,7 +578,14 @@ class CommandInterpreter():
         if command[1] in self.assembler.registers:
             temp = self.assembler.registers[command[1]] < 0
 
+            if temp:
+                self.assembler.registers[command[1]] += 2 ** 16
+
             self.assembler.registers[command[1]] = self.assembler.registers[command[1]] << 1
+
+            if self.assembler.registers[command[1]] >= 2 ** 15:  # this is when 0100
+                self.assembler.registers[command[1]] -= 2 ** 16
+
             self.assembler.registers[command[1]] += temp
 
             self.assembler.flags['C'] = temp
@@ -581,8 +601,15 @@ class CommandInterpreter():
         if command[1] in self.assembler.registers:
             temp = self.assembler.registers[command[1]] % 2
 
+            if self.assembler.registers[command[1]] < 0:
+                self.assembler.registers[command[1]] += 2 ** 16
+
             self.assembler.registers[command[1]] = self.assembler.registers[command[1]] >> 1
-            self.assembler.registers[command[1]] -= temp * (2 ** 15)
+
+            if self.assembler.registers[command[1]] >= 2 ** 15:
+                self.assembler.registers[command[1]] -= 2 ** 16
+
+            self.assembler.registers[command[1]] -= temp * 2 ** 15
 
             self.assembler.flags['C'] = temp
         else:
@@ -620,6 +647,93 @@ class CommandInterpreter():
             flags /= 2
         self.gui.updateStack()
 
+    def SHR(self, command, i):
+        """SHR register
+        """
+
+        if command[1] in self.assembler.registers:
+            temp = self.assembler.registers[command[1]] % 2
+
+            if self.assembler.registers[command[1]] < 0:
+                self.assembler.registers[command[1]] += 2 ** 16
+
+            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] >> 1
+
+            if self.assembler.registers[command[1]] >= 2 ** 15:  # this is when 0100
+                self.assembler.registers[command[1]] -= 2 ** 16
+
+            self.assembler.flags['C'] = temp
+        else:
+            self.gui.outPut("RCL expects its argument to be a register.")
+            self.gui.stopRunning(-1)
+            return
+
+    def SHL(self, command, i):
+        """SHL register
+        """
+
+        if command[1] in self.assembler.registers:
+            temp = self.assembler.registers[command[1]] < 0
+
+            if temp:
+                self.assembler.registers[command[1]] += 2 ** 16
+
+            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] << 1
+
+            if self.assembler.registers[command[1]] >= 2 ** 15:  # this is when 0100
+                self.assembler.registers[command[1]] -= 2 ** 16
+
+            self.assembler.flags['C'] = temp
+        else:
+            self.gui.outPut("RCL expects its argument to be a register.")
+            self.gui.stopRunning(-1)
+            return
+
+    def SAL(self, command, i):
+        """ SAL register
+        
+        SAL is identical to SHL and is included in the instruction set only for completeness."""
+        self.SHL(self, command, i)
+
+    def SAR(self, command, i):
+        """ SAR register
+        """
+        if command[1] in self.assembler.registers:
+            temp = self.assembler.registers[command[1]] < 0
+            self.assembler.flags['C'] = self.assembler.registers[command[1]] % 2
+
+            if temp:
+                self.assembler.registers[command[1]] += 2 ** 16
+
+            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] >> 1
+
+            if self.assembler.registers[command[1]] >= 2 ** 15:  # this is when 0100
+                self.assembler.registers[command[1]] -= 2 ** 16
+
+            self.assembler.registers[command[1]] -= temp * 2 ** 15
+
+
+        else:
+            self.gui.outPut("RCL expects its argument to be a register.")
+            self.gui.stopRunning(-1)
+            return
+
+    def LODSB(self, command, i):
+        """ LODSB
+        
+        """
+        self.assembler.registers['AX'] = self.assembler.addressSpace[self.assembler.registers['SI']]
+
+        self.assembler.registers['SI'] += -1 if self.assembler.flags['D'] else 1
+
+    def LODSW(self, command, i):
+        """ LODSW
+        
+        """
+        self.assembler.registers['AX'] = self.assembler.addressSpace[self.assembler.registers['SI']] + self.assembler.addressSpace[self.assembler.registers['SI'] + 1] * 256
+
+        self.assembler.registers['SI'] += -2 if self.assembler.flags['D'] else 2
+
 """            
 "AAA":0,  # Ascii adjust AL after addition
 "AAD":0,  # Ascii adjust AX before division
@@ -640,18 +754,12 @@ class CommandInterpreter():
 "LDS":2,  # Load pointer using DS
 "LEA":2,  # Load effective address
 "LES":2,  # Load ES with pointer
-"LODSB":0,  # Load string byte
-"LODSW":0,  # Load string word
 "MOVSB":0,  # Move byte from string to string
 "MOVSW":0,  # Move word from string to string
 "MUL":2,  # Unsigned Multiply
-"SAL":2,  # Shift Arithmetically Left
-"SAR":2,  # Shift Arithmetically Right
 "SBB":2,  # Subtraction with borrow
 "SCASB":0,  # Compare byte string
 "SCASW":0,  # Compare word string
-"SHL":2,  # unsigned Shift left
-"SHR":2,  # unsigned Shift right
 "STOSW":0,  # Store word in string
 "SUB":2,  # Subtraction
 "TEST":2,  # Logical compare (AND)
