@@ -10,6 +10,7 @@
 	STRINGOFFSET = 87
 
 .SECT .TEXT
+	CALL start
 	PUSH 76
 	POP BX
 	CMPB BL, 'L'
@@ -19,6 +20,7 @@ start:
 	PUSH _PRINTF
 	SYS
 	ADD SP,6			! Print a velcome
+	RET
 
 	MOV AX,2
 	MOV AX,2
