@@ -3,9 +3,12 @@ Created on 2014-02-04
 
 @author: beewhy
 '''
-class Intel8088():
+class Intel8088(object):
 
     def __init__(self):
+        self.restart()
+
+    def restart(self):
         self.registers = {"AX":0, "BX":0, "CX":0, "DX":0, "SP":32760, "BP":32760, "SI":0, "DI":0, "PC":0}
 
         """Z: zero flag, S: sign flag, O: overflow flag, C: carry flag, A: auxillary flag, P: parity flag, D: direction flag, I: interrupt flag"""
@@ -17,6 +20,7 @@ class Intel8088():
         self.DATA = {}
         self.BSS = {}
         self.effectiveBSSandDATALocation = {}
+        self.codeBounds = [1, 1]
 
         self.addressSpace = []
         for i in range(1024):
@@ -55,14 +59,16 @@ class Intel8088():
     def intToHex(self, i):
         """ Converts integers to 0-padded hex. Does twos complement for negative numbers.
         i.e. 17 is returned as 11, 15 is returned as 0F """
-        if i > 2 ** 16 - 1:
-            print "Overflow"
-        else:
-            if i < 0:
-                i += 2 ** 16  # 2s complement
+        while i > 2 ** 16:
+            i -= 2 ** 16
+        while i < 0:
+            i += 2 ** 16  # 2s complement
 
-            hexString = str(hex(i).split("x")[1]).upper()
-            return "0"*(2 - len(hexString)) + hexString
+        if i > 2 ** 16 or i < 0:
+            print "FATAL ERROR"
+
+        hexString = str(hex(i).split("x")[1]).upper()
+        return "0"*(2 - len(hexString)) + hexString
     def replaceEscapedSequences(self, string):
         """ Replaces all escaped sequences with their unescaped counterparts """
         return string.replace("\\n", "\n").replace("\\'", "'").replace('\\"', '"').replace("\\a", "\a").replace("\\b", "\b").replace("\\f", "\f").replace("\\r", "\r").replace("\\t", "\t").replace("\\v", "\v")
@@ -70,3 +76,10 @@ class Intel8088():
     def escapeSequences(self, string):
         """ Escapes all things that may need escaped. """
         return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
+
+    def isHex(self, string):
+        try:
+            int(string, 16)
+            return True
+        except ValueError:
+            return False

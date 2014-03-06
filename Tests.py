@@ -25,11 +25,78 @@ class Test(unittest.TestCase):
             self.functionTable["MOV"](['MOV', x, '10'], 0)
             self.assertEqual(self.machine.registers[x], 16, x + ' failed mov')
 
+    def testAdc(self):
+        self.machine.flags['C'] = 1
+        self.machine.registers['AX'] = 2
+        self.functionTable['ADC'](['ADC', 'AX', '1'], 0)
+        self.assertEqual(self.machine.registers["AX"], 4)
+        self.machine.flags['C'] = 0
+        self.machine.registers['AX'] = 2
+        self.functionTable['ADC'](['ADC', 'AX', '1'], 0)
+        self.assertEqual(self.machine.registers["AX"], 3)
+
+    def testSbb(self):
+        self.machine.flags['C'] = 1
+        self.machine.registers['AX'] = 2
+        self.functionTable['SBB'](['SBB', 'AX', '1'], 0)
+        self.assertEqual(self.machine.registers["AX"], 0)
+        self.machine.flags['C'] = 0
+        self.machine.registers['AX'] = 2
+        self.functionTable['SBB'](['SBB', 'AX', '1'], 0)
+        self.assertEqual(self.machine.registers["AX"], 1)
+
+    def testSubSmallNumbers(self):
+        for x in ['AX', 'BX', 'CX', 'DX']:
+            self.machine.registers[x] = 2 ** 15 - 1
+            self.functionTable["SUB"](['SUB', x, '1'], 0)
+            self.assertEqual(self.machine.registers[x], 2 ** 15 - 2)
+
+    def testSubSmallOverflow(self):
+        for x in ['AX', 'BX', 'CX', 'DX']:
+            self.machine.registers[x] = -2 ** 15
+            self.functionTable["SUB"](['SUB', x, '1'], 43)
+            self.assertEqual(self.machine.registers[x], 2 ** 15 - 1)
+
     def testMovSmallHexNumbers(self):
         """ moving hexy small numbers, things with letters"""
         for x in self.machine.registers.keys():
             self.functionTable["MOV"](['MOV', x, '1f'], 0)
             self.assertEqual(self.machine.registers[x], 31, x + ' failed mov')
+
+    def testAddOverflow(self):
+        """ Adding small positive integers - the easiest case """
+        for x in ['AX', 'BX', 'CX', 'DX']:
+            self.machine.registers[x] = 2 ** 15 - 1
+            self.functionTable["ADD"](['ADD', x, '1'], 0)
+            self.assertEqual(self.machine.registers[x], -2 ** 15, x + ' failed add')
+
+    def testAddBigOverflow(self):
+        """ Adding small positive integers - the easiest case """
+        for x in ['AX', 'BX', 'CX', 'DX']:
+            self.machine.registers[x] = 2 ** 15 - 1
+            self.functionTable["ADD"](['ADD', x, 'FF'], 0)
+            self.assertEqual(self.machine.registers[x], -32514, x + ' failed add')
+
+    def testAddNegativeSmallNumbers(self):
+        """ Adding small positive integers - the easiest case """
+        for x in ['AX', 'BX', 'CX', 'DX']:
+            self.machine.registers[x] = -200
+            self.functionTable["ADD"](['ADD', x, '1'], 0)
+            self.assertEqual(self.machine.registers[x], -199, x + ' failed add')
+
+    def testAddNegativeSmallHexNumbers(self):
+        """ Adding small positive integers - the easiest case """
+        for x in ['AX', 'BX', 'CX', 'DX']:
+            self.machine.registers[x] = -200
+            self.functionTable["ADD"](['ADD', x, 'f'], 0)
+            self.assertEqual(self.machine.registers[x], -185, x + ' failed add')
+
+    def testAddNegativeLargeNumbers(self):
+        """ Adding small positive integers - the easiest case """
+        for x in ['AX', 'BX', 'CX', 'DX']:
+            self.machine.registers[x] = -200
+            self.functionTable["ADD"](['ADD', x, '018000'], 42)
+            self.assertEqual(self.machine.registers[x], 32568)
 
     def testAddPositiveSmallNumbers(self):
         """ Adding small positive integers - the easiest case """
@@ -57,6 +124,30 @@ class Test(unittest.TestCase):
         self.functionTable["CLC"]([], 0)
         self.assertEqual(self.machine.flags['C'], False)
 
+    def testSti(self):
+        """ Testing the stc - set carry flag - method """
+        self.machine.flags['I'] = False
+        self.functionTable["STI"]([], 0)
+        self.assertEqual(self.machine.flags['I'], True)
+
+    def testCli(self):
+        """ Testing the clc - clear carry flag - method """
+        self.machine.flags['I'] = True
+        self.functionTable["CLI"]([], 0)
+        self.assertEqual(self.machine.flags['I'], False)
+
+    def testStd(self):
+        """ Testing the stc - set carry flag - method """
+        self.machine.flags['D'] = False
+        self.functionTable["STD"]([], 0)
+        self.assertEqual(self.machine.flags['D'], True)
+
+    def testCld(self):
+        """ Testing the clc - clear carry flag - method """
+        self.machine.flags['D'] = True
+        self.functionTable["CLD"]([], 0)
+        self.assertEqual(self.machine.flags['D'], False)
+
     """ 
     ******* Jump Tests ********
         Kind of jumps
@@ -68,6 +159,20 @@ class Test(unittest.TestCase):
         self.machine.lookupTable = {"test":25}
         self.functionTable["JMP"](['jmp', 'test'], 0)
         self.assertEqual(self.machine.jumpLocation, 25)
+
+    def testJumpImmed(self):
+        self.functionTable["JMP"](['JMP', '10'], 0)
+        self.assertEqual(self.machine.jumpLocation, 16)
+
+    def testJumpFarNear(self):
+        self.machine.lookupTable = {"1":[10, 20, 30, 40], "2":35}
+        self.machine.registers["PC"] = 11
+        self.functionTable["JMP"](["JMP", "1f"], 0)
+        self.assertEqual(self.machine.jumpLocation, 20)
+        self.functionTable["JMP"](["JMP", "1b"], 0)
+        self.assertEqual(self.machine.jumpLocation, 10)
+        self.functionTable["JMP"](["JMP", "2"], 0)
+        self.assertEqual(self.machine.jumpLocation, 35)
 
     def testJcxzTrue(self):
         """ Testing the CXZ method when passed a true condition"""
@@ -638,10 +743,82 @@ class Test(unittest.TestCase):
         self.assertEqual(self.machine.registers['AX'], 51)
         self.assertFalse(self.machine.flags['C'])
 
+    def testRclPowerOf2(self):
+        self.machine.registers['AX'] = 2 ** 13
+        self.assertFalse(self.machine.flags['C'])
+        self.functionTable["RCL"](['rcl', 'AX'], 0)
+        self.assertEqual(self.machine.registers['AX'], 2 ** 14)
+        self.functionTable["RCL"](['rcl', 'AX'], 0)
+        self.assertEqual(self.machine.registers['AX'], -2 ** 15)
+        self.functionTable["RCL"](['rcl', 'AX'], 0)
+        self.assertEqual(self.machine.registers['AX'], 0)
+        self.assertTrue(self.machine.flags['C'])
+        self.functionTable["RCL"](['rcl', 'AX'], 0)
+        self.assertFalse(self.machine.flags['C'])
+        self.assertEqual(self.machine.registers['AX'], 1)
+        self.functionTable["RCL"](['rcl', 'AX'], 0)
+        self.assertFalse(self.machine.flags['C'])
+        self.assertEqual(self.machine.registers['AX'], 2)
+
+    def testRcl(self):
+        self.machine.registers['AX'] = 2 ** 13 + 1 + 2 ** 12
+        self.assertFalse(self.machine.flags['C'])
+        self.functionTable["RCL"](['rcl', 'AX'], 0)
+        self.assertEqual(self.machine.registers['AX'], 2 ** 14 + 2 + 2 ** 13)
+        self.functionTable["RCL"](['rcl', 'AX'], 0)
+        self.assertEqual(self.machine.registers['AX'], -2 ** 15 + 4 + 2 ** 14)
+        self.functionTable["RCL"](['rcl', 'AX'], 0)
+        self.assertTrue(self.machine.flags['C'])
+        self.assertEqual(self.machine.registers['AX'], 8 - 2 ** 15)
+        self.functionTable["RCL"](['rcl', 'AX'], 0)
+        self.assertTrue(self.machine.flags['C'])
+        self.assertEqual(self.machine.registers['AX'], 1 + 16)
+        self.functionTable["RCL"](['rcl', 'AX'], 0)
+        self.assertFalse(self.machine.flags['C'])
+        self.assertEqual(self.machine.registers['AX'], 1 + 2 + 32)
+
+    def testRcrPowerOf2(self):
+        self.machine.registers['AX'] = 4
+        self.assertFalse(self.machine.flags['C'])
+        self.functionTable["RCR"](['rcr', 'AX'], 0)
+        self.assertEqual(self.machine.registers['AX'], 2)
+        self.assertFalse(self.machine.flags['C'])
+        self.functionTable["RCR"](['rcr', 'AX'], 0)
+        self.assertEqual(self.machine.registers['AX'], 1)
+        self.assertFalse(self.machine.flags['C'])
+        self.functionTable["RCR"](['rcr', 'AX'], 0)
+        self.assertEqual(self.machine.registers['AX'], 0)
+        self.assertTrue(self.machine.flags['C'])
+        self.functionTable["RCR"](['rcr', 'AX'], 0)
+        self.assertFalse(self.machine.flags['C'])
+        self.assertEqual(self.machine.registers['AX'], -2 ** 15)
+        self.functionTable["RCR"](['rcr', 'AX'], 0)
+        self.assertFalse(self.machine.flags['C'])
+        self.assertEqual(self.machine.registers['AX'], 2 ** 14)
+
+
     def testPushf(self):
-        self.machine.flags = {"Z":True, "S":True, "O":True, "C":True, "A":True, "P":True, "D":True, "I":True}
+        self.machine.flags = {"Z":True, "S":True, "C":True, "A":True, "P":True}
         self.functionTable['PUSHF'](['PUSHF'], 0)
-        self.assertEqual(self.machine.stackData[-1], 255)
+        self.assertEqual(self.machine.stackData[-1], 1 + 4 + 16 + 64 + 128)
+        self.machine.flags = {"Z":False, "S":True, "C":False, "A":True, "P":False}
+        self.functionTable['PUSHF'](['PUSHF'], 0)
+        self.assertEqual(self.machine.stackData[-1], 16 + 128)
+
+    def testPopf(self):
+        self.machine.stackData.append(1 + 4 + 64)
+        self.functionTable['POPF'](['POPF'], 0)
+        self.assertTrue(self.machine.flags['C'])
+        self.assertTrue(self.machine.flags['P'])
+        self.assertTrue(self.machine.flags['Z'])
+
+        self.machine.stackData.append(1 + 4 + 16 + 64 + 128)
+        self.functionTable['POPF'](['POPF'], 0)
+        self.assertTrue(self.machine.flags['C'])
+        self.assertTrue(self.machine.flags['P'])
+        self.assertTrue(self.machine.flags['Z'])
+        self.assertTrue(self.machine.flags['S'])
+        self.assertTrue(self.machine.flags['A'])
 
     def testSARWithSignBit(self):
         self.machine.registers['AX'] = -2 ** 15 + 2 ** 14 + 1
@@ -680,6 +857,97 @@ class Test(unittest.TestCase):
         self.assertEqual(self.machine.eightBitRegister('AH'), 31)
 
         self.assertEqual(self.machine.registers['SI'], 68)
+
+    def testLoop(self):
+        self.machine.registers["CX"] = 2
+        self.machine.lookupTable = {"test":25, "test2":20}
+        self.functionTable["LOOP"](["LOOP", "test2"], 0)
+        self.assertEqual(self.machine.registers['CX'], 1)
+        self.assertEqual(self.machine.jumpLocation, 20)
+        self.functionTable["LOOP"](["LOOP", "test"], 0)
+        self.assertEqual(self.machine.registers['CX'], 0)
+        self.assertEqual(self.machine.jumpLocation, 25)
+        self.functionTable["LOOP"](["LOOP", "test2"], 0)
+        self.assertEqual(self.machine.registers['CX'], 0)
+        self.assertNotEqual(self.machine.jumpLocation, 20)
+
+    def testLoopETrue(self):
+        self.machine.flags['Z'] = True
+        self.machine.registers["CX"] = 2
+        self.machine.lookupTable = {"test":25, "test2":20}
+        self.functionTable["LOOPE"](["LOOPE", "test2"], 0)
+        self.assertEqual(self.machine.registers['CX'], 1)
+        self.assertEqual(self.machine.jumpLocation, 20)
+        self.functionTable["LOOPE"](["LOOPE", "test"], 0)
+        self.assertEqual(self.machine.registers['CX'], 0)
+        self.assertEqual(self.machine.jumpLocation, 25)
+        self.functionTable["LOOPE"](["LOOPE", "test2"], 0)
+        self.assertEqual(self.machine.registers['CX'], 0)
+        self.assertNotEqual(self.machine.jumpLocation, 20)
+
+    def testLoopEFalse(self):
+        self.machine.flags['Z'] = False
+        self.machine.registers["CX"] = 2
+        self.machine.lookupTable = {"test":25, "test2":20}
+        self.functionTable["LOOPE"](["LOOPE", "test2"], 0)
+        self.assertNotEqual(self.machine.registers['CX'], 1)
+        self.assertNotEqual(self.machine.jumpLocation, 20)
+
+    def testLoopNETrue(self):
+        self.machine.flags['Z'] = False
+        self.machine.registers["CX"] = 2
+        self.machine.lookupTable = {"test":25, "test2":20}
+        self.functionTable["LOOPNE"](["LOOPNE", "test2"], 0)
+        self.assertEqual(self.machine.registers['CX'], 1)
+        self.assertEqual(self.machine.jumpLocation, 20)
+        self.functionTable["LOOPNE"](["LOOPNE", "test"], 0)
+        self.assertEqual(self.machine.registers['CX'], 0)
+        self.assertEqual(self.machine.jumpLocation, 25)
+        self.functionTable["LOOPNE"](["LOOPNE", "test2"], 0)
+        self.assertEqual(self.machine.registers['CX'], 0)
+        self.assertNotEqual(self.machine.jumpLocation, 20)
+
+    def testLoopNEFalse(self):
+        self.machine.flags['Z'] = True
+        self.machine.registers["CX"] = 2
+        self.machine.lookupTable = {"test":25, "test2":20}
+        self.functionTable["LOOPNE"](["LOOPNE", "test2"], 0)
+        self.assertNotEqual(self.machine.registers['CX'], 1)
+        self.assertNotEqual(self.machine.jumpLocation, 20)
+
+    def testOr(self):
+        self.machine.registers['AX'] = int('1101101', 2)
+        self.machine.registers['BX'] = int('0110101', 2)
+        self.functionTable["OR"](["OR", "AX", "BX"], 0)
+        self.assertEqual(self.machine.registers["AX"], int("1111101", 2))
+
+    def testAnd(self):
+        self.machine.registers['AX'] = int('1101101', 2)
+        self.machine.registers['BX'] = int('0110101', 2)
+        self.functionTable["AND"](["AND", "AX", "BX"], 0)
+        self.assertEqual(self.machine.registers["AX"], int("0100101", 2))
+
+    def testXor(self):
+        self.machine.registers['AX'] = int('1101101', 2)
+        self.machine.registers['BX'] = int('0110101', 2)
+        self.functionTable["XOR"](["XOR", "AX", "BX"], 0)
+        self.assertEqual(self.machine.registers["AX"], int("1011000", 2))
+
+    def testNot(self):
+        self.machine.registers['AX'] = int('1101101101010101', 2) - 2 ** 16
+        self.functionTable["NOT"](["NOT", "AX"], 0)
+        self.assertEqual(self.machine.registers["AX"], int("0010010010101010", 2))
+        self.machine.registers['AX'] = int('0101101101010101', 2)
+        self.functionTable["NOT"](["NOT", "AX"], 0)
+        self.assertEqual(self.machine.registers["AX"], int("0010010010101010", 2) - 2 ** 15)
+
+    def testXchg(self):
+        self.machine.registers['AX'] = 23
+        self.machine.registers['BX'] = -13
+
+        self.functionTable['XCHG'](["XCHG", "AX", "BX"], 0)
+        self.assertEqual(self.machine.registers['BX'], 23)
+        self.assertEqual(self.machine.registers['AX'], -13)
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,4 @@
 from gi.repository import Gtk, Gdk, GObject, Pango
-import threading, os, time
 import CommandInterpreter, Intel8088
 
 # TODO: issues with restarting
@@ -10,7 +9,7 @@ import CommandInterpreter, Intel8088
 # TODO: (possibly related to prev) have the parts of the gui updated
 
 """"Assembler Class for Intel 8088 Architecture"""
-class Assembler():
+class Assembler(object):
 
     def __init__(self):
 
@@ -163,7 +162,6 @@ class Assembler():
         self.lineCount = 0
 
         self.mode = "head"
-        self.codeBounds = [1, 1]
         self.running = False
         self.ran = False
         self.restartPrompt = False
@@ -269,7 +267,7 @@ class Assembler():
         self.lineCount = 0
 
         self.mode = "head"
-        self.codeBounds = [1, 1]
+        self.machine.restart()
 
         self.machine.addressSpace = []
 
@@ -317,10 +315,10 @@ class Assembler():
             if ".SECT" in line:
 
                 # record where the .SECT .TEXT section starts, and ends
-                if self.mode == ".SECT .TEXT":  # ends, we've gone one too far
-                    self.codeBounds[1] = self.lineCount - 1
-                elif line == ".SECT .TEXT":  # starts, we're one too short
-                    self.codeBounds[0] = self.lineCount + 1
+                if self.mode == ".SECT .TEXT":  # ends, we've gone one too far, but we count from zero
+                    self.machine.codeBounds[1] = self.lineCount - 1
+                elif line == ".SECT .TEXT":  # starts, we're one too short, and we count from zero
+                    self.machine.codeBounds[0] = self.lineCount
 
                 self.mode = line
                 continue
@@ -371,7 +369,7 @@ class Assembler():
         # TODO: error check before second pass
         """ SECOND PASS """
         if errorCount == 0:
-            self.machine.registers['PC'] = self.codeBounds[0] - 1
+            self.machine.registers['PC'] = self.machine.codeBounds[0]
             self.running = True
         else:
             self.outPut("Your code cannot be run, it contains %d errors" % errorCount)
@@ -517,7 +515,7 @@ class Assembler():
                 tempList = text.split()
                 if tempList[0] == "run" and tempList[1] == "until" and tempList[2].isdigit():
                     n = int(tempList[2])
-                    if n >= self.codeBounds[0] and n < self.codeBounds[1]:
+                    if n >= self.machine.codeBounds[0] and n < self.machine.codeBounds[1]:
                         while self.running:
                             if self.machine.registers['PC'] == int(tempList[2]):
                                 self.step()
@@ -538,7 +536,7 @@ class Assembler():
         """ The guts of the second pass. Where the magic happens! """
         if self.running:
 
-            if self.machine.registers['PC'] >= self.codeBounds[1]:
+            if self.machine.registers['PC'] >= self.machine.codeBounds[1]:
                 self.stopRunning()
                 return
 
@@ -598,7 +596,7 @@ class Assembler():
             elif injectedLine == "":
                 self.machine.registers['PC'] += 1
 
-            if self.machine.registers['PC'] >= self.codeBounds[1]:
+            if self.machine.registers['PC'] >= self.machine.codeBounds[1]:
                 self.stopRunning()
                 return
 
