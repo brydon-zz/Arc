@@ -54,7 +54,7 @@ GtkNotebook {
 
         # Make stuff from the GLADE file and setup events
         self.builder = Gtk.Builder()
-        self.builder.add_from_file("GladeMockup3.glade")
+        self.builder.add_from_file("xml/GladeMockup3.glade")
         self.builder.connect_signals(Handler())
 
         self.win = self.builder.get_object("window1")
@@ -124,7 +124,7 @@ GtkNotebook {
         self.win.connect('key_press_event', self.on_key_press_event)
         self.win.connect('key_release_event', self.on_key_release_event)
         # Window Icon -> what shows up in unity bar/toolbar/etc.
-        self.win.set_icon_from_file("icon.png")
+        self.win.set_icon_from_file("images/icon.png")
 
         self.win.show_all()
 

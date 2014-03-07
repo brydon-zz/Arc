@@ -79,7 +79,7 @@ class Intel8088(object):
 
     def isHex(self, string):
         try:
-            int(string, 16)
+            int(str(string), 16)
             return True
         except ValueError:
             return False

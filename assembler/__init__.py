@@ -1,6 +1,6 @@
 #!/usr/bin/python2.7
 from Assembler import Assembler
-from gi.repository import Gtk, Gdk, GObject, Pango
+from gi.repository import Gtk, GObject
 
 if __name__ == "__main__":
 
@@ -9,3 +9,5 @@ if __name__ == "__main__":
 	A = Assembler()
 	print "Constructed"
 	Gtk.main()
+
+

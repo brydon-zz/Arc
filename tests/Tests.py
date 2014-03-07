@@ -5,16 +5,16 @@ Created on 2013-10-01
 '''
 
 import unittest
-import CommandInterpreter, Intel8088
+import assembler.CommandInterpreter, assembler.Intel8088
 
 class Test(unittest.TestCase):
     """ Unittest calls setUp before each test method (a test method is any method that starts with "test" - they all "assert" something. """
 
     def setUp(self):
         """ Just reset the basic properties of an assembler between tests """
-        self.machine = Intel8088.Intel8088()
+        self.machine = assembler.Intel8088.Intel8088()
 
-        as88 = CommandInterpreter.CommandInterpreter(self, self.machine)
+        as88 = assembler.CommandInterpreter.CommandInterpreter(self, self.machine)
         self.functionTable = as88.getFunctionTable()
 
     # TODO: pop push mov and add with negative numbers, pop push move and add with digits, pop push move and add with overflow numbers,

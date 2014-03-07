@@ -16,7 +16,7 @@ class Assembler(object):
         """ Begin GUI """
         styles = """
 #As88Window {
-    background:url('bg.jpg');
+    background:#000;
 }
 
 #As88Window #code, #As88Window #outText, #As88Window #stack, #As88Window #regA, #As88Window #regB, #As88Window #regC, #As88Window #regD, #As88Window #regSP, #As88Window #regBP, #As88Window #regSI,#As88Window #regDI, #As88Window #regPC, #As88Window #regFlags, #As88Window #memory {
@@ -38,7 +38,7 @@ class Assembler(object):
 
         # Make stuff from the GLADE file and setup events
         self.builder = Gtk.Builder()
-        self.builder.add_from_file("As88_Mockup.glade")
+        self.builder.add_from_file("xml/As88_Mockup.glade")
         self.builder.connect_signals(Handler())
 
         self.win = self.builder.get_object("window1")
@@ -103,7 +103,7 @@ class Assembler(object):
         self.win.connect('key_press_event', self.on_key_press_event)
         self.win.connect('key_release_event', self.on_key_release_event)
         # Window Icon -> what shows up in unity bar/toolbar/etc.
-        self.win.set_icon_from_file("icon.png")
+        self.win.set_icon_from_file("images/icon.png")
 
         self.win.show_all()
 
