@@ -1,0 +1,165 @@
+AAA 	ASCII adjust AL after addition 	used with unpacked binary coded decimal
+	Example:
+;Assume AL=0011 0101,ASCII 5;
+BL=0011 1001,ASCII 9
+
+AAD 	ASCII adjust AX before division 	8086/8088 datasheet documents only base 10 version of the AAD instruction (opcode 0xD5 0x0A), but any other base will work. Later Intel's documentation has the generic form too. NEC V20 and V30 (and possibly other NEC V-series CPUs) always use base 10, and ignore the argument, causing a number of incompatibilities 	
+
+AAM 	ASCII adjust AX after multiplication 	Only base 10 version is documented, see notes for AAD 	
+
+AAS 	ASCII adjust AL after subtraction 	
+
+ADC 	Add with carry 	destination := destination + source + carry_flag 	
+
+ADD 	Add 	(1) r/m += r/imm; (2) r += m/imm; 	
+
+AND 	Logical AND 	(1) r/m &= r/imm; (2) r &= m/imm; 	
+
+CALL 	Call procedure 	push eip + 2 ;  jmp operand 	
+
+CBW 	Convert byte to word 		
+
+CLC 	Clear carry flag 	CF = 0; 	
+
+CLD 	Clear direction flag 	DF = 0; 	
+
+CLI 	Clear interrupt flag 	IF = 0; 	
+
+CMC 	Complement carry flag 		
+
+CMP 	Compare operands 		
+
+CMPSB 	Compare bytes in memory 		
+
+CMPSW 	Compare words 		
+
+CWD 	Convert word to doubleword 		
+
+DAA 	Decimal adjust AL after addition 	(used with packed binary coded decimal) 	
+
+DAS 	Decimal adjust AL after subtraction 		
+
+DEC 	Decrement by 1 		
+
+DIV 	Unsigned divide 	DX:AX = DX:AX / r/m; resulting DX = remainder 	
+
+ESC 	Used with floating-point unit 		
+
+HLT 	Enter halt state 		0xF4
+
+IDIV 	Signed divide 	DX:AX = DX:AX / r/m; resulting DX = remainder 	
+
+IMUL 	Signed multiply 	(1) DX:AX = AX * r/m; (2) AX = AL * r/m 	
+
+IN 	Input from port 	(1) AL = port[imm]; (2) AL = port[DX]; (3) AX = port[DX]; 	
+
+INC 	Increment by 1 		
+
+INT 	Call to interrupt 		
+
+INTO 	Call to interrupt if overflow 		
+
+IRET 	Return from interrupt 		
+
+Jcc 	Jump if condition 	(JA, JAE, JB, JBE, JC, JE, JG, JGE, JL, JLE, JNA, JNAE, JNB, JNBE, 
+JNC, JNE, JNG, JNGE, JNL, JNLE, JNO, JNP, JNS, JNZ, JO, JP, JPE, JPO, JS, JZ) 	
+
+JCXZ 	Jump if CX is zero 		
+
+JMP 	Jump 		
+
+LAHF 	Load flags into AH register 		
+
+LDS 	Load pointer using DS 		
+
+LEA 	Load Effective Address 		
+
+LES 	Load ES with pointer 		
+
+LOCK 	Assert BUS LOCK# signal 	(for multiprocessing) 	
+
+LODSB 	Load string byte 	if (DF==0) AL = *SI++; else AL = *SI--; 	
+
+LODSW 	Load string word 	if (DF==0) AX = *SI++; else AX = *SI--; 	
+
+LOOP/LOOPx 	Loop control 	(LOOPE, LOOPNE, LOOPNZ, LOOPZ) if (x && --CX) goto lbl; 	
+
+MOV 	Move 	copies data from one location to another, (1) r/m = r; (2) r = r/m; 	
+
+MOVSB 	Move byte from string to string 	if (DF==0) *(byte*)DI++ = *(byte*)SI++; else *(byte*)DI-- = *(byte*)SI--; 	
+
+MOVSW 	Move word from string to string 	if (DF==0) *(word*)DI++ = *(word*)SI++; else *(word*)DI-- = *(word*)SI--; 	
+
+MUL 	Unsigned multiply 	(1) DX:AX = AX * r/m; (2) AX = AL * r/m; 	
+
+NEG 	Two's complement negation 	r/m *= -1; 	
+
+NOP 	No operation 	opcode equivalent to XCHG EAX, EAX 	0x90
+
+NOT 	Negate the operand, logical NOT 	r/m ^= -1; 	
+
+OR 	Logical OR 	(1) r/m |= r/imm; (2) r |= m/imm; 	
+
+OUT 	Output to port 	(1) port[imm] = AL; (2) port[DX] = AL; (3) port[DX] = AX; 	
+
+POP 	Pop data from stack 	*SP++ = r/m; POP CS (opcode 0x0F) works only on 8086/8088. Later CPUs use 0x0F as a prefix for newer instructions. 	0x0F
+
+POPF 	Pop data from flags register 	*SP++ = flags; 	
+
+PUSH 	Push data onto stack 	*--SP = r/m; 	
+
+PUSHF 	Push flags onto stack 	*--SP = flags; 	
+
+RCL 	Rotate left (with carry) 		
+
+RCR 	Rotate right (with carry) 		
+
+REPxx 	Repeat MOVS/STOS/CMPS/LODS/SCAS 	(REP, REPE, REPNE, REPNZ, REPZ) 	
+
+RET 	Return from procedure 	Not a real instruction. The assembler will translate these to a RETN or a RETF depending on the memory model of the target system. 	
+
+RETN 	Return from near procedure 		
+
+RETF 	Return from far procedure 		
+
+ROL 	Rotate left 		
+
+ROR 	Rotate right 		
+
+SAHF 	Store AH into flags 		
+
+SAL 	Shift Arithmetically left (signed shift left) 	(1) r/m <<= 1; (2) r/m <<= CL; 	
+
+SAR 	Shift Arithmetically right (signed shift right) 	(1) (signed)r/m >>= 1; (2) (signed)r/m >>= CL; 	
+
+SBB 	Subtraction with borrow 	alternative 1-byte encoding of SBB AL, AL is available via undocumented SALC instruction 	
+
+SCASB 	Compare byte string 		
+
+SCASW 	Compare word string 		
+
+SHL 	Shift left (unsigned shift left) 		
+
+SHR 	Shift right (unsigned shift right) 		
+
+STC 	Set carry flag 	CF = 1; 	
+
+STD 	Set direction flag 	DF = 1; 	
+
+STI 	Set interrupt flag 	IF = 1; 	
+
+STOSB 	Store byte in string 	if (DF==0) *ES:DI++ = AL; else *ES:DI-- = AL; 	
+
+STOSW 	Store word in string 	if (DF==0) *ES:DI++ = AX; else *ES:DI-- = AX; 	
+
+SUB 	Subtraction 	(1) r/m -= r/imm; (2) r -= m/imm; 	
+
+TEST 	Logical compare (AND) 	(1) r/m & r/imm; (2) r & m/imm; 	
+
+WAIT 	Wait until not busy 	Waits until BUSY# pin is inactive (used with floating-point unit) 
+	
+XCHG 	Exchange data 	r :=: r/m; 	
+
+XLAT 	Table look-up translation 	behaves like MOV AL, [BX+AL] 	
+
+XOR 	Exclusive OR 	(1) r/m ^= r/imm; (2) r ^= m/imm;
