@@ -133,6 +133,10 @@ class CommandInterpreter(object):
                 "JNBE":1,  # Jump if not below or equal
                 """
         return {
+                "AAA":lambda x, i: self.AAA(x, i),
+                "AAD":lambda x, i: self.AAD(x, i),
+                "AAM":lambda x, i: self.AAM(x, i),
+                "AAS":lambda x, i: self.AAS(x, i),
                 "ADC":lambda x, i: self.ADC(x, i),
                 "ADD":lambda x, i: self.ADD(x, i),
                 "AND":lambda x, i: self.AND(x, i),
@@ -141,6 +145,8 @@ class CommandInterpreter(object):
                 "CLD":lambda x, i: self.CLD(x, i),
                 "CLI":lambda x, i: self.CLI(x, i),
                 "CMPB":lambda x, i: self.CMPB(x, i),
+                "DAA":lambda x, i: self.DAA(x, i),
+                "DAS":lambda x, i: self.DAS(x, i),
                 "DEC":lambda x, i: self.incdec(x, i, -1),
                 "INC":lambda x, i: self.incdec(x, i, 1),
                 "JA":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 and self.assembler.flags['Z'] == 0),
@@ -209,16 +215,59 @@ class CommandInterpreter(object):
                 "STD":lambda x, i: self.STD(x, i),
                 "STI":lambda x, i: self.STI(x, i),
                 "STOSB":lambda x, i: self.STOSB(x, i),
+                "STOSW":lambda x, i: self.STOSW(x, i),
                 "SUB":lambda x, i: self.SUB(x, i),
                 "SYS":lambda x, i: self.SYS(x, i),
                 "XCHG":lambda x, i: self.XCHG(x, i),
                 "XOR":lambda x, i: self.XOR(x, i)
                 }
+
+    def AAA(self, command, i):
+        """ AAA
+        
+        ASCII Adjust AL After Addition """
+        if (self.assembler.eightBitRegister('AL') & 15 > 9) or self.assembler.flags['A']:
+            tempAH = self.assembler.eightbitRegister('AH')
+            self.assembler.registers['AX'] = (self.assembler.eightBitRegister('AL') + 6) & 15
+            self.assembler.registers['AX'] += (tempAH + 1) * 256
+            self.assembler.flags['A'] = 1
+            self.assembler.flags['C'] = 1
+        else:
+            self.assembler.flags['A'] = 0
+            self.assembler.flags['C'] = 0
+
+    def AAD(self, command, i):
+        """ AAD
+        
+        ASCII Adjust AL Before Division"""
+        self.assembler.registers['AX'] = self.assembler.eightBitRegister('AL') + self.assembler.eightBitRegister('AH') * 10
+
+    def AAM(self, command, i):
+        """ AAM
+        
+        ASCII Adjust AL Before Multiplication """
+        tempAL = self.assembler.eightBitRegister('AL')
+        self.assembler.registers['AX'] = (tempAL % 10) + (tempAL / 10) * 256
+
+    def AAS(self, command, i):
+        """ AAS
+        
+        ASCII Adjust AL After Subtraction """
+        if (self.assembler.eightBitRegister('AL') & 15 > 9) or self.assembler.flags['A']:
+            tempAH = self.assembler.eightbitRegister('AH')
+            self.assembler.registers['AX'] = (self.assembler.eightBitRegister('AL') - 6) & 15
+            self.assembler.registers['AX'] += (tempAH - 1) * 256
+            self.assembler.flags['A'] = 1
+            self.assembler.flags['C'] = 1
+        else:
+            self.assembler.flags['A'] = 0
+            self.assembler.flags['C'] = 0
+
     def ADC(self, command, i):
         """ ADC """
-        self.ADD(command, i, True)
+        self.ADD(command, i, carry=True)
 
-    def ADD(self, command, i, carry=False):
+    def ADD(self, command, i, carry=False, inPlace=False):
         """ ADD x,y translates to x = x + y
         where x is a register or mem address, y is a number, localvar, mem address, or register. """
         if command[1] == "SP" and command[2].isdigit():  # TODO: REPLACE THIS
@@ -244,19 +293,25 @@ class CommandInterpreter(object):
             y = self.assembler.addressSpace[self.assembler.DATA[command[2]][0]]
         elif command[2] in self.assembler.BSS.keys():  # y is a mem address from BSS section
             y = self.assembler.addressSpace[self.assembler.BSS[command[2]][0]]
+        elif len(command[2].strip('"').strip("'")) == 1:
+            y = ord(command[2].strip('"').strip("'"))
+        else:
+            self.gui.outPut("What the heck is going on with your second argument!?!?!")
+            self.gui.stopRunning(-1)
+            return
 
         if carry: y += self.assembler.flags['C']
-        if command[0].upper() == "SUB" or command[0].upper() == "SBB": y *= -1
+        if command[0].upper() in ["SUB", "SBB", "CMP", "CMPB", "SCASB", "SCASW"]: y *= -1
 
         if command[1] in self.assembler.registers.keys():  # x is a register
-            self.assembler.registers[command[1]] += y
-            result = self.assembler.registers[command[1]]
+            result = self.assembler.registers[command[1]] + y
+            if not inPlace: self.assembler.registers[command[1]] = result
         elif command[1] in self.assembler.DATA.keys():  # x is a data location
-            self.assembler.addressSpace[self.assembler.DATA[command[1]][0]] += y
-            result = self.assembler.addressSpace[self.assembler.DATA[command[1]][0]]
+            result = self.assembler.addressSpace[self.assembler.DATA[command[1]][0]] + y
+            if not inPlace: self.assembler.addressSpace[self.assembler.DATA[command[1]][0]] = result
         elif command[1] in self.assembler.BSS.keys():  # x is a BSS location
-            self.assembler.addressSpace[self.assembler.BSS[command[1]][0]] += y
-            result = self.assembler.addressSpace[self.assembler.BSS[command[1]][0]]
+            result = self.assembler.addressSpace[self.assembler.BSS[command[1]][0]] + y
+            if not inPlace: self.assembler.addressSpace[self.assembler.BSS[command[1]][0]] = result
 
         if result == 0:
             self.assembler.flags['Z'] = 1
@@ -272,7 +327,7 @@ class CommandInterpreter(object):
                 self.assembler.registers[command[1]] += 2 ** 16
                 self.assembler.flags['O'] = 1
 
-    def AND(self, command, i):
+    def AND(self, command, i, inPlace=False):
         """ AND [register or memory address], [register, memory address, local variable, or hex value]
         
         AND A, B --> A = A & B
@@ -289,13 +344,24 @@ class CommandInterpreter(object):
             t = self.assembler.DATA[self.assembler.registers[command[2]]]
         elif command[2] in self.assembler.BSS.keys():
             t = self.assembler.BSS[self.assembler.registers[command[2]]]
+        else:
+            self.gui.outPut("No Idea what's going on there bud")
+            self.gui.stopRunning(-1)
+            return
 
         if command[1] in self.assembler.registers:
-            self.assembler.registers[command[1]] &= t
+            result = self.assembler.registers[command[1]] & t
+            if not inPlace: self.assembler.registers[command[1]] = result
         elif command[1] in self.assembler.BSS.keys():
-            self.assembler.BSS[command[1]] &= t
+            result = self.assembler.BSS[command[1]] & t
+            if not inPlace: self.assembler.BSS[command[1]] = result
         elif command[1] in self.assembler.DATA.keys():
-            self.assembler.DATA[command[1]] &= t
+            result = self.assembler.DATA[command[1]] & t
+            if not inPlace: self.assembler.DATA[command[1]] = result
+        else:
+            self.gui.outPut("No Idea what's going on there bud")
+            self.gui.stopRunning(-1)
+            return
 
     def CALL(self, command, i):
         """ CALL [label]
@@ -350,14 +416,48 @@ class CommandInterpreter(object):
                     return
                 else:
                     try:
-                        x = int(x)
+                        x = int(x, 16) % 255
                     except ValueError:
                         x = ord(x)
             elif type(x) != type(1):
                 self.assembler.out("Illegal argument %s for CMPB on line %d. CMPB expects an argument to be a one byte register (ie: AH, AL, etc.), an integer, or a one byte string (ie: \"L\", etc.). Instead %s was given." % (x, i, x))
             b.append(x)
 
-        self.assembler.flags["Z"] = b[0] == b[1]
+        self.SUB(["CMPB", b[0], b[1]], i, inPlace=True)
+
+    def DAA(self, command, i):
+        """ DAA 
+        
+        Decimal Adjust AL after addition"""
+
+        if (self.assembler.eightBitRegister('AL') & 15 > 9) or self.assembler.flags['A']:
+            self.assembler.registers['AX'] += 6
+            self.assembler.flags['A'] = 1
+        else:
+            self.assembler.flags['A'] = 0
+
+        if self.assembler.eightBitRegister('AL') > 159 or self.assembler.flags['C']:
+            self.assembler.registers['AX'] += 96
+            self.assembler.flags['C'] = 1
+        else:
+            self.assembler.flags['C'] = 0
+
+    def DAS(self, command, i):
+        """ DAS 
+        
+        Decimal Adjust AL after subtraction"""
+
+        if (self.assembler.eightBitRegister('AL') & 15 > 9) or self.assembler.flags['A']:
+            self.assembler.registers['AX'] -= 6
+            self.assembler.flags['A'] = 1
+        else:
+            self.assembler.flags['A'] = 0
+
+        if self.assembler.eightBitRegister('AL') > 159 or self.assembler.flags['C']:
+            self.assembler.registers['AX'] -= 96
+            self.assembler.flags['C'] = 1
+        else:
+            self.assembler.flags['C'] = 0
 
     def JMP(self, command, i, referer="JMP"):
         """ JMP x jumps to position x in the program """
@@ -442,6 +542,8 @@ class CommandInterpreter(object):
             b = int(self.assembler.BSS[command[2]][0])
         elif command[2] in self.assembler.DATA.keys():  # B is DATA mem address
             b = int(self.assembler.DATA[command[2]][0])
+        elif len(command[2].strip("'").strip('"')) == 1:
+            b = ord(command[2].strip("'").strip('"'))
         else:
             self.gui.outPut("Incorrect B val.")
             self.gui.stopRunning(-1)
@@ -455,7 +557,7 @@ class CommandInterpreter(object):
         elif self.assembler.isHex(command[1]):
             self.gui.outPut("Error, you made your first argument a hex digit. MOV expects its first argument to be a register, or a memory address.")
         else:
-            self.gui.outPut("MOV expects its first argument to be a memory address or register, and second to be a memory address, register, immediate value, or local variable.")
+            self.gui.outPut("MOV expects its first argument to be a memory address or register")
 
     def MOVSB(self, command, i):
         """ MOVSB"""
@@ -781,7 +883,17 @@ class CommandInterpreter(object):
 
     def SBB(self, command, i):
         """ SBB """
-        self.ADD(command, i, True)
+        self.ADD(command, i, carry=True)
+
+    def SCASB(self, command, i):
+        """ SCASB """
+        self.SUB(['SCASB', self.assembler.eightBitRegister('AL'), self.assembler.addressSpace[self.assembler.registers['DI']]], i, inPlace=True)
+        self.assembler.registers['DI'] += -1 if self.assembler.flags['D'] else 1
+
+    def SCASW(self, command, i):
+        """ SCASB """
+        self.SUB(['SCASW', self.assembler.registers['AX'], self.assembler.addressSpace[self.assembler.registers['DI'] + 1] + 256 * self.assembler.addressSpace[self.assembler.registers['DI']]], i, inPlace=True)
+        self.assembler.registers['DI'] += -2 if self.assembler.flags['D'] else 2
 
     def SHL(self, command, i):
         """SHL register
@@ -839,14 +951,20 @@ class CommandInterpreter(object):
 
     def STOSB(self, command, i):
         """ Stores contents of AX in the memory address contained in DI, then increments DI """
-        self.assembler.addressSpace[self.assembler.registers["DI"]] = chr(self.assembler.registers["AX"])
-        self.assembler.registers["DI"] += 1
+        self.assembler.addressSpace[self.assembler.registers["DI"]] = chr(self.assembler.eightBitRegister("AL"))
+        self.assembler.registers["DI"] += -1 if self.assembler.flags['D'] else 1
 
-    def SUB(self, command, i):
+    def STOSW(self, command, i):
+        """ Stores contents of AX in the memory address contained in DI, then increments DI """
+        self.assembler.addressSpace[self.assembler.registers["DI"]] = chr(self.assembler.eightBitRegister("AH"))
+        self.assembler.addressSpace[self.assembler.registers["DI"] + 1] = chr(self.assembler.eightBitRegister("AL"))
+        self.assembler.registers["DI"] += -2 if self.assembler.flags['D'] else 2
+
+    def SUB(self, command, i, inPlace=False):
         """ SUB x,y
         
         """
-        self.ADD(command, i, -1)
+        self.ADD(command, i, inPlace=inPlace)
 
     def SYS(self, command, i):
         """ Call a system trap - evaluates based on the last piece of data on the stack """
@@ -882,6 +1000,10 @@ class CommandInterpreter(object):
                 except IndexError:
                     self.gui.stopRunning(-1)
                     self.gui.outPut("Invalid system trap on line %d. Invalid number of arguments with _PRINTF." % i)
+
+    def TEST(self, command, i):
+        """ TEST """
+        self.AND(command, i, inPlace=True)
 
     def XCHG(self, command, i):
         """ XCHG, swaps two registers contents """
@@ -930,16 +1052,10 @@ class CommandInterpreter(object):
         if flag:
             self.JMP(command, i)
 
-"""   20 more to go
-"AAA":0,  # Ascii adjust AL after ADDition
-"AAD":0,  # Ascii adjust AX before division
-"AAM":0,  # Ascii adjust AX after multiplication
-"AAS":0,  # Ascii adjust AL after subtraction
+"""   10 more to go
 "CMP":2,  # Compare operands
 "CMPSB":-1,  # Compare bytes in memory
 "CMPSW":-1,  # Compare words in memory
-"DAA":0,  # Decimal adjust AL after ADDition
-"DAS":0,  # Decimal adjust AL after subtraction
 "DIV":2,  # Unsigned divide 
 "IDIV":1,  # Signed divide
 "IMUL":1,  # Signed multiply
@@ -947,8 +1063,4 @@ class CommandInterpreter(object):
 "LEA":2,  # Load effective address
 "LES":2,  # Load ES with pointer
 "MUL":2,  # Unsigned Multiply
-"SCASB":0,  # Compare byte string
-"SCASW":0,  # Compare word string
-"STOSW":0,  # Store word in string
-"TEST":2,  # Logical compare (AND)
 """
