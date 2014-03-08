@@ -1,9 +1,9 @@
 from gi.repository import Gtk, Gdk, GObject, Pango
 import CommandInterpreter, Intel8088
-from Assembler import Assembler as Assemb
+from Assembler import Assembler as OldAssembler
 
 """"Assembler Class for Intel 8088 Architecture"""
-class Assembler(Assemb):
+class Assembler(OldAssembler):
 
     def __init__(self):
 
@@ -15,6 +15,34 @@ class Assembler(Assemb):
 
 GtkNotebook, GtkEntry {
     border: 1px solid #333
+}
+
+#As88Window #codeScrolled {
+    border-bottom: 3px solid #000;
+}
+
+#As88Window #seperatorLabelTrue {
+    background-color:#200;
+    border-right:1px solid #333;
+    border-left:1px solid #333;
+}
+
+#As88Window #seperatorLabelFalse {
+    background-color:#002;
+    border-right:1px solid #333;
+    border-left:1px solid #333;
+}
+
+#As88Window #seperatorLabelOverTrue {
+    background-color:#666;
+    border-right:1px solid #000;
+    border-left:1px solid #000;
+}
+
+#As88Window #seperatorLabelOverFalse {
+    background-color:#666;
+    border-right:1px solid #000;
+    border-left:1px solid #000;
 }
 
 #As88Window, GtkNotebook {
@@ -33,6 +61,10 @@ GtkNotebook {
 
 #As88Window #code {
     font-family: mono;
+    border-bottom: 3px solid black;
+}
+#As88Window #outText {
+    border:5px solid #000;
 }
 
 #As88Window #outText, #As88Window #stack, #As88Window #regA, #As88Window #regB, #As88Window #regC, #As88Window #regD, #As88Window #regSP, #As88Window #regBP, #As88Window #regSI,#As88Window #regDI, #As88Window #regPC, #As88Window #regFlags, #As88Window #memory {
@@ -83,6 +115,9 @@ GtkNotebook {
         self.regFlags = self.builder.get_object("regFlags")
         self.memory = self.builder.get_object("memory")
         self.hexSwitch = self.builder.get_object("hexSwitch")
+        self.notebook = self.builder.get_object("notebook")
+        self.eventbox = self.builder.get_object("eventbox")
+        self.seperatorLabel = self.builder.get_object("seperatorLabel")
 
         # Text buffers for the big text-views
         self.outBuffer = self.outText.get_buffer()
@@ -106,10 +141,14 @@ GtkNotebook {
         self.regPC.set_name("regPC")
         self.regFlags.set_name("regFlags")
         self.memory.set_name("memory")
-        self.builder.get_object("notebook").set_name("notebook")
+        self.notebook.set_name("notebook")
         self.builder.get_object("fixed1").set_name("fixed1")
         self.builder.get_object("fixed2").set_name("fixed2")
         self.builder.get_object("fixed3").set_name("fixed3")
+        self.seperatorLabel.set_name("seperatorLabelTrue")
+
+        self.builder.get_object("codeScrolled").set_name("codeScrolled")
+        self.builder.get_object("outScrolled").set_name("outScrolled")
 
         # Set up the text behaviour
         self.outText.set_wrap_mode(Gtk.WrapMode.WORD)
@@ -123,6 +162,11 @@ GtkNotebook {
         # Key events!
         self.win.connect('key_press_event', self.on_key_press_event)
         self.win.connect('key_release_event', self.on_key_release_event)
+
+        self.eventbox.connect('button_press_event', self.test)
+        self.eventbox.connect('enter-notify-event', self.test2)
+        self.eventbox.connect('leave-notify-event', self.test3)
+
         # Window Icon -> what shows up in unity bar/toolbar/etc.
         self.win.set_icon_from_file("images/icon.png")
 
@@ -159,6 +203,8 @@ GtkNotebook {
 
         self.memory.props.has_tooltip = True
 
+        # self.notebook.set_visible(False)
+
         for x in self.memoryColours:
             self.memory.connect("query-tooltip", self.toolTipOption, x)
 
@@ -189,6 +235,23 @@ GtkNotebook {
         self.restartPrompt = False
 
         self.keysDown = []
+        self.shrunk = True
+
+        self.notebook.set_visible(False)
+
+    def test(self, a, b):
+        if self.shrunk:
+            self.notebook.set_visible(True)
+            self.shrunk = False
+        else:
+            self.notebook.set_visible(False)
+            self.shrunk = True
+
+    def test2(self, a, b):
+        self.seperatorLabel.set_name("seperatorLabelOver" + str(self.shrunk))
+
+    def test3(self, a, b):
+        self.seperatorLabel.set_name("seperatorLabel" + str(self.shrunk))
 
 if __name__ == "__main__":
 
