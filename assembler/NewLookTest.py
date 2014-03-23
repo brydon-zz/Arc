@@ -119,6 +119,11 @@ GtkNotebook {
         self.eventbox = self.builder.get_object("eventbox")
         self.seperatorLabel = self.builder.get_object("seperatorLabel")
 
+        print dir(Gtk)
+        self.listBox = Gtk.ListStore()
+        self.builder.get_object("box5").add(self.listBox)
+
+
         # Text buffers for the big text-views
         self.outBuffer = self.outText.get_buffer()
         self.codeBuffer = self.code.get_buffer()
@@ -144,7 +149,6 @@ GtkNotebook {
         self.notebook.set_name("notebook")
         self.builder.get_object("fixed1").set_name("fixed1")
         self.builder.get_object("fixed2").set_name("fixed2")
-        self.builder.get_object("fixed3").set_name("fixed3")
         self.seperatorLabel.set_name("seperatorLabelTrue")
 
         self.builder.get_object("codeScrolled").set_name("codeScrolled")
@@ -152,9 +156,9 @@ GtkNotebook {
 
         # Set up the text behaviour
         self.outText.set_wrap_mode(Gtk.WrapMode.WORD)
-        self.code.set_wrap_mode(Gtk.WrapMode.WORD)
         self.memory.set_wrap_mode(Gtk.WrapMode.CHAR)
         self.stack.set_justification(Gtk.Justification.CENTER)
+        # self.code.set_wrap_mode(Gtk.WrapMode.WORD)
 
         # Hex Switch needs a special trigger signal that glade cannot understand
         self.hexSwitch.connect('notify::active', self.hexSwitchClicked)
@@ -260,4 +264,3 @@ if __name__ == "__main__":
     A = Assembler()
     print "Constructed"
     Gtk.main()
-
