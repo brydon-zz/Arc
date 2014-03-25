@@ -13,6 +13,16 @@ class Assembler(OldAssembler):
     border: 0px;
 }        
 
+#As88Window #helpTree {
+    color:#000;
+    background-color:#F5F5F5;
+}
+
+#As88Window #helpDisplayText {
+    color:#000;
+    background-color:#E5E5E5;
+}
+
 GtkNotebook, GtkEntry {
     border: 1px solid #333
 }
@@ -119,11 +129,6 @@ GtkNotebook {
         self.eventbox = self.builder.get_object("eventbox")
         self.seperatorLabel = self.builder.get_object("seperatorLabel")
 
-        print dir(Gtk)
-        self.listBox = Gtk.ListStore()
-        self.builder.get_object("box5").add(self.listBox)
-
-
         # Text buffers for the big text-views
         self.outBuffer = self.outText.get_buffer()
         self.codeBuffer = self.code.get_buffer()
@@ -148,7 +153,7 @@ GtkNotebook {
         self.memory.set_name("memory")
         self.notebook.set_name("notebook")
         self.builder.get_object("fixed1").set_name("fixed1")
-        self.builder.get_object("fixed2").set_name("fixed2")
+        # self.builder.get_object("fixed2").set_name("fixed2")
         self.seperatorLabel.set_name("seperatorLabelTrue")
 
         self.builder.get_object("codeScrolled").set_name("codeScrolled")
@@ -167,14 +172,14 @@ GtkNotebook {
         self.win.connect('key_press_event', self.on_key_press_event)
         self.win.connect('key_release_event', self.on_key_release_event)
 
-        self.eventbox.connect('button_press_event', self.test)
-        self.eventbox.connect('enter-notify-event', self.test2)
-        self.eventbox.connect('leave-notify-event', self.test3)
+        self.eventbox.connect('button_press_event', self.clickSeperator)
+        self.eventbox.connect('enter-notify-event', self.hoverOverSeperator)
+        self.eventbox.connect('leave-notify-event', self.hoverOffSeperator)
 
         # Window Icon -> what shows up in unity bar/toolbar/etc.
         self.win.set_icon_from_file("images/icon.png")
 
-        self.win.show_all()
+        # self.win.show_all()
 
         self.textTagBold = Gtk.TextTag()
         self.textTagBold.set_property("weight", Pango.Weight.BOLD)
@@ -227,7 +232,11 @@ GtkNotebook {
 
         self.commandArgs = as88.getCommandArgs()
         self.do = as88.getFunctionTable()
+        self.functions = self.do.keys()
+        self.functions.sort()
         # self.sysCodes = as88.getSysCodes()
+
+        self.makeHelpBox()
 
         self.LIST_TYPE = type([1, 1])
 
@@ -242,8 +251,9 @@ GtkNotebook {
         self.shrunk = True
 
         self.notebook.set_visible(False)
+        self.win.show_all()
 
-    def test(self, a, b):
+    def clickSeperator(self, a, b):
         if self.shrunk:
             self.notebook.set_visible(True)
             self.shrunk = False
@@ -251,11 +261,42 @@ GtkNotebook {
             self.notebook.set_visible(False)
             self.shrunk = True
 
-    def test2(self, a, b):
+    def hoverOverSeperator(self, a, b):
         self.seperatorLabel.set_name("seperatorLabelOver" + str(self.shrunk))
 
-    def test3(self, a, b):
+    def hoverOffSeperator(self, a, b):
         self.seperatorLabel.set_name("seperatorLabel" + str(self.shrunk))
+
+    def makeHelpBox(self):
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+
+        box = self.builder.get_object("displayHelp")
+        store = Gtk.ListStore(str)
+
+        for x in self.functions:
+            treeiter = store.append([x])
+
+        tree = Gtk.TreeView(store)
+        tree.set_name("helpTree")
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn("Command", renderer, text=0)
+
+        tree.append_column(column)
+
+        def on_tree_selection_changed(selection):
+            model, treeiter = selection.get_selected()
+            if treeiter != None:
+                helpDisplayText.get_buffer().set_text(str(self.do[model[treeiter][0]].__doc__))
+
+        tree.get_selection().connect("changed", on_tree_selection_changed)
+
+        helpDisplayText = self.builder.get_object("helpDisplayText")
+        helpDisplayText.set_name("helpDisplayText")
+        helpDisplayText.get_buffer().set_text("abcd")
+
+        scroll.add(tree)
+        box.pack_start(scroll, True, True, 0)
 
 if __name__ == "__main__":
 
