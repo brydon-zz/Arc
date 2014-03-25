@@ -243,11 +243,22 @@ class Assembler(object):
 
             self.codeString = f.read()
 
+            self.codeBuffer.set_text(self.codeString)
+
+            f.close()
+
+            f = open(self.fileName, 'r')
+
+            self.syntaxHighlight(f)
+
             f.close()
 
             self.startRunning()
         except IOError:
             self.outPut("There was a fatal issue opening " + self.fileName + ". Are you sure it's a file?")
+
+    def syntaxHighlight(self, f):
+        return
 
     def startRunning(self):
         """Starts the whole sha-bang.
@@ -256,9 +267,8 @@ class Assembler(object):
 
         self.ran = False
 
-        self.clearGui()
-
-        GObject.idle_add(lambda: self.codeBuffer.set_text(self.codeString))
+        # self.clearGui()
+        # GObject.idle_add(lambda: self.codeBuffer.set_text(self.codeString))
 
         self.updateRegisters()
 
@@ -388,11 +398,6 @@ class Assembler(object):
         if i == "":
             GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), ">> " + string),
                     self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(), 0.1, True, .5, .5)))
-        else:
-            GObject.idle_add(lambda: (self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), str(i) + ": " + string + "\n"),
-                    self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(), 0.1, True, .5, .5),
-                    self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(i + 1), 0.25, True, .5, .5),
-                    self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line(i), self.codeBuffer.get_iter_at_line(i + 1))))
 
     def clearGui(self):
         """ Empties the text buffers of all relevant GUI elements"""
@@ -489,11 +494,16 @@ class Assembler(object):
                                 ))
 
     def stepButtonClicked(self, injectedLine=""):
+        print "no MY stbc"
         """ Defines what happens if the step button is clicked.
         If the entry text field is empty, step like normal.
         If the entry text field has a command in it execute accordingly
         If the entry text field has characters in it, that aren't recognised as a command, clear the entry and do nothing.
         """
+        # Scroll to view the line
+        self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(self.machine.registers['PC']), 0.25, True, .5, .5)
+
+        # Inject Line stuff, up for Del??
         text = self.entry.get_text().lower().strip()
         if injectedLine != "" or text == "":
             if self.ran:
@@ -532,7 +542,18 @@ class Assembler(object):
 
             GObject.idle_add(lambda: self.entry.set_text(""))
 
+        # insert a >
+        iter = self.codeBuffer.get_iter_at_line(self.machine.registers['PC'])
+        self.codeBuffer.insert(iter, ">")
+
+        # remove the > from the previous line, -1 means we're at the first line
+        if self.machine.lastLine != -1:
+            start = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 0)
+            end = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 1)
+            self.codeBuffer.delete(start, end)
+
     def step(self, injectedLine=""):
+        print "no MY step"
         """ The guts of the second pass. Where the magic happens! """
         if self.running:
 
@@ -569,11 +590,14 @@ class Assembler(object):
                 command.remove("")
 
             if command == None or command == []:
-                if injectedLine == "": self.machine.registers['PC'] += 1
+                if injectedLine == "":
+                    self.machine.lastLine = self.machine.registers['PC']
+                    self.machine.registers['PC'] += 1
                 return  # skip nothing lines, yo.
 
             if command[0] not in self.commandArgs.keys():
                 print "Missing " + command[0] + " from self.commandArgs"
+                self.machine.lastLine = self.machine.registers['PC']
                 self.machine.registers['PC'] += 1
                 return
 
@@ -594,6 +618,7 @@ class Assembler(object):
                 self.machine.registers['PC'] = self.machine.jumpLocation
                 self.machine.jumpLocation = -1
             elif injectedLine == "":
+                self.machine.lastLine = self.machine.registers['PC']
                 self.machine.registers['PC'] += 1
 
             if self.machine.registers['PC'] >= self.machine.codeBounds[1]:

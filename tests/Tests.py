@@ -33,7 +33,7 @@ class Test(unittest.TestCase):
         """ Adding small positive integers - the easiest case """
         for x in ['AX', 'BX', 'CX', 'DX']:
             self.machine.registers[x] = 2 ** 15 - 1
-            self.functionTable["ADD"](['ADD', x, 'FF'], 0)
+            self.functionTable["ADD"](['ADD', x, 'FFh'], 0)
             self.assertEqual(self.machine.registers[x], -32514, x + ' failed add')
 
     def testAddLetter(self):
@@ -45,14 +45,14 @@ class Test(unittest.TestCase):
         """ Adding small positive integers - the easiest case """
         for x in ['AX', 'BX', 'CX', 'DX']:
             self.machine.registers[x] = -200
-            self.functionTable["ADD"](['ADD', x, '018000'], 42)
+            self.functionTable["ADD"](['ADD', x, '98304'], 42)
             self.assertEqual(self.machine.registers[x], 32568)
 
     def testAddNegativeSmallHexNumbers(self):
         """ Adding small positive integers - the easiest case """
         for x in ['AX', 'BX', 'CX', 'DX']:
             self.machine.registers[x] = -200
-            self.functionTable["ADD"](['ADD', x, 'f'], 0)
+            self.functionTable["ADD"](['ADD', x, 'fh'], 0)
             self.assertEqual(self.machine.registers[x], -185, x + ' failed add')
 
     def testAddNegativeSmallNumbers(self):
@@ -74,13 +74,13 @@ class Test(unittest.TestCase):
         for x in ['AX', 'BX', 'CX', 'DX']:
             self.machine.registers[x] = 10
             self.functionTable["ADD"](['ADD', x, '10'], 0)
-            self.assertEqual(self.machine.registers[x], 26, x + ' failed add')
+            self.assertEqual(self.machine.registers[x], 20, x + ' failed add')
 
     def testAddSmallHexNumbers(self):
         """ Adding hexy small numbers, things with letters"""
         for x in ['AX', 'BX', 'CX', 'DX']:
             self.machine.registers[x] = 10
-            self.functionTable["ADD"](['ADD', x, '1f'], 0)
+            self.functionTable["ADD"](['ADD', x, '1fh'], 0)
             self.assertEqual(self.machine.registers[x], 41, x + ' failed add')
 
     def testAnd(self):
@@ -100,6 +100,18 @@ class Test(unittest.TestCase):
         self.machine.flags['D'] = True
         self.functionTable["CLD"]([], 0)
         self.assertEqual(self.machine.flags['D'], False)
+
+    def testCmpb(self):
+        """ Testing CMPB"""
+        self.machine.registers['BX'] = 8
+        self.functionTable['CMPB'](['CMPB', 'BL', '8'], 0)
+        self.assertTrue(self.machine.flags['Z'])
+
+    def testCmpbWithLetters(self):
+        """ Testing CMPB"""
+        self.machine.registers['BX'] = 76
+        self.functionTable['CMPB'](['CMPB', 'BL', "'L'"], 0)
+        self.assertTrue(self.machine.flags['Z'])
 
     """ 
     ******* Jump Tests ********
@@ -460,7 +472,7 @@ class Test(unittest.TestCase):
 
     def testJumpImmed(self):
         self.functionTable["JMP"](['JMP', '10'], 0)
-        self.assertEqual(self.machine.jumpLocation, 16)
+        self.assertEqual(self.machine.jumpLocation, 10)
 
     def testJzFalse(self):
         """ testing the jump if zero method, if passed a false condition """
@@ -562,12 +574,12 @@ class Test(unittest.TestCase):
         """ Moving small positive integers - the easiest case """
         for x in self.machine.registers.keys():
             self.functionTable["MOV"](['MOV', x, '10'], 0)
-            self.assertEqual(self.machine.registers[x], 16, x + ' failed mov')
+            self.assertEqual(self.machine.registers[x], 10, x + ' failed mov')
 
     def testMovSmallHexNumbers(self):
         """ moving hexy small numbers, things with letters"""
         for x in self.machine.registers.keys():
-            self.functionTable["MOV"](['MOV', x, '1f'], 0)
+            self.functionTable["MOV"](['MOV', x, '1fh'], 0)
             self.assertEqual(self.machine.registers[x], 31, x + ' failed mov')
 
     def testNot(self):
@@ -608,13 +620,13 @@ class Test(unittest.TestCase):
 
     def testPushHex(self):
         """ testing pushing a hex number, with letters in it """
-        self.functionTable["PUSH"](['push', '1f'], 0)
+        self.functionTable["PUSH"](['push', '1fh'], 0)
         self.assertEqual(self.machine.stackData, [31])
 
     def testPushInt(self):
         """ Testing pushing a raw number """
         self.functionTable["PUSH"](['push', '11'], 0)
-        self.assertEqual(self.machine.stackData, [17])
+        self.assertEqual(self.machine.stackData, [11])
 
     def testPushLocalvar(self):
         """ Teting pushing a LOCAL variable (i.e. an assembler level var) """

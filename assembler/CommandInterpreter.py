@@ -278,13 +278,17 @@ class CommandInterpreter(object):
             self.assembler.registers['SP'] += int(command[2])
             return
         if self.assembler.isHex(command[1]):
-            self.gui.outPut("Error on line " + str(i) + ". " + command[0] + " cannot have a numerical first argument.")
-            self.gui.stopRunning(-1)
-            return
+            if not inPlace:
+                self.gui.outPut("Error on line " + str(i) + ". " + command[0] + " cannot have a numerical first argument.")
+                self.gui.stopRunning(-1)
+                return
 
         """ To save on code space, y will serve as "second guy" """
         if self.assembler.isHex(command[2]):  # y is a digit
-            y = int(command[2], 16)
+            if command[2][-1] == "h":
+                y = int(command[2][:-1], 16)
+            else:
+                y = int(command[2])
         elif command[2] in self.assembler.localVars.keys():  # y is a local var
             y = int(self.assembler.localVars[command[2]])
         elif command[2] in self.assembler.registers.keys():  # y is a register
@@ -312,11 +316,8 @@ class CommandInterpreter(object):
         elif command[1] in self.assembler.BSS.keys():  # x is a BSS location
             result = self.assembler.addressSpace[self.assembler.BSS[command[1]][0]] + y
             if not inPlace: self.assembler.addressSpace[self.assembler.BSS[command[1]][0]] = result
-
-        if result == 0:
-            self.assembler.flags['Z'] = 1
-        elif result < 0:
-            self.assembler.flags['S'] = 1
+        elif inPlace:
+            result = int(command[1], 10) + y
 
         if result >= 2 ** 15 and command[1] in self.assembler.registers.keys():
             while self.assembler.registers[command[1]] >= 2 ** 15:
@@ -327,6 +328,11 @@ class CommandInterpreter(object):
                 self.assembler.registers[command[1]] += 2 ** 16
                 self.assembler.flags['O'] = 1
 
+        if result == 0:
+            self.assembler.flags['Z'] = 1
+        elif result < 0:
+            self.assembler.flags['S'] = 1
+
     def AND(self, command, i, inPlace=False):
         """ AND [register or memory address], [register, memory address, local variable, or hex value]
         
@@ -335,7 +341,10 @@ class CommandInterpreter(object):
         Logical AND: Each bit in A is anded with the corresponding bit in B."""
 
         if self.assembler.isHex(command[2]):  # y is a digit
-            t = int(command[2], 16)
+            if command[2][-1] == "h":
+                t = int(command[2][:-1], 16)
+            else:
+                t = int(command[2])
         elif command[2] in self.assembler.localVars.keys():  # y is a local var
             t = self.assembler.localVars[command[2]]
         elif command[2] in self.assembler.registers:
@@ -423,7 +432,8 @@ class CommandInterpreter(object):
                 self.assembler.out("Illegal argument %s for CMPB on line %d. CMPB expects an argument to be a one byte register (ie: AH, AL, etc.), an integer, or a one byte string (ie: \"L\", etc.). Instead %s was given." % (x, i, x))
             b.append(x)
 
-        self.SUB(["CMPB", b[0], b[1]], i, inPlace=True)
+        print b
+        self.SUB(["CMPB", str(b[0]), str(b[1])], i, inPlace=True)
 
     def DAA(self, command, i):
         """ DAA 
@@ -484,7 +494,10 @@ class CommandInterpreter(object):
                 self.assembler.jumpLocation = m
 
         elif self.assembler.isHex(command[1]):
-            self.assembler.jumpLocation = int(command[1], 16)
+            if command[1][-1] == "h":
+                self.assembler.jumpLocation = int(command[1][:-1], 16)
+            else:
+                self.assembler.jumpLocation = int(command[1])
         else:
             self.gui.outPut("Error on line " + str(i) + ". The label " + command[1] + " is not defined for " + referer + "-ing to.")
 
@@ -535,7 +548,10 @@ class CommandInterpreter(object):
             register address, local variable, or number. """
 
         if self.assembler.isHex(command[2]):  # B is digit
-            b = int(command[2], 16)
+            if command[2][-1] == "h":
+                b = int(command[2][:-1], 16)
+            else:
+                b = int(command[2])
         elif command[2] in self.assembler.localVars.keys():  # B is local var
             b = int(self.assembler.localVars[command[2]])
         elif command[2] in self.assembler.BSS.keys():  # B is BSS mem address
@@ -597,7 +613,10 @@ class CommandInterpreter(object):
         Inclusive OR: Performs a logical OR between each bit in A and each bit in B. If either bit is a 1 in each position, the resulting bit is a 1."""
 
         if self.assembler.isHex(command[2]):  # y is a digit
-            t = int(command[2], 16)
+            if command[2][-1] == "h":
+                t = int(command[2][:-1], 16)
+            else:
+                t = int(command[2])
         elif command[2] in self.assembler.localVars.keys():  # y is a local var
             t = self.assembler.localVars[command[2]]
         elif command[2] in self.assembler.registers:
@@ -643,7 +662,10 @@ class CommandInterpreter(object):
     def PUSH(self, command, i):
         """ Push x will PUSH the argument x to the stack """
         if self.assembler.isHex(command[1]):  # PUSHing a number to the stack, it's prolly hex so ignore the A-F chars
-            self.assembler.stackData.append(int(command[1], 16))
+            if command[1][-1] == "h":
+                self.assembler.stackData.append(int(command[1][:-1], 16))
+            else:
+                self.assembler.stackData.append(int(command[1]))
             self.assembler.registers['SP'] -= 2
             self.gui.updateStack()
         elif command[1] in self.assembler.registers:
@@ -887,12 +909,12 @@ class CommandInterpreter(object):
 
     def SCASB(self, command, i):
         """ SCASB """
-        self.SUB(['SCASB', self.assembler.eightBitRegister('AL'), self.assembler.addressSpace[self.assembler.registers['DI']]], i, inPlace=True)
+        self.SUB(['SCASB', str(self.assembler.eightBitRegister('AL')), str(self.assembler.addressSpace[self.assembler.registers['DI']])], i, inPlace=True)
         self.assembler.registers['DI'] += -1 if self.assembler.flags['D'] else 1
 
     def SCASW(self, command, i):
         """ SCASB """
-        self.SUB(['SCASW', self.assembler.registers['AX'], self.assembler.addressSpace[self.assembler.registers['DI'] + 1] + 256 * self.assembler.addressSpace[self.assembler.registers['DI']]], i, inPlace=True)
+        self.SUB(['SCASW', str(self.assembler.registers['AX']), str(self.assembler.addressSpace[self.assembler.registers['DI'] + 1] + 256 * self.assembler.addressSpace[self.assembler.registers['DI']])], i, inPlace=True)
         self.assembler.registers['DI'] += -2 if self.assembler.flags['D'] else 2
 
     def SHL(self, command, i):
@@ -1019,7 +1041,10 @@ class CommandInterpreter(object):
         Exclusive OR: Each bit in B is exclusive ORed with its corresponding bit in A. The result is stored in A."""
 
         if self.assembler.isHex(command[2]):  # y is a digit
-            t = int(command[2], 16)
+            if command[2][-1] == "h":
+                t = int(command[2][:-1], 16)
+            else:
+                t = int(command[2])
         elif command[2] in self.assembler.localVars.keys():  # y is a local var
             t = self.assembler.localVars[command[2]]
         elif command[2] in self.assembler.registers:

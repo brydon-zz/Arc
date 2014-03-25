@@ -16,6 +16,7 @@ class Intel8088(object):
 
         self.lookupTable = {}
         self.localVars = {}
+        self.lastLine = -1
         self.stackData = []
         self.DATA = {}
         self.BSS = {}
@@ -79,7 +80,12 @@ class Intel8088(object):
 
     def isHex(self, string):
         try:
-            int(str(string), 16)
-            return True
+            if str(string)[-1] == "h":
+                int(str(string)[:-1], 16)
+                return True
+            else:
+                int(str(string))
+                return True
+
         except ValueError:
             return False
