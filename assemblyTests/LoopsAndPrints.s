@@ -3,18 +3,17 @@
 	_GETCHAR = 117
 
 .SECT .TEXT
-
 	PUSH str
 	PUSH inGreet
 	PUSH _PRINTF
 	SYS
+	ADD SP, 6
 
-	ADD SP,6
 	MOV DI, num
-	MOV AX, 41
+	MOV AX, 41h
 
 loop:
-	CMP AX, 'Z'
+	CMPB AL, 'Z'
 	
 	STOSB
 	
@@ -34,7 +33,7 @@ doneLoop:
 	ADD SP,2
 
 	PUSH str
-	PUSH printBuffer
+	PUSH goodByeMessage
 	PUSH _PRINTF
 	SYS
 
@@ -48,6 +47,7 @@ doneLoop:
 	str: 		.ASCIZ "%s\n"
 	inGreet:	.ASCIZ "Let's do our ABCS\n"
 	dig:		.ASCIZ "%d\n"
+	goodByeMessage:	.ASCIZ "\nGoodBye."
 	
 .SECT .BSS
 	num:		.SPACE 3
