@@ -1,3 +1,5 @@
 logs/
 *.notes
 *.pyc
+.project
+.pydevproject
