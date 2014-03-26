@@ -18,7 +18,7 @@
 """
 
 from gi.repository import Gtk, Gdk, GObject, Pango
-import CommandInterpreter, Intel8088
+import CommandInterpreter, Intel8088, sys, os, ReadLiner
 from Assembler import Assembler as OldAssembler
 
 """"Assembler Class for Intel 8088 Architecture"""
@@ -26,6 +26,8 @@ class Assembler(OldAssembler):
 
     def __init__(self):
         """ Begin GUI """
+        self._PATH = "/".join(os.path.dirname(os.path.realpath(__file__)).split("/")[:-1])
+        print self._PATH
         styles = """
 * {
     border: 0px;
@@ -128,8 +130,10 @@ GtkNotebook {
 
         # Make stuff from the GLADE file and setup events
         self.builder = Gtk.Builder()
-        self.builder.add_from_file("xml/GladeMockup3.glade")
+        self.builder.add_from_file(self._PATH + "/xml/GladeMockup3.glade")
         self.builder.connect_signals(Handler(self))
+
+        self.downFile = ""
 
         self.win = self.builder.get_object("window1")
         self.win.set_name('As88Window')
@@ -154,7 +158,7 @@ GtkNotebook {
         self.hexSwitch.connect('notify::active', self.hexSwitchClicked)
 
         # Key events!
-        self.win.connect('key_press_event', self.on_key_press_event)
+        self.win.connect('key_press_event', self.onKeyPressEvent)
         self.win.connect('key_release_event', self.on_key_release_event)
 
         self.eventbox.connect('button_press_event', self.clickSeperator)
@@ -162,7 +166,7 @@ GtkNotebook {
         self.eventbox.connect('leave-notify-event', self.hoverOffSeperator)
 
         # Window Icon -> what shows up in unity bar/toolbar/etc.
-        self.win.set_icon_from_file("images/icon.png")
+        self.win.set_icon_from_file(self._PATH + "/images/icon.png")
 
         self.setUpTextTags()
 
@@ -172,47 +176,72 @@ GtkNotebook {
         for x in self.memoryColours:
             self.memory.connect("query-tooltip", self.toolTipOption, x)
 
-
-        self.codeBuffer.connect("notify::cursor-position", self.outputStatusLabel)
-        # self.code.connect("move-cursor", self.outputStatusLabel)
-        # self.code.connect("button-press-event", self.outputStatusLabel)
-        # self.code.connect("set-anchor", self.outputStatusLabel)
-
         """ End GUI """
+        self.PROGRAMNAME = "8088 Assembly"
+
+        self.new()
+
+        # GUI elements
+        self.codeBuffer.connect("notify::cursor-position", self.updateStatusLabel)
+        self.codeBuffer.connect("changed", self.textChanged)
+        self.updateStatusLabel()
 
         # return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
         self.ESCAPE_CHARS = ['\b', '\n', '\v', '\t', '\f', "'", '"', '\a', '\r']
         self.inBuffer = ""
-        self.fileName = None
         self.displayInHex = True
         self.getCharFlag = False
 
-        self.machine = Intel8088.Intel8088()
-
-        as88 = CommandInterpreter.CommandInterpreter(self, self.machine)
-
-        self.commandArgs = as88.getCommandArgs()
-        self.do = as88.getFunctionTable()
-        self.functions = self.do.keys()
-        self.functions.sort()
-        # self.sysCodes = as88.getSysCodes()
-
-        self.makeHelpBox()
-
         self.LIST_TYPE = type([1, 1])
-
-        self.lineCount = 0
-
-        self.mode = "head"
-        self.running = False
-        self.ran = False
-        self.restartPrompt = False
-
         self.keysDown = []
         self.shrunk = True
 
+        # Two Final GUI elements
         self.win.show_all()
         self.notebook.set_visible(False)
+
+    def openFile(self):
+        """Opens up a file dialog to select a file then reads that file in to the assembler. """
+
+        self.fileChooser = Gtk.FileChooserDialog(title="Choose A File", parent=self.win, buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        response = self.fileChooser.run()
+
+        if response == Gtk.ResponseType.OK:
+            fileName = self.fileChooser.get_filename()
+
+        self.fileChooser.destroy()
+
+        if fileName == None:
+            return
+
+        self.open(fileName)
+
+    def open(self, fileName):
+        """ Opens and reads in the file fileName """
+        try:
+            self.fileName = None
+            self.running = False
+            self.ran = False
+
+            f = open(fileName, 'r')
+
+            self.codeString = f.read()
+
+            self.codeBuffer.set_text(self.codeString)
+
+            f.seek(0)
+
+            self.syntaxHighlight(f)
+
+            f.close()
+
+            self.outBuffer.set_text("")
+            self.fileName = fileName
+            self.edited = False
+            self.win.set_title(self.PROGRAMNAME + " - " + "Untitled" if self.fileName == None else self.fileName)
+
+        except IOError:
+            self.outPut("There was a fatal issue opening " + fileName + ". Are you sure it's a file?")
 
     def clickSeperator(self, a, b):
         if self.shrunk:
@@ -222,40 +251,44 @@ GtkNotebook {
             self.notebook.set_visible(False)
             self.shrunk = True
 
-    def syntaxHighlight(self, f):
+    def syntaxHighlight(self, f, lineOffset=0):
         import tokenize
 
         self.commentLine = -1
 
-        def handle_token(typeOfToken, token, (srow, scol), (erow, ecol), line):
-
+        def handleSyntaxHighlightingToken(typeOfToken, token, (srow, scol), (erow, ecol), line):
             if repr(token) == "'!'":
                 self.commentLine = line
-                self.codeBuffer.apply_tag(self.textTagLightGreyText, self.codeBuffer.get_iter_at_line_offset(srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(srow, 0))
+                # self.codeBuffer.remove_all_tags(self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
+                self.codeBuffer.apply_tag(self.textTagLightGreyText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + srow, 0))
 
             comment = self.commentLine == line
 
-            # print repr(token), tokenize.tok_name[typeOfToken]
+            print repr(token), tokenize.tok_name[typeOfToken]
             if tokenize.tok_name[typeOfToken] == "NAME":
                 if not comment:
+                    self.codeBuffer.remove_all_tags(self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
                     if repr(token).strip("'") in self.functions:
-                        self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(erow - 1, ecol))
+                        self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
                     elif repr(token).strip("'") in self.machine.registers.keys():
-                        self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(erow - 1, ecol))
-                        self.codeBuffer.apply_tag(self.textTagBlueText, self.codeBuffer.get_iter_at_line_offset(srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(erow - 1, ecol))
+                        self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
+                        self.codeBuffer.apply_tag(self.textTagBlueText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
+                    elif repr(token).strip("'") in self.machine.eightBitRegisterNames():
+                        self.codeBuffer.apply_tag(self.textTagBlueText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
                     elif repr(token).strip("'") in ["SECT", "DATA", "BSS", "TEXT"]:
-                        self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(erow - 1, ecol))
-                        self.codeBuffer.apply_tag(self.textTagGreyText, self.codeBuffer.get_iter_at_line_offset(srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(erow - 1, ecol))
+                        self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
+                        self.codeBuffer.apply_tag(self.textTagGreyText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
                     else:
-                        self.codeBuffer.apply_tag(self.textTagRedText, self.codeBuffer.get_iter_at_line_offset(srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(erow - 1, ecol))
+                        self.codeBuffer.apply_tag(self.textTagRedText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
             elif tokenize.tok_name[typeOfToken] == "NUMBER":
-                self.codeBuffer.apply_tag(self.textTagGreenText, self.codeBuffer.get_iter_at_line_offset(srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(erow - 1, ecol))
+                self.codeBuffer.remove_all_tags(self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
+                self.codeBuffer.apply_tag(self.textTagGreenText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
             else:
                 1
                 # print "%d,%d-%d,%d:\t%s\t%s" % \
                 #    (srow, scol, erow, ecol, tokenize.tok_name[typeOfToken], repr(token))
 
-        tokenize.tokenize(f.readline, handle_token)
+        tokenize.tokenize(f.readline, handleSyntaxHighlightingToken)
 
     def hoverOverSeperator(self, a, b):
         self.seperatorLabel.set_name("seperatorLabelOver" + str(self.shrunk))
@@ -271,7 +304,7 @@ GtkNotebook {
         store = Gtk.ListStore(str)
 
         for x in self.functions:
-            treeiter = store.append([x])
+            store.append([x])
 
         tree = Gtk.TreeView(store)
         tree.set_name("helpTree")
@@ -280,12 +313,12 @@ GtkNotebook {
 
         tree.append_column(column)
 
-        def on_tree_selection_changed(selection):
+        def onHelpTreeSelectionChanged(selection):
             model, treeiter = selection.get_selected()
             if treeiter != None:
                 helpDisplayText.get_buffer().set_text(str(self.do[model[treeiter][0]].__doc__))
 
-        tree.get_selection().connect("changed", on_tree_selection_changed)
+        tree.get_selection().connect("changed", onHelpTreeSelectionChanged)
 
         helpDisplayText = self.builder.get_object("helpDisplayText")
         helpDisplayText.set_name("helpDisplayText")
@@ -385,11 +418,8 @@ GtkNotebook {
         self.memoryBuffer.get_tag_table().add(self.textTagPurple)
         self.memoryColours = [self.textTagRed, self.textTagOrange, self.textTagMagenta, self.textTagGreen, self.textTagBlue, self.textTagPurple, self.textTagGrey]
 
-    def outputStatusLabel(self, *args):
-        self.statusLabel.set_text("Line: " + str(self.codeBuffer.get_iter_at_offset(self.codeBuffer.props.cursor_position).get_line()))
-
-    def textChanged(self, *args):
-        print "fdf"
+    def updateStatusLabel(self, *args):
+        self.statusLabel.set_text(" Line: " + str(self.codeBuffer.get_iter_at_offset(self.codeBuffer.props.cursor_position).get_line()) + "\t" + self.running * "Running")
 
     def setupTextBuffers(self):
         self.outBuffer = self.outText.get_buffer()
@@ -404,23 +434,23 @@ GtkNotebook {
 
     def makeFileButtons(self):
         new = Gtk.Image()
-        new.set_from_file("images/newFileIcon.png")
+        new.set_from_file(self._PATH + "/images/newFileIcon.png")
 
         newEB = Gtk.EventBox()
         newEB.add(new)
 
         self.buttonBox.pack_start(newEB, False, False, 1)
 
-        open = Gtk.Image()
-        open.set_from_file("images/openIcon.png")
+        openImage = Gtk.Image()
+        openImage.set_from_file(self._PATH + "/images/openIcon.png")
 
         openEB = Gtk.EventBox()
-        openEB.add(open)
+        openEB.add(openImage)
 
         self.buttonBox.pack_start(openEB, False, False, 1)
 
         save = Gtk.Image()
-        save.set_from_file("images/saveIcon.png")
+        save.set_from_file(self._PATH + "/images/saveIcon.png")
 
         saveEB = Gtk.EventBox()
         saveEB.add(save)
@@ -428,7 +458,7 @@ GtkNotebook {
         self.buttonBox.pack_start(saveEB, False, False, 1)
 
         allIcon = Gtk.Image()
-        allIcon.set_from_file("images/allIcon.png")
+        allIcon.set_from_file(self._PATH + "/images/allIcon.png")
 
         allEB = Gtk.EventBox()
         allEB.add(allIcon)
@@ -436,7 +466,7 @@ GtkNotebook {
         self.buttonBox.pack_start(allEB, False, False, 1)
 
         step = Gtk.Image()
-        step.set_from_file("images/stepIcon.png")
+        step.set_from_file(self._PATH + "/images/stepIcon.png")
 
         stepEB = Gtk.EventBox()
         stepEB.add(step)
@@ -444,18 +474,21 @@ GtkNotebook {
         self.buttonBox.pack_start(stepEB, False, False, 1)
 
         stop = Gtk.Image()
-        stop.set_from_file("images/stopIcon.png")
+        stop.set_from_file(self._PATH + "/images/stopIcon.png")
 
         stopEB = Gtk.EventBox()
         stopEB.add(stop)
         self.buttonBox.pack_start(stopEB, False, False, 1)
 
         def pressFileButton(widget, event):
-            self.downFile = widget.get_child().props.file
-            widget.get_child().set_from_file("images/empty.png")
+            print "pr"
+            if self.downFile == "": self.downFile = widget.get_child().props.file
+
+            widget.get_child().set_from_file(self._PATH + "/images/empty.png")
 
             if widget == stopEB:
                 if self.running: self.stopRunning(1)
+                self.updateStatusLabel()
             elif widget == allEB:
                 self.runAll()
             elif widget == stepEB:
@@ -468,14 +501,17 @@ GtkNotebook {
                 self.new()
 
         def hoverOverFileButton(widget, event):
+            print "hove"
             newFileName = widget.get_child().props.file.replace(".", "Over.")
             widget.get_child().set_from_file(newFileName)
 
         def releaseFileButton(widget, event):
+            print "re"
             widget.get_child().set_from_file(self.downFile)
             self.downFile = ""
 
         def hoverOffFileButton(widget, event):
+            print "hoff"
             newFileName = widget.get_child().props.file.replace("Over.", ".")
             widget.get_child().set_from_file(newFileName)
 
@@ -486,10 +522,39 @@ GtkNotebook {
             x.connect('leave-notify-event', hoverOffFileButton)
 
     def saveFile(self):
-        1 + 1
+        if self.fileName != "":
+            self.win.set_title(self.PROGRAMNAME + " - " + self.fileName)
+            file = open(self.fileName, "w")
+            file.write(self.codeBuffer.get_text(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter(), False))
+            file.close()
 
     def new(self):
-        1 + 1
+        self.win.set_title(self.PROGRAMNAME)
+        self.outBuffer.set_text("")
+        self.edited = False
+        self.codeBuffer.remove_all_tags(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter())
+        self.codeBuffer.set_text("")
+
+        self.fileName = None
+        self.machine = Intel8088.Intel8088()
+
+        as88 = CommandInterpreter.CommandInterpreter(self, self.machine)
+
+        self.commandArgs = as88.getCommandArgs()
+        self.do = as88.getFunctionTable()
+        self.functions = self.do.keys()
+        self.functions.sort()
+        # self.sysCodes = as88.getSysCodes()
+
+        # This GUI element needs the as88 defined
+        self.makeHelpBox()
+
+        self.lineCount = 0
+
+        self.mode = "head"
+        self.running = False
+        self.ran = False
+        self.restartPrompt = False
 
     def runAll(self):
         while self.running:
@@ -501,28 +566,33 @@ GtkNotebook {
         If the entry text field has a command in it execute accordingly
         If the entry text field has characters in it, that aren't recognised as a command, clear the entry and do nothing.
         """
-        # Scroll to view the line
-        self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(self.machine.registers['PC']), 0.25, True, .5, .5)
+        if self.running:
+            # Scroll to view the line
+            self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(self.machine.registers['PC']), 0.25, True, .5, .5)
+            self.codeBuffer.place_cursor(self.code.get_buffer().get_iter_at_line(self.machine.registers['PC']))
 
-        # insert a >
-        iter = self.codeBuffer.get_iter_at_line(self.machine.registers['PC'])
-        self.codeBuffer.insert(iter, ">")
+            # insert a >
+            currentLineIter = self.codeBuffer.get_iter_at_line(self.machine.registers['PC'])
+            self.codeBuffer.insert(currentLineIter, ">")
 
-        # remove the > from the previous line, -1 means we're at the first line
-        if self.machine.lastLine != -1:
-            start = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 0)
-            end = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 1)
-            self.codeBuffer.delete(start, end)
+            # remove the > from the previous line, -1 means we're at the first line
+            if self.machine.lastLine != -1:
+                startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 0)
+                endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 1)
+                self.codeBuffer.delete(startOfArrow, endOfArrow)
+            self.step()
 
-        if self.ran:
+        elif self.ran:
+            """ Prompt the user to restart """
             if not self.restartPrompt:
                 self.outPut("Do you wish to restart? (y/n)")
                 self.restartPrompt = True
-        elif self.running:
-            self.step()
+
+        else:
+            self.startRunning()
+            self.stepButtonClicked()
 
     def step(self):
-        print self.machine.eightBitRegister('BL')
         """ The guts of the second pass. Where the magic happens! """
         if self.running:
 
@@ -550,7 +620,6 @@ GtkNotebook {
                 command.remove("")
 
             if command == None or command == []:
-                print "empty cmd"
                 self.machine.lastLine = self.machine.registers['PC']
                 self.machine.registers['PC'] += 1
                 return  # skip the empty lines
@@ -587,7 +656,7 @@ GtkNotebook {
                 self.stopRunning()
                 return
 
-    def on_key_press_event(self, widget, event):
+    def onKeyPressEvent(self, widget, event):
         """ Handles Key Down events, puts the corresponding keyval into a list self.keysDown.
         Also checks for key combinations. """
         keyname = Gdk.keyval_name(event.keyval)
@@ -623,9 +692,33 @@ GtkNotebook {
         self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), string)
         self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(), 0.1, True, .5, .5)
 
-if __name__ == "__main__":
+    def textChanged(self, *args):
+        """ This function gets called everytime the 'code' text changes.
+        Syntax Highglighting is applied on the changed line appropriately. """
+        if not self.running:
+            self.edited = True
+            self.win.set_title(self.PROGRAMNAME + " - *" + ("Untitled" if self.fileName == None else self.fileName))
+            lineNumber = self.codeBuffer.get_iter_at_offset(self.codeBuffer.props.cursor_position).get_line()
 
+            startOfLineIter = self.codeBuffer.get_iter_at_line_offset(lineNumber, 0)
+
+            if lineNumber == self.codeBuffer.get_line_count():
+                endOfLineIter = self.codeBuffer.get_end_iter()
+            else:
+                endOfLineIter = self.codeBuffer.get_iter_at_line_offset(lineNumber + 1, 0)
+
+            lineText = self.codeBuffer.get_text(startOfLineIter, endOfLineIter, False)
+
+            self.syntaxHighlight(ReadLiner.ReadLiner(lineText), lineOffset=lineNumber)
+
+def main():
     GObject.threads_init()
 
     A = Assembler()
+    if len(sys.argv) > 1:
+        if os.path.isfile(sys.argv[1]):
+            A.open(sys.argv[1])
     Gtk.main()
+
+if __name__ == "__main__":
+    main()

@@ -43,6 +43,12 @@ class Intel8088(object):
 
         self.jumpLocation = -1
 
+    def eightBitRegisterNames(self):
+        """ Returns a tuple of the names of the eight bit registers. 
+            ("AH", "AL", "BH", "BL", "CH", "CL", "DH", "DL") """
+
+        return ("AH", "AL", "BH", "BL", "CH", "CL", "DH", "DL")
+
     def eightBitRegister(self, s):
         """ Returns the 8 bit register s, if it exists, otherwise returns 0.
         i.e. self.eightBitRegister('BH') is the top 8 bits of BX """

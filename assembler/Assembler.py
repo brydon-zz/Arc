@@ -119,7 +119,7 @@ class Assembler(object):
         # Hex Switch needs a special trigger signal that glade cannot understand
         self.hexSwitch.connect('notify::active', self.hexSwitchClicked)
         # Key events!
-        self.win.connect('key_press_event', self.on_key_press_event)
+        self.win.connect('key_press_event', self.onKeyPressEvent)
         self.win.connect('key_release_event', self.on_key_release_event)
         # Window Icon -> what shows up in unity bar/toolbar/etc.
         self.win.set_icon_from_file("images/icon.png")
@@ -208,7 +208,7 @@ class Assembler(object):
 
         return True
 
-    def on_key_press_event(self, widget, event):
+    def onKeyPressEvent(self, widget, event):
         """ Handles Key Down events, puts the corresponding keyval into a list self.keysDown.
         Also checks for key combinations. """
         keyname = Gdk.keyval_name(event.keyval)
@@ -260,19 +260,14 @@ class Assembler(object):
         try:
             f = open(self.fileName, 'r')
 
-            self.codeString = f.read()
+            self.codeBuffer.set_text(f.read())
 
-            self.codeBuffer.set_text(self.codeString)
-
-            f.close()
-
-            f = open(self.fileName, 'r')
+            f.seek(0)
 
             self.syntaxHighlight(f)
 
             f.close()
 
-            self.startRunning()
         except IOError:
             self.outPut("There was a fatal issue opening " + self.fileName + ". Are you sure it's a file?")
 
@@ -282,7 +277,7 @@ class Assembler(object):
     def startRunning(self):
         """Starts the whole sha-bang.
         First pass for forward references, and setting up local vars, etc.
-        Second loop to be done LATES."""
+        The self.running flag is set so the user can step thru accordingly. """
 
         self.ran = False
 
@@ -290,8 +285,9 @@ class Assembler(object):
         # GObject.idle_add(lambda: self.codeBuffer.set_text(self.codeString))
 
         self.updateRegisters()
+        self.code.set_editable(False)
 
-        self.lines = self.codeString.split("\n")
+        self.lines = self.codeBuffer.get_text(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter(), False).split("\n")
 
         self.lineCount = 0
 
@@ -304,7 +300,6 @@ class Assembler(object):
             self.machine.addressSpace.append(str(0))
 
         errorCount = 0
-
 
         BSScount = 0
 
@@ -648,10 +643,12 @@ class Assembler(object):
         """ Ends the current simulation, if i=1 then succesfully, otherwise there was an issue """
         self.running = False
         self.ran = True
+        self.code.set_editable(True)
+
         if i == 1:
             self.outPut("\nCode executed succesfully.")
         else:
-            self.outPut("\nCode execution terminated.")
+            self.outPut("\nCode execution incorrectly terminated.")
         # TODO: EOF, anything important like that should go here.
 
     def hexSwitchClicked(self, button=None, data=None):
