@@ -6,7 +6,6 @@ from Assembler import Assembler as OldAssembler
 class Assembler(OldAssembler):
 
     def __init__(self):
-
         """ Begin GUI """
         styles = """
 * {
@@ -95,20 +94,23 @@ GtkNotebook {
 """
 
         """Handlers for the actions in the interface."""
-        class Handler:
+        class Handler(object):
+            def __init__(self, outer):
+                self.outer = outer
+
             def onDeleteWindow(self, *args):
                 Gtk.main_quit(*args)
 
             def onOpen(self, button):
-                Assembler.openFile()
+                self.outer.openFile()
 
             def onButtonClicked(self, button):
-                Assembler.stepButtonClicked()
+                self.outer.stepButtonClicked()
 
         # Make stuff from the GLADE file and setup events
         self.builder = Gtk.Builder()
         self.builder.add_from_file("xml/GladeMockup3.glade")
-        self.builder.connect_signals(Handler())
+        self.builder.connect_signals(Handler(self))
 
         self.win = self.builder.get_object("window1")
         self.win.set_name('As88Window')
@@ -150,6 +152,12 @@ GtkNotebook {
         # self.notebook.set_visible(False)
         for x in self.memoryColours:
             self.memory.connect("query-tooltip", self.toolTipOption, x)
+
+
+        self.codeBuffer.connect("notify::cursor-position", self.outputStatusLabel)
+        # self.code.connect("move-cursor", self.outputStatusLabel)
+        # self.code.connect("button-press-event", self.outputStatusLabel)
+        # self.code.connect("set-anchor", self.outputStatusLabel)
 
         """ End GUI """
 
@@ -270,7 +278,7 @@ GtkNotebook {
         # Names need set for CSS reasons only
         self.outText.set_name("outText")
         self.code.set_name("code")
-        self.entry.set_name("entry")
+        # self.entry.set_name("entry")
         self.stack.set_name("stack")
         self.regA.set_name("regA")
         self.regB.set_name("regB")
@@ -292,7 +300,7 @@ GtkNotebook {
     def assignGuiElementsToVariables(self):
         self.outText = self.builder.get_object("outText")
         self.code = self.builder.get_object("code")
-        self.entry = self.builder.get_object("entry")
+        # self.entry = self.builder.get_object("entry")
         self.stack = self.builder.get_object("stack")
         self.button = self.builder.get_object("button1")
         self.regA = self.builder.get_object("regA")
@@ -311,6 +319,7 @@ GtkNotebook {
         self.eventbox = self.builder.get_object("eventbox")
         self.seperatorLabel = self.builder.get_object("seperatorLabel")
         self.buttonBox = self.builder.get_object("buttonBox")
+        self.statusLabel = self.builder.get_object("statusLabel")
 
     def setUpTextTags(self):
         self.textTagBold = Gtk.TextTag()
@@ -356,6 +365,12 @@ GtkNotebook {
         self.memoryBuffer.get_tag_table().add(self.textTagBlue)
         self.memoryBuffer.get_tag_table().add(self.textTagPurple)
         self.memoryColours = [self.textTagRed, self.textTagOrange, self.textTagMagenta, self.textTagGreen, self.textTagBlue, self.textTagPurple, self.textTagGrey]
+
+    def outputStatusLabel(self, *args):
+        self.statusLabel.set_text("Line: " + str(self.codeBuffer.get_iter_at_offset(self.codeBuffer.props.cursor_position).get_line()))
+
+    def textChanged(self, *args):
+        print "fdf"
 
     def setupTextBuffers(self):
         self.outBuffer = self.outText.get_buffer()
@@ -450,10 +465,7 @@ GtkNotebook {
             x.connect('button_release_event', releaseFileButton)
             x.connect('enter-notify-event', hoverOverFileButton)
             x.connect('leave-notify-event', hoverOffFileButton)
-        # stopButton = Gtk.Button()
-        # stopButton.add(stop)
 
-#        self.buttonBox.pack_start(stopButton, False, False, 0)
     def saveFile(self):
         1 + 1
 
@@ -477,14 +489,11 @@ GtkNotebook {
         iter = self.codeBuffer.get_iter_at_line(self.machine.registers['PC'])
         self.codeBuffer.insert(iter, ">")
 
-        firstFlag = False
         # remove the > from the previous line, -1 means we're at the first line
         if self.machine.lastLine != -1:
             start = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 0)
             end = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 1)
             self.codeBuffer.delete(start, end)
-        else:
-            firstFlag = True
 
         if self.ran:
             if not self.restartPrompt:
@@ -568,7 +577,7 @@ GtkNotebook {
             if not self.getCharFlag:
                 if not self.code.has_focus(): self.stepButtonClicked()
             else:
-                self.inBuffer = self.entry.get_text() + "\n"
+                # self.inBuffer = self.entry.get_text() + "\n"
                 self.machine.registers["AX"] = ord(self.inBuffer[0])
                 self.outPut(self.inBuffer + "\n")
                 self.inBuffer = self.inBuffer[1:]
@@ -577,9 +586,18 @@ GtkNotebook {
 
         if not keyname in self.keysDown: self.keysDown.append(keyname)
 
-        if ('O' in self.keysDown or 'o' in self.keysDown) and ('Control_L' in self.keysDown or 'Control_R' in self.keysDown):
+        if len(self.keysDown) == 2 and (('O' in self.keysDown) ^ ('o' in self.keysDown)) and (('Control_L' in self.keysDown) ^ ('Control_R' in self.keysDown)):
             self.keysDown = []
             self.openFile()
+        elif len(self.keysDown) == 2 and (('S' in self.keysDown) ^ ('s' in self.keysDown)) and (('Control_L' in self.keysDown) ^ ('Control_R' in self.keysDown)):
+            self.keysDown = []
+            self.saveFile()
+        elif len(self.keysDown) == 2 and (('N' in self.keysDown) ^ ('n' in self.keysDown)) and (('Control_L' in self.keysDown) ^ ('Control_R' in self.keysDown)):
+            self.keysDown = []
+            self.new()
+        elif len(self.keysDown) == 2 and (('Q' in self.keysDown) ^ ('q' in self.keysDown)) and (('Control_L' in self.keysDown) ^ ('Control_R' in self.keysDown)):
+            self.keysDown = []
+            exit(0)
 
     def outPut(self, string):
         """ Outputs the argument """
