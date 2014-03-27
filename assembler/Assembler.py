@@ -120,7 +120,7 @@ class Assembler(object):
         self.hexSwitch.connect('notify::active', self.hexSwitchClicked)
         # Key events!
         self.win.connect('key_press_event', self.onKeyPressEvent)
-        self.win.connect('key_release_event', self.on_key_release_event)
+        self.win.connect('key_release_event', self.onKeyReleaseEvent)
         # Window Icon -> what shows up in unity bar/toolbar/etc.
         self.win.set_icon_from_file("images/icon.png")
 
@@ -234,7 +234,7 @@ class Assembler(object):
             self.keysDown = []
             self.openFile()
 
-    def on_key_release_event(self, widget, event):
+    def onKeyReleaseEvent(self, widget, event):
         """ Handes Key Up events, removes the corresponding keyval from the list self.keysDown. """
         keyname = Gdk.keyval_name(event.keyval)
 
@@ -293,11 +293,6 @@ class Assembler(object):
 
         self.mode = "head"
         self.machine.restart()
-
-        self.machine.addressSpace = []
-
-        for i in range(1024):
-            self.machine.addressSpace.append(str(0))
 
         errorCount = 0
 
@@ -646,9 +641,9 @@ class Assembler(object):
         self.code.set_editable(True)
 
         if i == 1:
-            self.outPut("\nCode executed succesfully.")
+            self.outPut("\n----\nCode executed succesfully.")
         else:
-            self.outPut("\nCode execution incorrectly terminated.")
+            self.outPut("\n----\nCode execution terminated.")
         # TODO: EOF, anything important like that should go here.
 
     def hexSwitchClicked(self, button=None, data=None):

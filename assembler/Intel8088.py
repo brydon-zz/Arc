@@ -35,7 +35,7 @@ class Intel8088(object):
         self.DATA = {}
         self.BSS = {}
         self.effectiveBSSandDATALocation = {}
-        self.codeBounds = [1, 1]
+        self.codeBounds = [-1, -1]
 
         self.addressSpace = []
         for i in range(1024):
