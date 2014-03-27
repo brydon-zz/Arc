@@ -697,7 +697,6 @@ GtkNotebook {
         self.mode = "head"
         self.running = False
         self.ran = False
-        self.restartPrompt = False
 
     def runAll(self):
         """ If the simulation isn't running, then it is started and run in full with the GUI only being updated afterwards.
@@ -710,6 +709,25 @@ GtkNotebook {
             while self.running:
                 self.step()
             self.updateRegisters()
+        else:
+            if self.restartPrompt(): self.runAll()
+
+    def restartPrompt(self):
+        dialog = Gtk.MessageDialog(self.win, 0, Gtk.MessageType.QUESTION,
+            Gtk.ButtonsType.YES_NO, "Do You Wish to Restart?")
+
+        response = dialog.run()
+
+        if response == Gtk.ResponseType.NO:
+            dialog.destroy()
+            return False
+        elif response == Gtk.ResponseType.YES:
+            dialog.destroy()
+            self.startRunning()
+            return True
+        else:
+            dialog.destroy()
+            return False
 
     def startRunning(self):
         """Loads in the code to run, intialises all local variables and labels as set up in the code.
@@ -860,9 +878,7 @@ GtkNotebook {
 
         elif self.ran:
             """ Prompt the user to restart """
-            if not self.restartPrompt:
-                self.outPut("Do you wish to restart? (y/n)")
-                self.restartPrompt = True
+            if self.restartPrompt(): self.stepButtonClicked()
 
         else:
             self.startRunning()
