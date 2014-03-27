@@ -18,22 +18,54 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <child>
-              <object class="GtkMenuItem" id="menuitem1">
+              <object class="GtkMenuItem" id="filemenu">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">FIle</property>
+                <property name="label" translatable="yes">File</property>
                 <child type="submenu">
                   <object class="GtkMenu" id="menu1">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="open">
-                        <property name="label">gtk-open</property>
+                      <object class="GtkMenuItem" id="new">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="label" translatable="yes">New</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="open">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label">Open</property>
                         <signal name="activate" handler="onOpen" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="menuitem2">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Open Recent</property>
+                        <child type="submenu">
+                          <object class="GtkMenu" id="menu2">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="save">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label">Save</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="saveas">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label">Save As</property>
                       </object>
                     </child>
                     <child>
@@ -43,13 +75,10 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem5">
-                        <property name="label">gtk-quit</property>
+                      <object class="GtkMenuItem" id="quit">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="onDeleteWindow" swapped="no"/>
+                        <property name="label">Quit</property>
                       </object>
                     </child>
                   </object>
@@ -57,7 +86,41 @@
               </object>
             </child>
             <child>
-              <object class="GtkMenuItem" id="menuitem4">
+              <object class="GtkMenuItem" id="editmenu">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Edit</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="menu4">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkMenuItem" id="step">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label">Step Once</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="all">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label">Run All</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="stopRunning">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label">Stop Running</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="helpmenu">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Help</property>
@@ -66,12 +129,10 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem10">
-                        <property name="label">gtk-about</property>
+                      <object class="GtkMenuItem" id="about">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="label">About</property>
                       </object>
                     </child>
                   </object>
@@ -112,6 +173,7 @@
                             <property name="height_request">170</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="editable">False</property>
                           </object>
                         </child>
                       </object>
@@ -131,6 +193,7 @@
                           <object class="GtkTextView" id="stack">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="editable">False</property>
                           </object>
                         </child>
                       </object>
@@ -148,6 +211,7 @@
                             <property name="height_request">170</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="editable">False</property>
                           </object>
                         </child>
                       </object>
@@ -168,6 +232,7 @@
                             <property name="height_request">170</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="editable">False</property>
                           </object>
                         </child>
                       </object>
@@ -188,6 +253,7 @@
                             <property name="height_request">170</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="editable">False</property>
                           </object>
                         </child>
                       </object>
@@ -208,6 +274,7 @@
                             <property name="height_request">170</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="editable">False</property>
                           </object>
                         </child>
                       </object>
@@ -229,6 +296,7 @@
                             <property name="height_request">170</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="editable">False</property>
                           </object>
                         </child>
                       </object>
@@ -250,6 +318,7 @@
                             <property name="height_request">170</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="editable">False</property>
                           </object>
                         </child>
                       </object>
@@ -271,6 +340,7 @@
                             <property name="height_request">170</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="editable">False</property>
                           </object>
                         </child>
                       </object>
@@ -292,6 +362,7 @@
                             <property name="height_request">170</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="editable">False</property>
                           </object>
                         </child>
                       </object>
@@ -313,6 +384,7 @@
                             <property name="height_request">170</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="editable">False</property>
                           </object>
                         </child>
                       </object>
@@ -334,6 +406,7 @@
                             <property name="height_request">170</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="editable">False</property>
                           </object>
                         </child>
                       </object>
@@ -387,7 +460,7 @@
                         <property name="wrap_mode">word</property>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
+                        <property name="expand">True</property>
                         <property name="fill">True</property>
                         <property name="pack_type">end</property>
                         <property name="position">1</property>
@@ -434,11 +507,45 @@
                         <property name="can_focus">False</property>
                         <property name="shadow_type">in</property>
                         <child>
-                          <object class="GtkTextView" id="code">
-                            <property name="height_request">525</property>
+                          <object class="GtkViewport" id="viewport1">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="vscroll_policy">natural</property>
+                            <child>
+                              <object class="GtkBox" id="codeLineBox">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <child>
+                                  <object class="GtkTextView" id="lines">
+                                    <property name="width_request">20</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="editable">False</property>
+                                    <property name="justification">right</property>
+                                    <property name="right_margin">2</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkTextView" id="code">
+                                    <property name="width_request">402</property>
+                                    <property name="height_request">525</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                            </child>
                           </object>
                         </child>
                       </object>
