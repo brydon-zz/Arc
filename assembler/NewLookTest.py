@@ -27,6 +27,7 @@ class Simulator(object):
     _VERSION = "0.5"
     _DESCRIPTION = "A Program for Writing and Simulating Intel 8088 Assembly Code"
     _WEBSITE = "http://www.beastman.ca/"
+    _LICENSE = Gtk.License.GPL_2_0
 
     def __init__(self):
         self._PATH = "/".join(os.path.dirname(os.path.realpath(__file__)).split("/")[:-1])
@@ -119,11 +120,6 @@ GtkNotebook {
     border:0;
 }
 
-#fixed1 {
-    background-color:#F0F;
-    border:0;
-}
-
 #As88Window #outText {
     background-color:#333;
     font-family:mono;
@@ -148,7 +144,7 @@ GtkNotebook {
 
         self.win = self.builder.get_object("window1")
         self.win.set_name('As88Window')
-        self.win.connect("destroy", self.exit)
+        self.win.connect("delete-event", self.exit)
 
         # Set Up the CSS
                 # Creating local vars for gui elements
@@ -955,7 +951,7 @@ GtkNotebook {
 
         if keyname == 'Return' or keyname == 'KP_Enter':
             if not self.getCharFlag:
-                # if not self.code.has_focus():
+                if not self.code.has_focus():
                     self.stepButtonClicked()
             else:
                 # self.inBuffer = self.entry.get_text() + "\n"
@@ -1025,6 +1021,8 @@ GtkNotebook {
             self.syntaxHighlight(ReadLiner.ReadLiner(lineText), lineOffset=lineNumber)
 
     def makeAboutDialogue(self):
+        """ Makes an About Dialog displaying basic info about the program
+        (Name, Copyright, version, logo, website, license) """
         about = Gtk.AboutDialog()
         about.set_name("AboutDialog")
         about.set_program_name(self._PROGRAMNAME)
@@ -1032,6 +1030,7 @@ GtkNotebook {
         about.set_copyright("(c) Brydon Eastman")
         about.set_comments(self._DESCRIPTION)
         about.set_website(self._WEBSITE)
+        about.set_license_type(self._LICENSE)
         about.set_logo(GdkPixbuf.Pixbuf.new_from_file(self._PATH + "/images/logo.png"))
         about.run()
         about.destroy()
@@ -1135,27 +1134,45 @@ GtkNotebook {
             self.memoryBuffer.apply_tag(self.memoryColours[index % len(self.memoryColours)], self.memoryBuffer.get_iter_at_offset(before), self.memoryBuffer.get_iter_at_offset(after))
 
     def exit(self, *args):
-        """ Determines whether or not to exit, if there is an unsaved file or active simulation it prompts the user """
+        """ Determines whether or not to exit, if there is an unsaved file or active simulation it prompts the user.
+        Then decides whether to exit the program or not based on the users response. """
         if self.running:
-            confirm = Gtk.Dialog(title="There is a", parent=self.win, buttons=(Gtk.STOCK_NO, Gtk.ResponseType.CANCEL, Gtk.STOCK_YES, Gtk.ResponseType.OK))
-            response = confirm.run()
+            dialog = Gtk.MessageDialog(self.win, 0, Gtk.MessageType.QUESTION,
+            Gtk.ButtonsType.YES_NO, "Do You Want To quit?")
+            dialog.format_secondary_text("There is a simulation currently in progress.")
 
-            if response != Gtk.ResponseType.OK:
-                return
+            response = dialog.run()
 
+            if response == Gtk.ResponseType.NO:
+                dialog.destroy()
+                return True  # Returning true tells GTK to not kill this win
+
+            dialog.destroy()
         if self.edited:
-            """ """
-        else:
-            Gtk.main_quit(args)
+            dialog = Gtk.MessageDialog(self.win, 0, Gtk.MessageType.QUESTION,
+            Gtk.ButtonsType.YES_NO, "Do You Want To quit?")
+            dialog.format_secondary_text("There are unsaved changes.")
+
+            response = dialog.run()
+
+            if response == Gtk.ResponseType.NO:
+                dialog.destroy()
+                return True  # Returning true tells GTK to not kill this win
+
+            dialog.destroy()
+
+        Gtk.main_quit(args)
 
 def main():
     """ The entry point. """
     GObject.threads_init()
 
     A = Simulator()
+
     if len(sys.argv) > 1:
         if os.path.isfile(sys.argv[1]):
             A.open(sys.argv[1])
+
     Gtk.main()
 
 if __name__ == "__main__":

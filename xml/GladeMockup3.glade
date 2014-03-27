@@ -531,6 +531,7 @@
                                     <property name="can_focus">False</property>
                                     <property name="editable">False</property>
                                     <property name="justification">right</property>
+                                    <property name="left_margin">1</property>
                                     <property name="right_margin">2</property>
                                   </object>
                                   <packing>
