@@ -21,7 +21,7 @@
               <object class="GtkMenuItem" id="filemenu">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">File</property>
+                <property name="label" translatable="yes">_File</property>
                 <child type="submenu">
                   <object class="GtkMenu" id="menu1">
                     <property name="visible">True</property>
@@ -30,14 +30,16 @@
                       <object class="GtkMenuItem" id="new">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">New</property>
+                        <property name="tooltip_text" translatable="yes">New File</property>
+                        <property name="label" translatable="yes">_New</property>
                       </object>
                     </child>
                     <child>
                       <object class="GtkMenuItem" id="open">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label">Open</property>
+                        <property name="tooltip_text" translatable="yes">Open File</property>
+                        <property name="label">_Open</property>
                         <signal name="activate" handler="onOpen" swapped="no"/>
                       </object>
                     </child>
@@ -58,14 +60,16 @@
                       <object class="GtkMenuItem" id="save">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label">Save</property>
+                        <property name="tooltip_text" translatable="yes">Save File</property>
+                        <property name="label">_Save</property>
                       </object>
                     </child>
                     <child>
                       <object class="GtkMenuItem" id="saveas">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label">Save As</property>
+                        <property name="tooltip_text" translatable="yes">Save File As</property>
+                        <property name="label">Save _As</property>
                       </object>
                     </child>
                     <child>
@@ -78,7 +82,8 @@
                       <object class="GtkMenuItem" id="quit">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label">Quit</property>
+                        <property name="tooltip_text" translatable="yes">Quit</property>
+                        <property name="label">_Quit</property>
                       </object>
                     </child>
                   </object>
@@ -89,7 +94,7 @@
               <object class="GtkMenuItem" id="editmenu">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Edit</property>
+                <property name="label" translatable="yes">_Edit</property>
                 <child type="submenu">
                   <object class="GtkMenu" id="menu4">
                     <property name="visible">True</property>
@@ -98,21 +103,24 @@
                       <object class="GtkMenuItem" id="step">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label">Step Once</property>
+                        <property name="tooltip_text" translatable="yes">Run One Line</property>
+                        <property name="label">_Step Once</property>
                       </object>
                     </child>
                     <child>
                       <object class="GtkMenuItem" id="all">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label">Run All</property>
+                        <property name="tooltip_text" translatable="yes">Run All</property>
+                        <property name="label">Run _All</property>
                       </object>
                     </child>
                     <child>
                       <object class="GtkMenuItem" id="stopRunning">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label">Stop Running</property>
+                        <property name="tooltip_text" translatable="yes">Stop Running</property>
+                        <property name="label">Stop _Running</property>
                       </object>
                     </child>
                   </object>
@@ -123,7 +131,7 @@
               <object class="GtkMenuItem" id="helpmenu">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Help</property>
+                <property name="label" translatable="yes">_Help</property>
                 <child type="submenu">
                   <object class="GtkMenu" id="menu3">
                     <property name="visible">True</property>
@@ -132,7 +140,8 @@
                       <object class="GtkMenuItem" id="about">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label">About</property>
+                        <property name="tooltip_text" translatable="yes">About This Program</property>
+                        <property name="label">_About</property>
                       </object>
                     </child>
                   </object>
@@ -183,7 +192,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkScrolledWindow" id="scrolledWindowStack">
+                      <object class="GtkScrolledWindow" id="stackSW">
                         <property name="width_request">50</property>
                         <property name="height_request">520</property>
                         <property name="visible">True</property>

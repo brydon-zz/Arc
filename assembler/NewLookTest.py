@@ -17,23 +17,23 @@
     email to brydon.eastman@gmail.com.
 """
 
-from gi.repository import Gtk, Gdk, GObject, Pango
+from gi.repository import Gtk, Gdk, GObject, Pango, GdkPixbuf
 
 import CommandInterpreter, Intel8088, ReadLiner, sys, os, tokenize, time
 
-""""Assembler Class for Intel 8088 Architecture"""
-class Assembler(object):
+""""Simulator Class for Intel 8088 Architecture"""
+class Simulator(object):
+    _PROGRAMNAME = "The Best 8088 Simulator"
+    _VERSION = "0.5"
+    _DESCRIPTION = "A Program for Writing and Simulating Intel 8088 Assembly Code"
+    _WEBSITE = "http://www.beastman.ca/"
 
     def __init__(self):
         self._PATH = "/".join(os.path.dirname(os.path.realpath(__file__)).split("/")[:-1])
-        self._KEYTIMEOUT = 10  # TODO: maybe replace this with focus lost?
+        self._KEYTIMEOUT = 4  # TODO: maybe replace this with focus lost?
 
         """ Begin GUI """
         styles = """
-* {
-    border: 0px;
-}        
-
 #As88Window #helpTree {
     color:#000;
     background-color:#F5F5F5;
@@ -48,6 +48,10 @@ GtkNotebook, GtkEntry {
     border: 1px solid #333;
 }
 
+GtkAboutDialog, GtkAboutDialog * {
+    color: #000;
+}
+
 #As88Window #lines {
     color:#999;
     border-right:1px solid #333;
@@ -57,30 +61,41 @@ GtkNotebook, GtkEntry {
 
 #As88Window #codeScrolled {
     border-bottom: 3px solid #000;
+    border-top:0;
+    border-left:0;
+    border-right:0;
 }
 
 #As88Window #seperatorLabelTrue {
     background-color:#200;
     border-right:1px solid #333;
     border-left:1px solid #333;
+    border-top:0;
+    border-bottom:0;
 }
 
 #As88Window #seperatorLabelFalse {
     background-color:#002;
     border-right:1px solid #333;
     border-left:1px solid #333;
+    border-top:0;
+    border-bottom:0;
 }
 
 #As88Window #seperatorLabelOverTrue {
     background-color:#666;
     border-right:1px solid #000;
     border-left:1px solid #000;
+    border-top:0;
+    border-bottom:0;
 }
 
 #As88Window #seperatorLabelOverFalse {
     background-color:#666;
     border-right:1px solid #000;
     border-left:1px solid #000;
+    border-top:0;
+    border-bottom:0;
 }
 
 #As88Window, GtkNotebook {
@@ -101,20 +116,27 @@ GtkNotebook {
     background-color:#E5E5E5;
     font-family:mono;
     color:#000;
+    border:0;
 }
 
 #fixed1 {
     background-color:#F0F;
+    border:0;
 }
 
 #As88Window #outText {
     background-color:#333;
     font-family:mono;
     color:#FFF;
+    border:0;
 }
 
 #As88Window #code {
     font-family: mono;
+}
+
+#As88Window #outScrolled, #As88Window #regASW, #As88Window #regBSW, #As88Window #regCSW, #As88Window #regDSW, #As88Window #regBPSW, #As88Window #regSPSW, #As88Window #regSISW, #As88Window #regDISW, #As88Window #regPCSW, #As88Window #flagsSW, #As88Window #memorySW, #As88Window #stackSW {
+    border:0;
 }
 """
 
@@ -126,7 +148,7 @@ GtkNotebook {
 
         self.win = self.builder.get_object("window1")
         self.win.set_name('As88Window')
-        self.win.connect("destroy", Gtk.main_quit)
+        self.win.connect("destroy", self.exit)
 
         # Set Up the CSS
                 # Creating local vars for gui elements
@@ -156,7 +178,7 @@ GtkNotebook {
         self.builder.get_object("open").connect("activate", lambda *args: self.openFile())
         self.builder.get_object("save").connect("activate", lambda *args: self.saveFile())
         self.builder.get_object("saveas").connect("activate", lambda *args: self.saveFile(saveAs=True))
-        self.builder.get_object("quit").connect("activate", Gtk.main_quit)
+        self.builder.get_object("quit").connect("activate", self.exit)
 
         self.builder.get_object("step").connect("activate", lambda *args: self.stepButtonClicked())
         self.builder.get_object("all").connect("activate", lambda *args: self.runAll())
@@ -173,12 +195,11 @@ GtkNotebook {
 
         # self.notebook.set_visible(False)
         for x in self.memoryColours:
-            self.memory.connect("query-tooltip", self.toolTipOption, x)
+            self.memory.connect("query-tooltip", self.memoryToolTipOption, x)
 
         self.updateLineCounter()
 
         """ End GUI """
-        self.PROGRAMNAME = "The Best 8088 Simulator"
         self.downFile = ""
 
         self.new()
@@ -241,7 +262,7 @@ GtkNotebook {
             self.outBuffer.set_text("")
             self.fileName = fileName
             self.edited = False
-            self.win.set_title(self.PROGRAMNAME + " - " + "Untitled" if self.fileName == None else self.fileName)
+            self.win.set_title(self._PROGRAMNAME + " - " + "Untitled" if self.fileName == None else self.fileName)
 
         except IOError:
             self.outPut("There was a fatal issue opening " + fileName + ". Are you sure it's a file?")
@@ -398,6 +419,18 @@ GtkNotebook {
         self.seperatorLabel.set_name("seperatorLabelTrue")
         self.builder.get_object("codeScrolled").set_name("codeScrolled")
         self.builder.get_object("outScrolled").set_name("outScrolled")
+        self.builder.get_object("regASW").set_name("regASW")
+        self.builder.get_object("regBSW").set_name("regBSW")
+        self.builder.get_object("regCSW").set_name("regCSW")
+        self.builder.get_object("regDSW").set_name("regDSW")
+        self.builder.get_object("regBPSW").set_name("regBPSW")
+        self.builder.get_object("regSPSW").set_name("regSPSW")
+        self.builder.get_object("regSISW").set_name("regSISW")
+        self.builder.get_object("regDISW").set_name("regDISW")
+        self.builder.get_object("regPCSW").set_name("regPCSW")
+        self.builder.get_object("flagsSW").set_name("flagsSW")
+        self.builder.get_object("memorySW").set_name("memorySW")
+        self.builder.get_object("stackSW").set_name("stackSW")
 
     def assignGuiElementsToVariables(self):
         """ Binds critical GUI elements from the builder object to variable names. """
@@ -498,14 +531,28 @@ GtkNotebook {
         self.stack.set_justification(Gtk.Justification.CENTER)
         # self.code.set_wrap_mode(Gtk.WrapMode.WORD)
 
+    def hoverOverFileButton(self, widget, event):
+        newFileName = widget.get_child().props.file.replace(".", "Over.")
+        widget.get_child().set_from_file(newFileName)
+
+    def releaseFileButton(self, widget, event):
+        widget.get_child().set_from_file(self.downFile)
+        self.downFile = ""
+
+    def hoverOffFileButton(self, widget, event):
+        newFileName = widget.get_child().props.file.replace("Over.", ".")
+        widget.get_child().set_from_file(newFileName)
+
     def makeFileButtons(self):
         """ Creates the file buttons on the bottom of the screen: includes
         New, Open, Save, Run All, Step Once, Stop Stimulation """
+
         new = Gtk.Image()
         new.set_from_file(self._PATH + "/images/newFileIcon.png")
 
         newEB = Gtk.EventBox()
         newEB.add(new)
+        newEB.set_tooltip_text("New")
 
         self.buttonBox.pack_start(newEB, False, False, 1)
 
@@ -514,6 +561,7 @@ GtkNotebook {
 
         openEB = Gtk.EventBox()
         openEB.add(openImage)
+        openEB.set_tooltip_text("Open")
 
         self.buttonBox.pack_start(openEB, False, False, 1)
 
@@ -522,6 +570,7 @@ GtkNotebook {
 
         saveEB = Gtk.EventBox()
         saveEB.add(save)
+        saveEB.set_tooltip_text("Save")
 
         self.buttonBox.pack_start(saveEB, False, False, 1)
 
@@ -530,6 +579,7 @@ GtkNotebook {
 
         allEB = Gtk.EventBox()
         allEB.add(allIcon)
+        allEB.set_tooltip_text("Run All")
 
         self.buttonBox.pack_start(allEB, False, False, 1)
 
@@ -538,6 +588,7 @@ GtkNotebook {
 
         stepEB = Gtk.EventBox()
         stepEB.add(step)
+        stepEB.set_tooltip_text("Run One Line")
 
         self.buttonBox.pack_start(stepEB, False, False, 1)
 
@@ -546,44 +597,58 @@ GtkNotebook {
 
         stopEB = Gtk.EventBox()
         stopEB.add(stop)
+        stopEB.set_tooltip_text("Stop Running")
         self.buttonBox.pack_start(stopEB, False, False, 1)
 
-        def pressFileButton(widget, event):
-            if self.downFile == "": self.downFile = widget.get_child().props.file
-
-            widget.get_child().set_from_file(self._PATH + "/images/empty.png")
-
-            if widget == stopEB:
-                if self.running: self.stopRunning(1)
-                self.updateStatusLabel()
-            elif widget == allEB:
-                self.runAll()
-            elif widget == stepEB:
-                self.stepButtonClicked()
-            elif widget == saveEB:
-                self.saveFile()
-            elif widget == openEB:
-                self.openFile()
-            elif widget == newEB:
-                self.new()
-
-        def hoverOverFileButton(widget, event):
-            newFileName = widget.get_child().props.file.replace(".", "Over.")
-            widget.get_child().set_from_file(newFileName)
-
-        def releaseFileButton(widget, event):
-            widget.get_child().set_from_file(self.downFile)
-            self.downFile = ""
-
-        def hoverOffFileButton(widget, event):
-            newFileName = widget.get_child().props.file.replace("Over.", ".")
-            widget.get_child().set_from_file(newFileName)
-
         for x in [newEB, openEB, saveEB, allEB, stepEB, stopEB]:
-            x.connect('button_press_event', pressFileButton)
-            x.connect('button_release_event', releaseFileButton)
-            x.connect('enter-notify-event', hoverOverFileButton)
-            x.connect('leave-notify-event', hoverOffFileButton)
+            x.connect('button_release_event', self.releaseFileButton)
+            x.connect('enter-notify-event', self.hoverOverFileButton)
+            x.connect('leave-notify-event', self.hoverOffFileButton)
+
+        newEB.connect('button_press_event', self.pressNewButton)
+        openEB.connect('button_press_event', self.pressOpenButton)
+        saveEB.connect('button_press_event', self.pressSaveButton)
+        stepEB.connect('button_press_event', self.pressStepButton)
+        allEB.connect('button_press_event', self.pressAllButton)
+        stopEB.connect('button_press_event', self.pressStopButton)
+
+    def pressNewButton(self, widget, event):
+        if self.downFile == "": self.downFile = widget.get_child().props.file
+
+        widget.get_child().set_from_file(self._PATH + "/images/empty.png")
+        self.new()
+
+    def pressOpenButton(self, widget, event):
+        if self.downFile == "": self.downFile = widget.get_child().props.file
+
+        widget.get_child().set_from_file(self._PATH + "/images/empty.png")
+        self.openFile()
+
+    def pressStepButton(self, widget, event):
+        if self.downFile == "": self.downFile = widget.get_child().props.file
+
+        widget.get_child().set_from_file(self._PATH + "/images/empty.png")
+        self.stepButtonClicked()
+
+    def pressAllButton(self, widget, event):
+        if self.downFile == "": self.downFile = widget.get_child().props.file
+
+        widget.get_child().set_from_file(self._PATH + "/images/empty.png")
+        self.runAll()
+
+    def pressSaveButton(self, widget, event):
+        if self.downFile == "": self.downFile = widget.get_child().props.file
+
+        widget.get_child().set_from_file(self._PATH + "/images/empty.png")
+        self.saveFile()
+
+    def pressStopButton(self, widget, event):
+        if self.downFile == "": self.downFile = widget.get_child().props.file
+
+        widget.get_child().set_from_file(self._PATH + "/images/empty.png")
+
+        if self.running: self.stopRunning(1)
+        self.updateStatusLabel()
 
     def saveFile(self, saveAs=False):
         """ Saves the file.  If the file hans't been previously saved or if saveAs == True then a dialog propmts the user for a location
@@ -604,14 +669,14 @@ GtkNotebook {
                 file = open(self.fileName, "w")
                 file.write(self.codeBuffer.get_text(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter(), False))
                 file.close()
-                self.win.set_title(self.PROGRAMNAME + " - " + self.fileName)
+                self.win.set_title(self._PROGRAMNAME + " - " + self.fileName)
             except IOError:
                 """ Fatal error popup """
                 print "Fatal Error"
 
     def new(self):
         """ Resets the simulation and code """
-        self.win.set_title(self.PROGRAMNAME)
+        self.win.set_title(self._PROGRAMNAME)
         self.outBuffer.set_text("")
         self.edited = False
         self.codeBuffer.remove_all_tags(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter())
@@ -879,7 +944,14 @@ GtkNotebook {
     def onKeyPressEvent(self, widget, event):
         """ Handles Key Down events, puts the corresponding keyval into a list self.keysDown.
         Also checks for key combinations. """
-        keyname = Gdk.keyval_name(event.keyval)
+
+        keyval = event.keyval
+
+        keyname = Gdk.keyval_name(keyval)
+
+        mod = Gtk.accelerator_get_label(keyval, event.state)
+        # Possibly a better way ^^ weird things with MOD though.
+        # label.set_markup('<span size="xx-large">%s\n%d</span>' % (mod, keyval))
 
         if keyname == 'Return' or keyname == 'KP_Enter':
             if not self.getCharFlag:
@@ -896,7 +968,6 @@ GtkNotebook {
         self.keysDown[keyname] = time.time()
 
         for key in self.keysDown.keys():
-            print key, self.keysDown[key], time.time()
             if time.time() - self.keysDown[key] > self._KEYTIMEOUT:
                 self.keysDown.pop(key)
 
@@ -911,7 +982,7 @@ GtkNotebook {
             self.new()
         elif len(self.keysDown) == 2 and (('Q' in self.keysDown) ^ ('q' in self.keysDown)) and (('Control_L' in self.keysDown) ^ ('Control_R' in self.keysDown)):
             self.keysDown = {}
-            exit(0)
+            self.exit()
 
     def outPut(self, string):
         """ Outputs the argument """
@@ -939,7 +1010,7 @@ GtkNotebook {
         Syntax Highglighting is applied on the changed line appropriately. """
         if not self.running:
             self.edited = True
-            self.win.set_title(self.PROGRAMNAME + " - *" + ("Untitled" if self.fileName == None else self.fileName))
+            self.win.set_title(self._PROGRAMNAME + " - *" + ("Untitled" if self.fileName == None else self.fileName))
             lineNumber = self.codeBuffer.get_iter_at_offset(self.codeBuffer.props.cursor_position).get_line()
 
             startOfLineIter = self.codeBuffer.get_iter_at_line_offset(lineNumber, 0)
@@ -954,9 +1025,18 @@ GtkNotebook {
             self.syntaxHighlight(ReadLiner.ReadLiner(lineText), lineOffset=lineNumber)
 
     def makeAboutDialogue(self):
-        print "About: Brydon is super neat"
+        about = Gtk.AboutDialog()
+        about.set_name("AboutDialog")
+        about.set_program_name(self._PROGRAMNAME)
+        about.set_version(self._VERSION)
+        about.set_copyright("(c) Brydon Eastman")
+        about.set_comments(self._DESCRIPTION)
+        about.set_website(self._WEBSITE)
+        about.set_logo(GdkPixbuf.Pixbuf.new_from_file(self._PATH + "/images/logo.png"))
+        about.run()
+        about.destroy()
 
-    def toolTipOption(self, widget, x, y, keyboard_tip, tooltip, data):
+    def memoryToolTipOption(self, widget, x, y, keyboard_tip, tooltip, data):
         """ For printing the tooltips in the memory textview """
         if keyboard_tip:  # if the tooltip is focus from the keyboard, get those bounds
             offset = widget.props.buffer.cursor_position
@@ -1054,13 +1134,25 @@ GtkNotebook {
 
             self.memoryBuffer.apply_tag(self.memoryColours[index % len(self.memoryColours)], self.memoryBuffer.get_iter_at_offset(before), self.memoryBuffer.get_iter_at_offset(after))
 
+    def exit(self, *args):
+        """ Determines whether or not to exit, if there is an unsaved file or active simulation it prompts the user """
+        if self.running:
+            confirm = Gtk.Dialog(title="There is a", parent=self.win, buttons=(Gtk.STOCK_NO, Gtk.ResponseType.CANCEL, Gtk.STOCK_YES, Gtk.ResponseType.OK))
+            response = confirm.run()
 
+            if response != Gtk.ResponseType.OK:
+                return
+
+        if self.edited:
+            """ """
+        else:
+            Gtk.main_quit(args)
 
 def main():
     """ The entry point. """
     GObject.threads_init()
 
-    A = Assembler()
+    A = Simulator()
     if len(sys.argv) > 1:
         if os.path.isfile(sys.argv[1]):
             A.open(sys.argv[1])
