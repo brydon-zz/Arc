@@ -533,6 +533,9 @@
                                     <property name="justification">right</property>
                                     <property name="left_margin">1</property>
                                     <property name="right_margin">2</property>
+                                    <property name="cursor_visible">False</property>
+                                    <property name="accepts_tab">False</property>
+                                    <property name="input_purpose">digits</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>

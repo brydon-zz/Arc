@@ -19,14 +19,12 @@
     email to brydon.eastman@gmail.com.
 """
 
-from Assembler import Assembler
-from gi.repository import Gtk, GObject
+from NewLookTest import Simulator
+from gi.repository import Gtk
 
 if __name__ == "__main__":
 
-	GObject.threads_init()
-
-	A = Assembler()
+	A = Simulator()
 	print "Constructed"
 	Gtk.main()
 

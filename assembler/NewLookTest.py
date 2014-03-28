@@ -45,10 +45,6 @@ class Simulator(object):
     background-color:#E5E5E5;
 }
 
-GtkNotebook, GtkEntry {
-    border: 1px solid #333;
-}
-
 GtkAboutDialog, GtkAboutDialog * {
     color: #000;
 }
@@ -99,11 +95,11 @@ GtkAboutDialog, GtkAboutDialog * {
     border-bottom:0;
 }
 
-#As88Window, GtkNotebook {
+#As88Window {
     background-color:#000;
 }
 
-GtkNotebook {
+#As88Window #notebook {
     color:#fff;
     margin-top:0;
     padding-top:0;
@@ -111,6 +107,8 @@ GtkNotebook {
     padding-right:0;
     margin-left:0;
     padding-left:0;
+    background-color:#000;
+    border: 1px solid #333;
 }
 
 #As88Window #stack, #As88Window #regA, #As88Window #regB, #As88Window #regC, #As88Window #regD, #As88Window #regSP, #As88Window #regBP, #As88Window #regSI,#As88Window #regDI, #As88Window #regPC, #As88Window #regFlags, #As88Window #memory {
@@ -131,13 +129,24 @@ GtkNotebook {
     font-family: mono;
 }
 
-#As88Window #outScrolled, #As88Window #regASW, #As88Window #regBSW, #As88Window #regCSW, #As88Window #regDSW, #As88Window #regBPSW, #As88Window #regSPSW, #As88Window #regSISW, #As88Window #regDISW, #As88Window #regPCSW, #As88Window #flagsSW, #As88Window #memorySW, #As88Window #stackSW {
+#As88Window #regASW, #As88Window #regBSW, #As88Window #regCSW, #As88Window #regDSW, #As88Window #regBPSW, #As88Window #regSPSW, #As88Window #regSISW, #As88Window #regDISW, #As88Window #regPCSW {
+    border:1px dotted #000;
+}
+
+#As88Window #fixed1 {
+    background-color: #f0f;
+}
+
+#As88Window #outScrolled, #As88Window #flagsSW, #As88Window #memorySW, #As88Window #stackSW {
     border:0;
 }
 """
 
         """Handlers for the actions in the interface."""
 
+        self.edited = False
+        self.fileName = None
+        self.breakpointDClickTime = 0
         # Make stuff from the GLADE file and setup events
         self.builder = Gtk.Builder()
         self.builder.add_from_file(self._PATH + "/xml/GladeMockup3.glade")
@@ -203,6 +212,7 @@ GtkNotebook {
         # GUI elements
         self.codeBuffer.connect("notify::cursor-position", self.updateStatusLabel)
         self.codeBuffer.connect("changed", self.textChanged)
+        self.lineNumberTV.connect("button-press-event", self.setBreakpoint)
         self.updateStatusLabel()
 
         # return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
@@ -218,6 +228,19 @@ GtkNotebook {
         # Two Final GUI elements
         self.win.show_all()
         self.notebook.set_visible(False)
+
+    def setBreakpoint(self, widget, event):
+        if self.breakpointDClickTime == 0:
+            self.breakpointDClickTime = time.time()
+        else:
+            if time.time() - self.breakpointDClickTime < 0.2:
+                self.breakpointDClickTime = 0
+                self.breakPoint = self.lineNumberTV.get_iter_at_location(event.x, event.y).get_line()
+                start = self.codeBuffer.get_iter_at_line(self.breakPoint)
+                end = self.codeBuffer.get_iter_at_line(self.breakPoint + 1)
+                self.codeBuffer.apply_tag(self.textTagRed2, start, end)
+            else:
+                self.breakpointDClickTime = time.time()
 
     def openFile(self):
         """Opens up a file dialog to select a file then reads that file in to the assembler. """
@@ -258,7 +281,8 @@ GtkNotebook {
             self.outBuffer.set_text("")
             self.fileName = fileName
             self.edited = False
-            self.win.set_title(self._PROGRAMNAME + " - " + "Untitled" if self.fileName == None else self.fileName)
+            self.updateWindowTitle()
+            # self.win.set_title(self._PROGRAMNAME + " - " + "Untitled" if self.fileName == None else self.fileName)
 
         except IOError:
             self.outPut("There was a fatal issue opening " + fileName + ". Are you sure it's a file?")
@@ -396,7 +420,7 @@ GtkNotebook {
         """ Names need set for CSS reasons only """
         self.outText.set_name("outText")
         self.code.set_name("code")
-        self.lineCount.set_name("lines")
+        self.lineNumberTV.set_name("lines")
         # self.entry.set_name("entry")
         self.stack.set_name("stack")
         self.regA.set_name("regA")
@@ -452,7 +476,7 @@ GtkNotebook {
         self.seperatorLabel = self.builder.get_object("seperatorLabel")
         self.buttonBox = self.builder.get_object("buttonBox")
         self.statusLabel = self.builder.get_object("statusLabel")
-        self.lineCount = self.builder.get_object("lines")
+        self.lineNumberTV = self.builder.get_object("lines")
 
     def setUpTextTags(self):
         """ Constructs the various text tags used to style text within textviews. """
@@ -500,6 +524,11 @@ GtkNotebook {
         self.memoryBuffer.get_tag_table().add(self.textTagPurple)
         self.memoryColours = [self.textTagRed, self.textTagOrange, self.textTagMagenta, self.textTagGreen, self.textTagBlue, self.textTagPurple, self.textTagGrey]
 
+
+        self.textTagRed2 = Gtk.TextTag()
+        self.textTagRed2.set_property("background", "red")
+        self.codeBuffer.get_tag_table().add(self.textTagRed2)
+
     def updateStatusLabel(self, *args):
         """ Updates the status label at the bottom of the screen, including current line number,
         status of the simulation, etc. """
@@ -520,7 +549,7 @@ GtkNotebook {
         self.codeBuffer = self.code.get_buffer()
         self.stackBuffer = self.stack.get_buffer()
         self.memoryBuffer = self.memory.get_buffer()
-        self.linesBuffer = self.builder.get_object("lines").get_buffer()
+        self.linesBuffer = self.lineNumberTV.get_buffer()
         # Set up the text behaviour
         self.outText.set_wrap_mode(Gtk.WrapMode.WORD)
         self.memory.set_wrap_mode(Gtk.WrapMode.CHAR)
@@ -528,7 +557,13 @@ GtkNotebook {
         # self.code.set_wrap_mode(Gtk.WrapMode.WORD)
 
     def hoverOverFileButton(self, widget, event):
-        newFileName = widget.get_child().props.file.replace(".", "Over.")
+        if self.downFile != "":
+            newFileName = self.downFile
+            self.downFile = ""
+        else:
+            newFileName = widget.get_child().props.file.replace(".", "Over.")
+            newFileName = newFileName.replace("OverOver.", "Over.")
+
         widget.get_child().set_from_file(newFileName)
 
     def releaseFileButton(self, widget, event):
@@ -536,7 +571,12 @@ GtkNotebook {
         self.downFile = ""
 
     def hoverOffFileButton(self, widget, event):
-        newFileName = widget.get_child().props.file.replace("Over.", ".")
+        if self.downFile != "":
+            newFileName = self.downFile.replace("Over.", ".")
+            self.downFile = ""
+        else:
+            newFileName = widget.get_child().props.file.replace("Over.", ".")
+
         widget.get_child().set_from_file(newFileName)
 
     def makeFileButtons(self):
@@ -665,20 +705,21 @@ GtkNotebook {
                 file = open(self.fileName, "w")
                 file.write(self.codeBuffer.get_text(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter(), False))
                 file.close()
-                self.win.set_title(self._PROGRAMNAME + " - " + self.fileName)
+                self.updateWindowTitle()
             except IOError:
                 """ Fatal error popup """
                 print "Fatal Error"
 
     def new(self):
         """ Resets the simulation and code """
-        self.win.set_title(self._PROGRAMNAME)
+        self.updateWindowTitle()
+        self.fileName = None
+
         self.outBuffer.set_text("")
         self.edited = False
         self.codeBuffer.remove_all_tags(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter())
         self.codeBuffer.set_text("")
 
-        self.fileName = None
         self.machine = Intel8088.Intel8088()
 
         as88 = CommandInterpreter.CommandInterpreter(self, self.machine)
@@ -796,6 +837,7 @@ GtkNotebook {
                 if self.mode == ".SECT .TEXT":  # ends, we've gone one too far, but we count from zero
                     self.machine.codeBounds[1] = self.lineCount - 1
                 elif line.upper() == ".SECT .TEXT":  # starts, we're one too short, and we count from zero
+                    print "Found start"
                     self.machine.codeBounds[0] = self.lineCount
 
                 self.mode = line
@@ -1021,12 +1063,15 @@ GtkNotebook {
                             self.regFlags.get_buffer().set_text(""),
                             self.memory.get_buffer().set_text("")))
 
+    def updateWindowTitle(self):
+        self.win.set_title(self._PROGRAMNAME + " - " + ("*"*self.edited) + ("Untitled" if self.fileName == None else self.fileName))
+
     def textChanged(self, *args):
         """ This function gets called everytime the 'code' text changes.
         Syntax Highglighting is applied on the changed line appropriately. """
         if not self.running:
             self.edited = True
-            self.win.set_title(self._PROGRAMNAME + " - *" + ("Untitled" if self.fileName == None else self.fileName))
+            self.updateWindowTitle()
             lineNumber = self.codeBuffer.get_iter_at_offset(self.codeBuffer.props.cursor_position).get_line()
 
             startOfLineIter = self.codeBuffer.get_iter_at_line_offset(lineNumber, 0)
@@ -1110,9 +1155,9 @@ GtkNotebook {
             self.codeBuffer.delete(startOfArrow, endOfArrow)
 
         if i == 1:
-            self.outPut("\n----\nCode executed succesfully.")
+            self.outPut("\n----\nCode executed succesfully.\n")
         else:
-            self.outPut("\n----\nCode execution terminated.")
+            self.outPut("\n----\nCode execution terminated.\n")
         # TODO: EOF, anything important like that should go here.
 
     def getChar(self):

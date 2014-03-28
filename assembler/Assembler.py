@@ -27,8 +27,8 @@ import CommandInterpreter, Intel8088
 # TODO: Optimise the number of GUI interface calls. i.e. UpdateGUI should only update the gui parts who need updates
 # TODO: (possibly related to prev) have the parts of the gui updated
 
-""""Assembler Class for Intel 8088 Architecture"""
-class Assembler(object):
+""""Simulator Class for Intel 8088 Architecture"""
+class Simulator(object):
 
     def __init__(self):
 
@@ -50,10 +50,10 @@ class Assembler(object):
                 Gtk.main_quit(*args)
 
             def onOpen(self, button):
-                Assembler.openFile()
+                Simulator.openFile()
 
             def onButtonClicked(self, button):
-                Assembler.stepButtonClicked()
+                Simulator.stepButtonClicked()
 
         # Make stuff from the GLADE file and setup events
         self.builder = Gtk.Builder()
@@ -158,7 +158,7 @@ class Assembler(object):
         self.memory.props.has_tooltip = True
 
         for x in self.memoryColours:
-            self.memory.connect("query-tooltip", self.toolTipOption, x)
+            self.memory.connect("query-tooltip", self.memoryToolTipOption, x)
 
         """ End GUI """
         # return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
@@ -187,7 +187,7 @@ class Assembler(object):
 
         self.keysDown = []
 
-    def toolTipOption(self, widget, x, y, keyboard_tip, tooltip, data):
+    def memoryToolTipOption(self, widget, x, y, keyboard_tip, tooltip, data):
         """ For printing the tooltips in the memory textview """
         if keyboard_tip:  # if the tooltip is focus from the keyboard, get those bounds
             offset = widget.props.buffer.cursor_position
