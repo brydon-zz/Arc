@@ -323,7 +323,7 @@ GtkNotebook {
 
     def updateLineCounter(self):
         """Updates the line number label on the left of the code block. get's called whenever the lines change."""
-        self.linesBuffer.set_text("\n".join([str(x) for x in range(self.codeBuffer.get_line_count())]))
+        self.linesBuffer.set_text("\n".join([" " + str(x) for x in range(self.codeBuffer.get_line_count())]))
 
     def updateRegisters(self):
         """ Simply put, updates the register, flags, and memory gui elements with their respective values. """
@@ -702,9 +702,13 @@ GtkNotebook {
         """ If the simulation isn't running, then it is started and run in full with the GUI only being updated afterwards.
             If the simulation is running, then it runs until completion from it's current state, with GUI only being updated after.
             If the simulation has already run, then it prompts the user if he wishes to restart, and does so. """
-        if not self.ran:
-            if not self.running:
+        if not self.ran:  # If we aren't waiting on a restart prompt
+            if not self.running:  # if We're not running, start
                 self.startRunning()
+            else:
+                startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 0)  # If we are running, we got a arrow to get ridda
+                endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 1)
+                self.codeBuffer.delete(startOfArrow, endOfArrow)
 
             while self.running:
                 self.step()
@@ -791,7 +795,7 @@ GtkNotebook {
                 # record where the .SECT .TEXT section starts, and ends
                 if self.mode == ".SECT .TEXT":  # ends, we've gone one too far, but we count from zero
                     self.machine.codeBounds[1] = self.lineCount - 1
-                elif line == ".SECT .TEXT":  # starts, we're one too short, and we count from zero
+                elif line.upper() == ".SECT .TEXT":  # starts, we're one too short, and we count from zero
                     self.machine.codeBounds[0] = self.lineCount
 
                 self.mode = line
@@ -1073,7 +1077,7 @@ GtkNotebook {
         return True
 
     def onKeyReleaseEvent(self, widget, event):
-        """ Handes Key Up events, removes the corresponding keyval from the list self.keysDown. """
+        """ Handles Key Up events, removes the corresponding keyval from the list self.keysDown. """
         keyname = Gdk.keyval_name(event.keyval)
 
         if keyname in self.keysDown.keys(): self.keysDown.pop(keyname)
@@ -1098,6 +1102,12 @@ GtkNotebook {
         self.running = False
         self.ran = True
         self.code.set_editable(True)
+
+        startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.registers['PC'], 0)
+        endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.registers['PC'], 1)
+
+        if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
+            self.codeBuffer.delete(startOfArrow, endOfArrow)
 
         if i == 1:
             self.outPut("\n----\nCode executed succesfully.")
