@@ -144,7 +144,6 @@ GtkAboutDialog, GtkAboutDialog * {
 
         """Handlers for the actions in the interface."""
 
-        self.edited = False
         self.fileName = None
         self.breakpointDClickTime = 0
         # Make stuff from the GLADE file and setup events
@@ -205,6 +204,7 @@ GtkAboutDialog, GtkAboutDialog * {
         self.updateLineCounter()
 
         """ End GUI """
+
         self.downFile = ""
 
         self.new()
@@ -235,10 +235,20 @@ GtkAboutDialog, GtkAboutDialog * {
         else:
             if time.time() - self.breakpointDClickTime < 0.2:
                 self.breakpointDClickTime = 0
-                self.breakPoint = self.lineNumberTV.get_iter_at_location(event.x, event.y).get_line()
-                start = self.codeBuffer.get_iter_at_line(self.breakPoint)
-                end = self.codeBuffer.get_iter_at_line(self.breakPoint + 1)
-                self.codeBuffer.apply_tag(self.textTagRed2, start, end)
+                breakPoint = self.lineNumberTV.get_iter_at_location(event.x, event.y).get_line()
+                start = self.linesBuffer.get_iter_at_line(breakPoint)
+
+                if breakPoint + 1 == self.linesBuffer.get_line_count():
+                    end = self.linesBuffer.get_end_iter()
+                else:
+                    end = self.linesBuffer.get_iter_at_line_offset(breakPoint + 1, 0)
+
+                if breakPoint in self.breakPoints:
+                    self.breakPoints.remove(breakPoint)
+                    self.linesBuffer.remove_tag(self.textTagBreakpoint, start, end)
+                else:
+                    self.breakPoints.append(breakPoint)
+                    self.linesBuffer.apply_tag(self.textTagBreakpoint, start, end)
             else:
                 self.breakpointDClickTime = time.time()
 
@@ -280,7 +290,6 @@ GtkAboutDialog, GtkAboutDialog * {
 
             self.outBuffer.set_text("")
             self.fileName = fileName
-            self.edited = False
             self.updateWindowTitle()
             # self.win.set_title(self._PROGRAMNAME + " - " + "Untitled" if self.fileName == None else self.fileName)
 
@@ -302,6 +311,10 @@ GtkAboutDialog, GtkAboutDialog * {
 
         def handleSyntaxHighlightingToken(typeOfToken, token, (srow, scol), (erow, ecol), line):
             """Get's called by tokenizer to handle each token."""
+
+            print "%d,%d-%d,%d:\t%s\t%s" % \
+                (srow, scol, erow, ecol, tokenize.tok_name[typeOfToken], repr(token))
+
             if tokenize.tok_name[typeOfToken] == "ENDMARKER":
                 self.updateLineCounter()
             elif repr(token) == "'!'":
@@ -525,9 +538,9 @@ GtkAboutDialog, GtkAboutDialog * {
         self.memoryColours = [self.textTagRed, self.textTagOrange, self.textTagMagenta, self.textTagGreen, self.textTagBlue, self.textTagPurple, self.textTagGrey]
 
 
-        self.textTagRed2 = Gtk.TextTag()
-        self.textTagRed2.set_property("background", "red")
-        self.codeBuffer.get_tag_table().add(self.textTagRed2)
+        self.textTagBreakpoint = Gtk.TextTag()
+        self.textTagBreakpoint.set_property("background", "red")
+        self.linesBuffer.get_tag_table().add(self.textTagBreakpoint)
 
     def updateStatusLabel(self, *args):
         """ Updates the status label at the bottom of the screen, including current line number,
@@ -690,7 +703,7 @@ GtkAboutDialog, GtkAboutDialog * {
         """ Saves the file.  If the file hans't been previously saved or if saveAs == True then a dialog propmts the user for a location
         else it'll save in the same place it has been historically saved. """
         if self.fileName == None or saveAs:
-            fileChooser = Gtk.FileChooserDialog("Save your text file", self.win, Gtk.FileChooserAction.SAVE, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT))
+            fileChooser = Gtk.FileChooserDialog("Save your file", self.win, Gtk.FileChooserAction.SAVE, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT))
             response = fileChooser.run()
 
             fileName = None
@@ -705,6 +718,8 @@ GtkAboutDialog, GtkAboutDialog * {
                 file = open(self.fileName, "w")
                 file.write(self.codeBuffer.get_text(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter(), False))
                 file.close()
+
+                self.codeBuffer.set_modified(False)
                 self.updateWindowTitle()
             except IOError:
                 """ Fatal error popup """
@@ -712,11 +727,12 @@ GtkAboutDialog, GtkAboutDialog * {
 
     def new(self):
         """ Resets the simulation and code """
+        self.breakPoints = []
         self.updateWindowTitle()
         self.fileName = None
 
         self.outBuffer.set_text("")
-        self.edited = False
+        self.codeBuffer.set_modified(False)
         self.codeBuffer.remove_all_tags(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter())
         self.codeBuffer.set_text("")
 
@@ -752,14 +768,21 @@ GtkAboutDialog, GtkAboutDialog * {
                 self.codeBuffer.delete(startOfArrow, endOfArrow)
 
             while self.running:
+                if self.machine.registers['PC'] in self.breakPoints:
+                    currentLineIter = self.codeBuffer.get_iter_at_line(self.machine.registers['PC'])
+                    self.codeBuffer.insert(currentLineIter, ">")
+                    self.step()
+                    break
                 self.step()
+
             self.updateRegisters()
         else:
             if self.restartPrompt(): self.runAll()
 
     def restartPrompt(self):
+        """ Presents a dialog asking the user if they wish to restart the simulation """
         dialog = Gtk.MessageDialog(self.win, 0, Gtk.MessageType.QUESTION,
-            Gtk.ButtonsType.YES_NO, "Do You Wish to Restart?")
+            Gtk.ButtonsType.YES_NO, "Do You Wish to Restart?", title="Restart the simulation?")
 
         response = dialog.run()
 
@@ -1064,13 +1087,12 @@ GtkAboutDialog, GtkAboutDialog * {
                             self.memory.get_buffer().set_text("")))
 
     def updateWindowTitle(self):
-        self.win.set_title(self._PROGRAMNAME + " - " + ("*"*self.edited) + ("Untitled" if self.fileName == None else self.fileName))
+        self.win.set_title(self._PROGRAMNAME + " - " + ("*"*self.codeBuffer.get_modified()) + ("Untitled" if self.fileName == None else self.fileName))
 
-    def textChanged(self, *args):
+    def textChanged(self, widget):
         """ This function gets called everytime the 'code' text changes.
         Syntax Highglighting is applied on the changed line appropriately. """
         if not self.running:
-            self.edited = True
             self.updateWindowTitle()
             lineNumber = self.codeBuffer.get_iter_at_offset(self.codeBuffer.props.cursor_position).get_line()
 
@@ -1209,7 +1231,7 @@ GtkAboutDialog, GtkAboutDialog * {
         Then decides whether to exit the program or not based on the users response. """
         if self.running:
             dialog = Gtk.MessageDialog(self.win, 0, Gtk.MessageType.QUESTION,
-            Gtk.ButtonsType.YES_NO, "Do You Want To quit?")
+            Gtk.ButtonsType.YES_NO, "Do you want to quit?", title="Are you sure?")
             dialog.format_secondary_text("There is a simulation currently in progress.")
 
             response = dialog.run()
@@ -1219,9 +1241,9 @@ GtkAboutDialog, GtkAboutDialog * {
                 return True  # Returning true tells GTK to not kill this win
 
             dialog.destroy()
-        if self.edited:
+        if self.codeBuffer.get_modified():
             dialog = Gtk.MessageDialog(self.win, 0, Gtk.MessageType.QUESTION,
-            Gtk.ButtonsType.YES_NO, "Do You Want To quit?")
+            Gtk.ButtonsType.YES_NO, "Do you want to quit?", title="Are you sure?")
             dialog.format_secondary_text("There are unsaved changes.")
 
             response = dialog.run()

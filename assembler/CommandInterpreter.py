@@ -445,7 +445,6 @@ class CommandInterpreter(object):
                 self.assembler.out("Illegal argument %s for CMPB on line %d. CMPB expects an argument to be a one byte register (ie: AH, AL, etc.), an integer, or a one byte string (ie: \"L\", etc.). Instead %s was given." % (x, i, x))
             b.append(x)
 
-        print b
         self.SUB(["CMPB", str(b[0]), str(b[1])], i, inPlace=True)
 
     def DAA(self, command, i):
