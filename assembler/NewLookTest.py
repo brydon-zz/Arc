@@ -1431,6 +1431,12 @@ GtkAboutDialog, GtkAboutDialog * {
 
         if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
             self.codeBuffer.delete(startOfArrow, endOfArrow)
+        else:
+            startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 0)
+            endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 1)
+            if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
+                self.codeBuffer.delete(startOfArrow, endOfArrow)
+
 
         if i == 1:
             self.outPut("\n----\nCode executed succesfully.\n")
