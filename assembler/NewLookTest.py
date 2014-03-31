@@ -40,7 +40,15 @@ class Simulator(object):
     background-color:#F5F5F5;
 }
 
-#As88Window #helpDisplayText {
+#As88Window #machineInfoWrapper {
+    background-color:#F5F5F5;
+}
+
+#As88Window #machineInfoWrapper GtkLabel {
+    color:#000;
+}
+
+#As88Window #instructionHelpBox, #As88Window #instructionHelpBox *, #As88Window #instructionHelpBox * * {
     color:#000;
     background-color:#E5E5E5;
 }
@@ -111,11 +119,22 @@ GtkAboutDialog, GtkAboutDialog * {
     border: 1px solid #333;
 }
 
-#As88Window #stack, #As88Window #regA, #As88Window #regB, #As88Window #regC, #As88Window #regD, #As88Window #regSP, #As88Window #regBP, #As88Window #regSI,#As88Window #regDI, #As88Window #regPC, #As88Window #regFlags, #As88Window #memory {
+#As88Window #stack, #As88Window #memory {
     background-color:#E5E5E5;
     font-family:mono;
     color:#000;
     border:0;
+}
+
+#As88Window #regABox, #As88Window #regBBox, #As88Window #regCBox, #As88Window #regDBox{
+    border:1px solid #000;
+}
+
+#As88Window #regA, #As88Window #regAH, #As88Window #regAL, #As88Window #regB, #As88Window #regBH, #As88Window #regBL, #As88Window #regC, #As88Window #regCH, #As88Window #regCL, #As88Window #regD, #As88Window #regDH, #As88Window #regDL, #As88Window #regSP, #As88Window #regBP, #As88Window #regSI,#As88Window #regDI, #As88Window #regPC {
+    background-color:#E5E5E5;
+    border:1px solid #000;
+    font-family:mono;
+    color:#000;
 }
 
 #As88Window #outText {
@@ -129,17 +148,30 @@ GtkAboutDialog, GtkAboutDialog * {
     font-family: mono;
 }
 
-#As88Window #regASW, #As88Window #regBSW, #As88Window #regCSW, #As88Window #regDSW, #As88Window #regBPSW, #As88Window #regSPSW, #As88Window #regSISW, #As88Window #regDISW, #As88Window #regPCSW {
-    border:1px dotted #000;
+#As88Window #stackSW {
+    border-right:1px solid black;
 }
 
-#As88Window #fixed1 {
-    background-color: #f0f;
+#As88Window #memorySW {
+    border:1px solid black;
 }
 
-#As88Window #outScrolled, #As88Window #flagsSW, #As88Window #memorySW, #As88Window #stackSW {
+#As88Window #outScrolled {
     border:0;
 }
+
+#As88Window #reg16Off, #As88Window #reg8Off, #As88Window #memOff, #As88Window #labelOff, #As88Window #immedOff, #As88Window #varOff {
+    border:1px solid #000;
+    color:#666;
+    background-color:#E5E5E5;
+}
+
+#As88Window #reg16On, #As88Window #reg8On, #As88Window #memOn, #As88Window #labelOn, #As88Window #immedOn, #As88Window #varOn {
+    border:1px solid #F00;
+    color:#000;
+    background-color:#F5F5F5;
+}
+
 """
 
         """Handlers for the actions in the interface."""
@@ -148,9 +180,9 @@ GtkAboutDialog, GtkAboutDialog * {
         self.breakpointDClickTime = 0
         # Make stuff from the GLADE file and setup events
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(self._PATH + "/xml/GladeMockup3.glade")
+        self.builder.add_from_file(self._PATH + "/xml/GladeMockup3-3.glade")
 
-        self.win = self.builder.get_object("window1")
+        self.win = self.builder.get_object("window")
         self.win.set_name('As88Window')
         self.win.connect("delete-event", self.exit)
 
@@ -227,6 +259,9 @@ GtkAboutDialog, GtkAboutDialog * {
 
         # Two Final GUI elements
         self.win.show_all()
+
+        # This GUI element needs the as88 defined
+        self.makeHelpBox()
         self.notebook.set_visible(False)
 
     def setBreakpoint(self, widget, event):
@@ -368,33 +403,39 @@ GtkAboutDialog, GtkAboutDialog * {
         flagStr = "  %-5s %-5s %-5s %-5s %-5s %-1s\n  %-6d%-6d%-6d%-6d%-6d%-1d" % (self.machine.flags.keys()[0], self.machine.flags.keys()[1], self.machine.flags.keys()[2], self.machine.flags.keys()[3], self.machine.flags.keys()[4], self.machine.flags.keys()[5], int(self.machine.flags.values()[0]), int(self.machine.flags.values()[1]), int(self.machine.flags.values()[2]), int(self.machine.flags.values()[3]), int(self.machine.flags.values()[4]), int(self.machine.flags.values()[5]))
 
         if self.displayInHex:
-            GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %s\n AH: %s\n AL: %s" % ("0"*(4 - len(self.machine.intToHex(self.machine.registers['AX']))) + self.machine.intToHex(self.machine.registers['AX']), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('AH')))) + self.machine.intToHex(self.machine.eightBitRegister("AH")), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('AL')))) + self.machine.intToHex(self.machine.eightBitRegister('AL')))),
-                                self.regB.get_buffer().set_text("BX: %s\n BH: %s\n BL: %s" % ("0"*(4 - len(self.machine.intToHex(self.machine.registers['BX']))) + self.machine.intToHex(self.machine.registers['BX']), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('BH')))) + self.machine.intToHex(self.machine.eightBitRegister("BH")), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('BL')))) + self.machine.intToHex(self.machine.eightBitRegister("BL")))),
-                                self.regC.get_buffer().set_text("CX: %s\n CH: %s\n CL: %s" % ("0"*(4 - len(self.machine.intToHex(self.machine.registers['CX']))) + self.machine.intToHex(self.machine.registers['CX']), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('CH')))) + self.machine.intToHex(self.machine.eightBitRegister("CH")), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('CL')))) + self.machine.intToHex(self.machine.eightBitRegister("CL")))),
-                                self.regD.get_buffer().set_text("DX: %s\n DH: %s\n DL: %s" % ("0"*(4 - len(self.machine.intToHex(self.machine.registers['DX']))) + self.machine.intToHex(self.machine.registers['DX']), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('DH')))) + self.machine.intToHex(self.machine.eightBitRegister("DH")), "0"*(2 - len(self.machine.intToHex(self.machine.eightBitRegister('DL')))) + self.machine.intToHex(self.machine.eightBitRegister("DL")))),
-                                self.regBP.get_buffer().set_text("BP: " + str(hex(self.machine.registers['BP']).split("x")[1])),
-                                self.regSP.get_buffer().set_text("SP: " + str(hex(self.machine.registers['SP']).split("x")[1])),
-                                self.regDI.get_buffer().set_text("DI: " + str(hex(self.machine.registers['DI']).split("x")[1])),
-                                self.regSI.get_buffer().set_text("SI: " + str(hex(self.machine.registers['SI']).split("x")[1])),
-                                self.regPC.get_buffer().set_text("PC: " + str(hex(self.machine.registers['PC']).split("x")[1])),
-                                self.regFlags.get_buffer().set_text(flagStr),
-                                self.memoryBuffer.set_text("".join([self.machine.intToHex(ord(x)) for x in self.machine.addressSpace[:144]])),
-                                self.colourMemory()
-                                ))
+            self.regA.get_buffer().set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['AX']))) + self.machine.intToHex(self.machine.registers['AX']))
+            self.regB.get_buffer().set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['BX']))) + self.machine.intToHex(self.machine.registers['BX']))
+            self.regC.get_buffer().set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['CX']))) + self.machine.intToHex(self.machine.registers['CX']))
+            self.regD.get_buffer().set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['DX']))) + self.machine.intToHex(self.machine.registers['DX']))
+            self.regBP.get_buffer().set_text(self.machine.intToHex(self.machine.registers['BP']))
+            self.regSP.get_buffer().set_text(self.machine.intToHex(self.machine.registers['SP']))
+            self.regDI.get_buffer().set_text(self.machine.intToHex(self.machine.registers['DI']))
+            self.regSI.get_buffer().set_text(self.machine.intToHex(self.machine.registers['SI']))
+            self.regPC.get_buffer().set_text(self.machine.intToHex(self.machine.registers['PC']))
+            # self.regFlags.get_buffer().set_text(flagStr)
+            self.memoryBuffer.set_text("".join([self.machine.intToHex(ord(x)) for x in self.machine.addressSpace[:144]]))
+            self.colourMemory()
         else:
-            GObject.idle_add(lambda: (self.regA.get_buffer().set_text("AX: %d\n AH: %d\n AL: %d" % (self.machine.registers['AX'], self.machine.eightBitRegister("AH"), self.machine.eightBitRegister('AL'))),
-                                self.regB.get_buffer().set_text("BX: %d\n BH: %d\n BL: %d" % (self.machine.registers['BX'], self.machine.eightBitRegister("BH"), self.machine.eightBitRegister("BL"))),
-                                self.regC.get_buffer().set_text("CX: %d\n CH: %d\n CL: %d" % (self.machine.registers['CX'], self.machine.eightBitRegister("CH"), self.machine.eightBitRegister("CL"))),
-                                self.regD.get_buffer().set_text("DX: %d\n DH: %d\n DL: %d" % (self.machine.registers['DX'], self.machine.eightBitRegister("DH"), self.machine.eightBitRegister("DL"))),
-                                self.regBP.get_buffer().set_text("BP: " + str(self.machine.registers['BP'])),
-                                self.regSP.get_buffer().set_text("SP: " + str(self.machine.registers['SP'])),
-                                self.regDI.get_buffer().set_text("DI: " + str(self.machine.registers['DI'])),
-                                self.regSI.get_buffer().set_text("SI: " + str(self.machine.registers['SI'])),
-                                self.regPC.get_buffer().set_text("PC: " + str(self.machine.registers['PC'])),
-                                self.regFlags.get_buffer().set_text(flagStr),
-                                self.memory.get_buffer().set_text("".join([self.escapeSequences(x) for x in self.machine.addressSpace[:287]])),
-                                self.colourMemory()
-                                ))
+            self.regA.get_buffer().set_text(str(self.machine.registers['AX']))
+            self.regAH.get_buffer().set_text(str(self.machine.eightBitRegister('AH')))
+            self.regAL.get_buffer().set_text(str(self.machine.eightBitRegister('AL')))
+            self.regB.get_buffer().set_text(str(self.machine.registers['BX']))
+            self.regBH.get_buffer().set_text(str(self.machine.eightBitRegister('BH')))
+            self.regBL.get_buffer().set_text(str(self.machine.eightBitRegister('BL')))
+            self.regC.get_buffer().set_text(str(self.machine.registers['CX']))
+            self.regCH.get_buffer().set_text(str(self.machine.eightBitRegister('CH')))
+            self.regCL.get_buffer().set_text(str(self.machine.eightBitRegister('CL')))
+            self.regD.get_buffer().set_text(str(self.machine.registers['DX']))
+            self.regDH.get_buffer().set_text(str(self.machine.eightBitRegister('DH')))
+            self.regDL.get_buffer().set_text(str(self.machine.eightBitRegister('DL')))
+            self.regBP.get_buffer().set_text(str(self.machine.registers['BP']))
+            self.regSP.get_buffer().set_text(str(self.machine.registers['SP']))
+            self.regDI.get_buffer().set_text(str(self.machine.registers['DI']))
+            self.regSI.get_buffer().set_text(str(self.machine.registers['SI']))
+            self.regPC.get_buffer().set_text(str(self.machine.registers['PC']))
+            # self.regFlags.get_buffer().set_text(flagStr),
+            self.memory.get_buffer().set_text("".join([self.escapeSequences(x) for x in self.machine.addressSpace[:287]]))
+            self.colourMemory()
 
     def makeHelpBox(self):
         """Called at construction, creates the help box including a TreeView to display assembly instructions
@@ -419,51 +460,150 @@ GtkAboutDialog, GtkAboutDialog * {
             """Called whenever the selected item in the TreeView."""
             model, treeiter = selection.get_selected()
             if treeiter != None:
-                helpDisplayText.get_buffer().set_text(str(self.do[model[treeiter][0]].__doc__))
+                rawHelpText = str(self.do[model[treeiter][0]].__doc__).split("\n")
+                instructionName = rawHelpText[0].split(":")[1]
+                instructionTitle = rawHelpText[1].split(":")[1]
+                instructionDescription = rawHelpText[3].split(":")[1]
+
+                self.reg16Arg.set_name("reg16Off")
+                self.reg8Arg.set_name("reg8Off")
+                self.memArg.set_name("memOff")
+                self.labelArg.set_name("labelOff")
+                self.immedArg.set_name("immedOff")
+                self.varArg.set_name("varOff")
+
+                if "None" in rawHelpText[2]:
+                    print "None !!"
+                    self.noArgsLabel.set_text("No Arguments")
+                    self.noArgsLabel.set_visible(True)
+                    self.argumentsFrame2.set_visible(False)
+                    self.argumentsFrame.set_visible(False)
+                else:
+                    self.noArgsLabel.set_visible(False)
+                    self.argumentsFrame2.set_visible(True)
+                    self.argumentsFrame.set_visible(True)
+                    instructionArgs = rawHelpText[2].split(",")
+
+                    args1 = instructionArgs[0].split(":")
+
+                    for arg in args1:
+                        arg = arg.strip("[]")
+                        if arg == "reg":
+                            self.reg16Arg.set_name("reg16On")
+                            self.reg8Arg.set_name("reg8On")
+                        elif arg == "reg16":
+                            self.reg16Arg.set_name("reg16On")
+                        elif arg == "reg8":
+                            self.reg16Arg.set_name("reg8On")
+                        elif arg == "mem":
+                            self.memArg.set_name("memOn")
+                        elif arg == "immed":
+                            self.immedArg.set_name("immedOn")
+                            self.varArg.set_name("varOn")
+                        elif arg == "label":
+                            self.labelArg.set_name("labelOn")
+
+                    if len(instructionArgs) > 1:
+                        self.argumentsFrame2.set_visible(True)
+
+                        args2 = instructionArgs[1].split(":")
+                        self.reg16Arg2.set_name("reg16Off")
+                        self.reg8Arg2.set_name("reg8Off")
+                        self.memArg2.set_name("memOff")
+                        self.labelArg2.set_name("labelOff")
+                        self.immedArg2.set_name("immedOff")
+                        self.varArg2.set_name("varOff")
+
+                        for arg in args2:
+                            arg = arg.strip("[]")
+                            if arg == "reg":
+                                self.reg16Arg2.set_name("reg16On")
+                                self.reg8Arg2.set_name("reg8On")
+                            elif arg == "reg16":
+                                self.reg16Arg2.set_name("reg16On")
+                            elif arg == "reg8":
+                                self.reg16Arg2.set_name("reg8On")
+                            elif arg == "mem":
+                                self.memArg2.set_name("memOn")
+                            elif arg == "immed":
+                                self.immedArg2.set_name("immedOn")
+                                self.varArg.set_name("varOn")
+                            elif arg == "label":
+                                self.labelArg2.set_name("labelOn")
+                    else:
+                        self.argumentsFrame2.set_visible(False)
+
+
+                flags = rawHelpText[4].split(":")[1].split(",")
+
+                flagsOut = (self.oFlagOut, self.dFlagOut, self.iFlagOut, self.sFlagOut, self.zFlagOut, self.aFlagOut, self.pFlagOut, self.cFlagOUt)
+                for index, flag in enumerate(flags):
+                    flagsOut[index].set_text(flag)
+
+                self.instructionName.set_text(instructionName)
+                self.instructionTitle.set_text(instructionTitle)
+                self.instructionDescription.get_buffer().set_text(instructionDescription)
 
         tree.get_selection().connect("changed", onHelpTreeSelectionChanged)
-
-        helpDisplayText = self.builder.get_object("helpDisplayText")
-        helpDisplayText.set_name("helpDisplayText")
+        tree.get_selection().select_iter(tree.get_model().get_iter_first())
 
         scroll.add(tree)
         box.pack_start(scroll, True, True, 0)
+        scroll.show_all()
 
     def nameGuiElementsForCSS(self):
         """ Names need set for CSS reasons only """
+        self.machineInfoWrapper.set_name("machineInfoWrapper")
         self.outText.set_name("outText")
         self.code.set_name("code")
         self.lineNumberTV.set_name("lines")
         # self.entry.set_name("entry")
         self.stack.set_name("stack")
         self.regA.set_name("regA")
+        self.regAH.set_name("regAH")
+        self.regAL.set_name("regAL")
         self.regB.set_name("regB")
+        self.regBH.set_name("regBH")
+        self.regBL.set_name("regBL")
         self.regC.set_name("regC")
+        self.regCH.set_name("regCH")
+        self.regCL.set_name("regCL")
         self.regD.set_name("regD")
+        self.regDH.set_name("regDH")
+        self.regDL.set_name("regDL")
         self.regBP.set_name("regBP")
         self.regSP.set_name("regSP")
         self.regSI.set_name("regSI")
         self.regDI.set_name("regDI")
         self.regPC.set_name("regPC")
-        self.regFlags.set_name("regFlags")
+        self.builder.get_object("regAEBox").set_name("regABox")
+        self.builder.get_object("regBEBox").set_name("regBBox")
+        self.builder.get_object("regCEBox").set_name("regCBox")
+        self.builder.get_object("regDEBox").set_name("regDBox")
+        # self.builder.get_object("bpEBox").set_name("regBPBox")
+        # self.builder.get_object("spEBox").set_name("regSPBox")
+        # self.builder.get_object("siEBox").set_name("regSIBox")
+        # self.builder.get_object("diEBox").set_name("regDIBox")
+        # self.builder.get_object("pcEBox").set_name("regPCBox")
+        # self.regFlags.set_name("regFlags")
         self.memory.set_name("memory")
         self.notebook.set_name("notebook")
-        self.builder.get_object("fixed1").set_name("fixed1")
         self.seperatorLabel.set_name("seperatorLabelTrue")
         self.builder.get_object("codeScrolled").set_name("codeScrolled")
         self.builder.get_object("outScrolled").set_name("outScrolled")
-        self.builder.get_object("regASW").set_name("regASW")
-        self.builder.get_object("regBSW").set_name("regBSW")
-        self.builder.get_object("regCSW").set_name("regCSW")
-        self.builder.get_object("regDSW").set_name("regDSW")
-        self.builder.get_object("regBPSW").set_name("regBPSW")
-        self.builder.get_object("regSPSW").set_name("regSPSW")
-        self.builder.get_object("regSISW").set_name("regSISW")
-        self.builder.get_object("regDISW").set_name("regDISW")
-        self.builder.get_object("regPCSW").set_name("regPCSW")
-        self.builder.get_object("flagsSW").set_name("flagsSW")
         self.builder.get_object("memorySW").set_name("memorySW")
         self.builder.get_object("stackSW").set_name("stackSW")
+
+        self.oFlagOut.set_name("oFlagOut")
+        self.dFlagOut.set_name("dFlagOut")
+        self.iFlagOut.set_name("iFlagOut")
+        self.sFlagOut.set_name("sFlagOut")
+        self.zFlagOut.set_name("zFlagOut")
+        self.aFlagOut.set_name("aFlagOut")
+        self.pFlagOut.set_name("pFlagOut")
+        self.cFlagOUt.set_name("cFlagOut")
+
+        self.builder.get_object("instructionHelpBox").set_name("instructionHelpBox")
 
     def assignGuiElementsToVariables(self):
         """ Binds critical GUI elements from the builder object to variable names. """
@@ -471,25 +611,80 @@ GtkAboutDialog, GtkAboutDialog * {
         self.code = self.builder.get_object("code")
         # self.entry = self.builder.get_object("entry")
         self.stack = self.builder.get_object("stack")
-        self.button = self.builder.get_object("button1")
+        self.machineInfoWrapper = self.builder.get_object("machineInfoWrapper")
+
         self.regA = self.builder.get_object("regA")
+        self.regAH = self.builder.get_object("regAh")
+        self.regAL = self.builder.get_object("regAl")
         self.regB = self.builder.get_object("regB")
+        self.regBH = self.builder.get_object("regBh")
+        self.regBL = self.builder.get_object("regBl")
         self.regC = self.builder.get_object("regC")
+        self.regCH = self.builder.get_object("regCh")
+        self.regCL = self.builder.get_object("regCl")
         self.regD = self.builder.get_object("regD")
+        self.regDH = self.builder.get_object("regDh")
+        self.regDL = self.builder.get_object("regDl")
         self.regBP = self.builder.get_object("regBP")
         self.regSP = self.builder.get_object("regSP")
         self.regSI = self.builder.get_object("regSI")
         self.regDI = self.builder.get_object("regDI")
         self.regPC = self.builder.get_object("regPC")
-        self.regFlags = self.builder.get_object("regFlags")
+
+        # self.regFlags = self.builder.get_object("regFlags")
         self.memory = self.builder.get_object("memory")
+
         self.hexSwitch = self.builder.get_object("hexSwitch")
+
         self.notebook = self.builder.get_object("notebook")
+
         self.eventbox = self.builder.get_object("eventbox")
         self.seperatorLabel = self.builder.get_object("seperatorLabel")
+
         self.buttonBox = self.builder.get_object("buttonBox")
+
         self.statusLabel = self.builder.get_object("statusLabel")
+
         self.lineNumberTV = self.builder.get_object("lines")
+
+        self.oFlagOut = self.builder.get_object("oFlagOut")
+        self.dFlagOut = self.builder.get_object("dFlagOut")
+        self.iFlagOut = self.builder.get_object("iFlagOut")
+        self.sFlagOut = self.builder.get_object("sFlagOut")
+        self.zFlagOut = self.builder.get_object("zFlagOut")
+        self.aFlagOut = self.builder.get_object("aFlagOut")
+        self.pFlagOut = self.builder.get_object("pFlagOut")
+        self.cFlagOUt = self.builder.get_object("cFlagOut")
+
+        self.reg8Arg = self.builder.get_object("reg8")
+        self.reg16Arg = self.builder.get_object("reg16")
+        self.memArg = self.builder.get_object("mem")
+        self.varArg = self.builder.get_object("variable")
+        self.immedArg = self.builder.get_object("immed")
+        self.labelArg = self.builder.get_object("label")
+
+        self.reg8Arg = self.builder.get_object("reg8")
+        self.reg16Arg = self.builder.get_object("reg16")
+        self.memArg = self.builder.get_object("mem")
+        self.varArg = self.builder.get_object("variable")
+        self.immedArg = self.builder.get_object("immed")
+        self.labelArg = self.builder.get_object("label")
+
+        self.argumentsFrame = self.builder.get_object("argumentsFrame")
+        self.argumentsFrame2 = self.builder.get_object("argumentsFrame2")
+
+        self.reg8Arg2 = self.builder.get_object("reg82")
+        self.reg16Arg2 = self.builder.get_object("reg162")
+        self.memArg2 = self.builder.get_object("mem2")
+        self.varArg2 = self.builder.get_object("variable2")
+        self.immedArg2 = self.builder.get_object("immed2")
+        self.labelArg2 = self.builder.get_object("label2")
+
+        self.noArgsLabel = self.builder.get_object("noArgsLabel")
+
+        self.instructionDescription = self.builder.get_object("instructionDescription")
+        self.instructionName = self.builder.get_object("instructionName")
+        self.instructionTitle = self.builder.get_object("instructionTitle")
 
     def setUpTextTags(self):
         """ Constructs the various text tags used to style text within textviews. """
@@ -745,9 +940,6 @@ GtkAboutDialog, GtkAboutDialog * {
         self.functions = self.do.keys()
         self.functions.sort()
         # self.sysCodes = as88.getSysCodes()
-
-        # This GUI element needs the as88 defined
-        self.makeHelpBox()
 
         self.lineCount = 0
 
@@ -1083,7 +1275,7 @@ GtkAboutDialog, GtkAboutDialog * {
                             self.regDI.get_buffer().set_text(""),
                             self.regSI.get_buffer().set_text(""),
                             self.regPC.get_buffer().set_text(""),
-                            self.regFlags.get_buffer().set_text(""),
+                            # self.regFlags.get_buffer().set_text(""),
                             self.memory.get_buffer().set_text("")))
 
     def updateWindowTitle(self):
