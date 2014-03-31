@@ -171,7 +171,7 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkScrolledWindow" id="stackSW">
-                        <property name="width_request">50</property>
+                        <property name="width_request">55</property>
                         <property name="height_request">526</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
@@ -194,6 +194,7 @@
                     </child>
                     <child>
                       <object class="GtkEventBox" id="machineInfoWrapper">
+                        <property name="width_request">373</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <child>
@@ -203,54 +204,43 @@
                             <property name="margin_left">5</property>
                             <property name="orientation">vertical</property>
                             <child>
+                              <object class="GtkLabel" id="registersLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="margin_bottom">10</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">REGISTERS</property>
+                                <attributes>
+                                  <attribute name="font-desc" value="Monospace 22"/>
+                                  <attribute name="weight" value="ultraheavy"/>
+                                </attributes>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
                               <object class="GtkGrid" id="regABCDGrid">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="column_homogeneous">True</property>
                                 <child>
-                                  <object class="GtkEventBox" id="regAEBox">
+                                  <object class="GtkBox" id="regABox">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
+                                    <property name="orientation">vertical</property>
                                     <child>
-                                      <object class="GtkBox" id="regABox">
+                                      <object class="GtkBox" id="axBox">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
-                                        <property name="orientation">vertical</property>
                                         <child>
-                                          <object class="GtkBox" id="axBox">
+                                          <object class="GtkLabel" id="regA">
+                                            <property name="width_request">69</property>
+                                            <property name="height_request">40</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <child>
-                                              <object class="GtkTextView" id="regA">
-                                                <property name="width_request">59</property>
-                                                <property name="height_request">40</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="axLabel">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="yalign">0.49000000953674316</property>
-                                                <property name="label" translatable="yes">AX</property>
-                                                <property name="angle">270</property>
-                                                <attributes>
-                                                  <attribute name="font-desc" value="Monospace 14"/>
-                                                  <attribute name="weight" value="ultraheavy"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -259,67 +249,16 @@
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkBox" id="ahalBox">
+                                          <object class="GtkLabel" id="axLabel">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <child>
-                                              <object class="GtkTextView" id="regAh">
-                                                <property name="width_request">20</property>
-                                                <property name="height_request">20</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="ahLabel">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">AH</property>
-                                                <property name="angle">270</property>
-                                                <attributes>
-                                                  <attribute name="font-desc" value="Monospace 10"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkTextView" id="regAl">
-                                                <property name="width_request">20</property>
-                                                <property name="height_request">20</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">2</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="alLabel">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">AL</property>
-                                                <property name="angle">270</property>
-                                                <attributes>
-                                                  <attribute name="font-desc" value="Monospace 10"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">3</property>
-                                              </packing>
-                                            </child>
+                                            <property name="yalign">0.49000000953674316</property>
+                                            <property name="label" translatable="yes">AX</property>
+                                            <property name="angle">270</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 14"/>
+                                              <attribute name="weight" value="ultraheavy"/>
+                                            </attributes>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -328,6 +267,86 @@
                                           </packing>
                                         </child>
                                       </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkBox" id="ahalBox">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <child>
+                                          <object class="GtkLabel" id="regAh">
+                                            <property name="width_request">26</property>
+                                            <property name="height_request">20</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 10"/>
+                                            </attributes>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="ahLabel">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="label" translatable="yes">AH</property>
+                                            <property name="angle">270</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 10"/>
+                                            </attributes>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">1</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="regAl">
+                                            <property name="width_request">26</property>
+                                            <property name="height_request">20</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 10"/>
+                                            </attributes>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">2</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="alLabel">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="label" translatable="yes">AL</property>
+                                            <property name="angle">270</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 10"/>
+                                            </attributes>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">3</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">1</property>
+                                      </packing>
                                     </child>
                                   </object>
                                   <packing>
@@ -338,49 +357,20 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkEventBox" id="regBEBox">
+                                  <object class="GtkBox" id="regBBox">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
+                                    <property name="orientation">vertical</property>
                                     <child>
-                                      <object class="GtkBox" id="regBBox">
+                                      <object class="GtkBox" id="bxBox">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
-                                        <property name="orientation">vertical</property>
                                         <child>
-                                          <object class="GtkBox" id="bxBox">
+                                          <object class="GtkLabel" id="regB">
+                                            <property name="width_request">69</property>
+                                            <property name="height_request">40</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <child>
-                                              <object class="GtkTextView" id="regB">
-                                                <property name="width_request">59</property>
-                                                <property name="height_request">40</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="bxLabel">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="yalign">0.49000000953674316</property>
-                                                <property name="label" translatable="yes">BX</property>
-                                                <property name="angle">270</property>
-                                                <attributes>
-                                                  <attribute name="font-desc" value="Monospace 14"/>
-                                                  <attribute name="weight" value="ultraheavy"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -389,67 +379,16 @@
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkBox" id="bhblBox">
+                                          <object class="GtkLabel" id="bxLabel">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <child>
-                                              <object class="GtkTextView" id="regBh">
-                                                <property name="width_request">20</property>
-                                                <property name="height_request">20</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="bhLabel">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">BH</property>
-                                                <property name="angle">270</property>
-                                                <attributes>
-                                                  <attribute name="font-desc" value="Monospace 10"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkTextView" id="regBl">
-                                                <property name="width_request">20</property>
-                                                <property name="height_request">20</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">2</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="blLabel">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">BL</property>
-                                                <property name="angle">270</property>
-                                                <attributes>
-                                                  <attribute name="font-desc" value="Monospace 10"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">3</property>
-                                              </packing>
-                                            </child>
+                                            <property name="yalign">0.49000000953674316</property>
+                                            <property name="label" translatable="yes">BX</property>
+                                            <property name="angle">270</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 14"/>
+                                              <attribute name="weight" value="ultraheavy"/>
+                                            </attributes>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -458,6 +397,80 @@
                                           </packing>
                                         </child>
                                       </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkBox" id="bhblBox">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <child>
+                                          <object class="GtkLabel" id="regBh">
+                                            <property name="width_request">26</property>
+                                            <property name="height_request">20</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="bhLabel">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="label" translatable="yes">BH</property>
+                                            <property name="angle">270</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 10"/>
+                                            </attributes>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">1</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="regBl">
+                                            <property name="width_request">26</property>
+                                            <property name="height_request">20</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">2</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="blLabel">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="label" translatable="yes">BL</property>
+                                            <property name="angle">270</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 10"/>
+                                            </attributes>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">3</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">1</property>
+                                      </packing>
                                     </child>
                                   </object>
                                   <packing>
@@ -468,49 +481,20 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkEventBox" id="regCEBox">
+                                  <object class="GtkBox" id="regCBox">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
+                                    <property name="orientation">vertical</property>
                                     <child>
-                                      <object class="GtkBox" id="regCBox">
+                                      <object class="GtkBox" id="cxBox">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
-                                        <property name="orientation">vertical</property>
                                         <child>
-                                          <object class="GtkBox" id="cxBox">
+                                          <object class="GtkLabel" id="regC">
+                                            <property name="width_request">69</property>
+                                            <property name="height_request">40</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <child>
-                                              <object class="GtkTextView" id="regC">
-                                                <property name="width_request">59</property>
-                                                <property name="height_request">40</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="cxLabel">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="yalign">0.49000000953674316</property>
-                                                <property name="label" translatable="yes">CX</property>
-                                                <property name="angle">270</property>
-                                                <attributes>
-                                                  <attribute name="font-desc" value="Monospace 14"/>
-                                                  <attribute name="weight" value="ultraheavy"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -519,67 +503,16 @@
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkBox" id="chclBox">
+                                          <object class="GtkLabel" id="cxLabel">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <child>
-                                              <object class="GtkTextView" id="regCh">
-                                                <property name="width_request">20</property>
-                                                <property name="height_request">20</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="chLabel">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">CH</property>
-                                                <property name="angle">270</property>
-                                                <attributes>
-                                                  <attribute name="font-desc" value="Monospace 10"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkTextView" id="regCl">
-                                                <property name="width_request">20</property>
-                                                <property name="height_request">20</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">2</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="clLabel">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">CL</property>
-                                                <property name="angle">270</property>
-                                                <attributes>
-                                                  <attribute name="font-desc" value="Monospace 10"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">3</property>
-                                              </packing>
-                                            </child>
+                                            <property name="yalign">0.49000000953674316</property>
+                                            <property name="label" translatable="yes">CX</property>
+                                            <property name="angle">270</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 14"/>
+                                              <attribute name="weight" value="ultraheavy"/>
+                                            </attributes>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -588,6 +521,80 @@
                                           </packing>
                                         </child>
                                       </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkBox" id="chclBox">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <child>
+                                          <object class="GtkLabel" id="regCh">
+                                            <property name="width_request">26</property>
+                                            <property name="height_request">20</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="chLabel">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="label" translatable="yes">CH</property>
+                                            <property name="angle">270</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 10"/>
+                                            </attributes>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">1</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="regCl">
+                                            <property name="width_request">26</property>
+                                            <property name="height_request">20</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">2</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="clLabel">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="label" translatable="yes">CL</property>
+                                            <property name="angle">270</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 10"/>
+                                            </attributes>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">3</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">1</property>
+                                      </packing>
                                     </child>
                                   </object>
                                   <packing>
@@ -598,49 +605,20 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkEventBox" id="regDEBox">
+                                  <object class="GtkBox" id="regDBox">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
+                                    <property name="orientation">vertical</property>
                                     <child>
-                                      <object class="GtkBox" id="regDBox">
+                                      <object class="GtkBox" id="dxBox">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
-                                        <property name="orientation">vertical</property>
                                         <child>
-                                          <object class="GtkBox" id="dxBox">
+                                          <object class="GtkLabel" id="regD">
+                                            <property name="width_request">69</property>
+                                            <property name="height_request">40</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <child>
-                                              <object class="GtkTextView" id="regD">
-                                                <property name="width_request">59</property>
-                                                <property name="height_request">40</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="dxLabel">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="yalign">0.49000000953674316</property>
-                                                <property name="label" translatable="yes">DX</property>
-                                                <property name="angle">270</property>
-                                                <attributes>
-                                                  <attribute name="font-desc" value="Monospace 14"/>
-                                                  <attribute name="weight" value="ultraheavy"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -649,67 +627,16 @@
                                           </packing>
                                         </child>
                                         <child>
-                                          <object class="GtkBox" id="dhdlBox">
+                                          <object class="GtkLabel" id="dxLabel">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <child>
-                                              <object class="GtkTextView" id="regDh">
-                                                <property name="width_request">20</property>
-                                                <property name="height_request">20</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="dhLabel">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">DH</property>
-                                                <property name="angle">270</property>
-                                                <attributes>
-                                                  <attribute name="font-desc" value="Monospace 10"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkTextView" id="regDl">
-                                                <property name="width_request">20</property>
-                                                <property name="height_request">20</property>
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">2</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="dlLabel">
-                                                <property name="visible">True</property>
-                                                <property name="can_focus">False</property>
-                                                <property name="label" translatable="yes">DL</property>
-                                                <property name="angle">270</property>
-                                                <attributes>
-                                                  <attribute name="font-desc" value="Monospace 10"/>
-                                                </attributes>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">True</property>
-                                                <property name="position">3</property>
-                                              </packing>
-                                            </child>
+                                            <property name="yalign">0.49000000953674316</property>
+                                            <property name="label" translatable="yes">DX</property>
+                                            <property name="angle">270</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 14"/>
+                                              <attribute name="weight" value="ultraheavy"/>
+                                            </attributes>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -718,6 +645,80 @@
                                           </packing>
                                         </child>
                                       </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkBox" id="dhdlBox">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <child>
+                                          <object class="GtkLabel" id="regDh">
+                                            <property name="width_request">26</property>
+                                            <property name="height_request">20</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">0</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="dhLabel">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="label" translatable="yes">DH</property>
+                                            <property name="angle">270</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 10"/>
+                                            </attributes>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">1</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="regDl">
+                                            <property name="width_request">26</property>
+                                            <property name="height_request">20</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">2</property>
+                                          </packing>
+                                        </child>
+                                        <child>
+                                          <object class="GtkLabel" id="dlLabel">
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">False</property>
+                                            <property name="label" translatable="yes">DL</property>
+                                            <property name="angle">270</property>
+                                            <attributes>
+                                              <attribute name="font-desc" value="Monospace 10"/>
+                                            </attributes>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">True</property>
+                                            <property name="position">3</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">1</property>
+                                      </packing>
                                     </child>
                                   </object>
                                   <packing>
@@ -731,7 +732,7 @@
                               <packing>
                                 <property name="expand">False</property>
                                 <property name="fill">True</property>
-                                <property name="position">0</property>
+                                <property name="position">1</property>
                               </packing>
                             </child>
                             <child>
@@ -740,13 +741,14 @@
                                 <property name="can_focus">False</property>
                                 <property name="margin_top">15</property>
                                 <property name="margin_bottom">15</property>
+                                <property name="column_spacing">1</property>
                                 <property name="column_homogeneous">True</property>
                                 <child>
                                   <object class="GtkBox" id="bpBox">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <child>
-                                      <object class="GtkTextView" id="regBP">
+                                      <object class="GtkLabel" id="regBP">
                                         <property name="width_request">48</property>
                                         <property name="height_request">40</property>
                                         <property name="visible">True</property>
@@ -789,7 +791,7 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <child>
-                                      <object class="GtkTextView" id="regSP">
+                                      <object class="GtkLabel" id="regSP">
                                         <property name="width_request">48</property>
                                         <property name="height_request">40</property>
                                         <property name="visible">True</property>
@@ -832,7 +834,7 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <child>
-                                      <object class="GtkTextView" id="regSI">
+                                      <object class="GtkLabel" id="regSI">
                                         <property name="width_request">48</property>
                                         <property name="height_request">40</property>
                                         <property name="visible">True</property>
@@ -875,7 +877,7 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <child>
-                                      <object class="GtkTextView" id="regDI">
+                                      <object class="GtkLabel" id="regDI">
                                         <property name="width_request">48</property>
                                         <property name="height_request">40</property>
                                         <property name="visible">True</property>
@@ -918,7 +920,7 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <child>
-                                      <object class="GtkTextView" id="regPC">
+                                      <object class="GtkLabel" id="regPC">
                                         <property name="width_request">48</property>
                                         <property name="height_request">40</property>
                                         <property name="visible">True</property>
@@ -960,7 +962,7 @@
                               <packing>
                                 <property name="expand">False</property>
                                 <property name="fill">True</property>
-                                <property name="position">1</property>
+                                <property name="position">2</property>
                               </packing>
                             </child>
                             <child>
@@ -970,10 +972,9 @@
                                 <property name="margin_bottom">15</property>
                                 <child>
                                   <object class="GtkGrid" id="flagsGrid">
-                                    <property name="width_request">330</property>
+                                    <property name="width_request">344</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="margin_right">10</property>
                                     <property name="margin_top">10</property>
                                     <property name="margin_bottom">10</property>
                                     <property name="row_homogeneous">True</property>
@@ -982,10 +983,14 @@
                                       <object class="GtkLabel" id="oFlagLabel1">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Overflow Flag</property>
                                         <property name="xalign">0.49000000953674316</property>
                                         <property name="yalign">0.51999998092651367</property>
                                         <property name="xpad">1</property>
                                         <property name="label" translatable="yes">O</property>
+                                        <attributes>
+                                          <attribute name="weight" value="ultraheavy"/>
+                                        </attributes>
                                       </object>
                                       <packing>
                                         <property name="left_attach">0</property>
@@ -998,7 +1003,11 @@
                                       <object class="GtkLabel" id="dFlagLabel1">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Direction Flag</property>
                                         <property name="label" translatable="yes">D</property>
+                                        <attributes>
+                                          <attribute name="weight" value="ultraheavy"/>
+                                        </attributes>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
@@ -1011,8 +1020,12 @@
                                       <object class="GtkLabel" id="iFlagLabel1">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Interrupt Flag</property>
                                         <property name="xalign">0.49000000953674316</property>
                                         <property name="label" translatable="yes">I</property>
+                                        <attributes>
+                                          <attribute name="weight" value="ultraheavy"/>
+                                        </attributes>
                                       </object>
                                       <packing>
                                         <property name="left_attach">2</property>
@@ -1025,7 +1038,11 @@
                                       <object class="GtkLabel" id="sFlagLabel1">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Sign Flag</property>
                                         <property name="label" translatable="yes">S</property>
+                                        <attributes>
+                                          <attribute name="weight" value="ultraheavy"/>
+                                        </attributes>
                                       </object>
                                       <packing>
                                         <property name="left_attach">3</property>
@@ -1038,8 +1055,12 @@
                                       <object class="GtkLabel" id="zFlagLabel1">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Zero Flag</property>
                                         <property name="label" translatable="yes">Z</property>
                                         <property name="selectable">True</property>
+                                        <attributes>
+                                          <attribute name="weight" value="ultraheavy"/>
+                                        </attributes>
                                       </object>
                                       <packing>
                                         <property name="left_attach">4</property>
@@ -1052,7 +1073,11 @@
                                       <object class="GtkLabel" id="aFlagLabel1">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Arithmetic Flag</property>
                                         <property name="label" translatable="yes">A</property>
+                                        <attributes>
+                                          <attribute name="weight" value="ultraheavy"/>
+                                        </attributes>
                                       </object>
                                       <packing>
                                         <property name="left_attach">5</property>
@@ -1065,7 +1090,11 @@
                                       <object class="GtkLabel" id="pFlagLabel1">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Parity Flag</property>
                                         <property name="label" translatable="yes">P</property>
+                                        <attributes>
+                                          <attribute name="weight" value="ultraheavy"/>
+                                        </attributes>
                                       </object>
                                       <packing>
                                         <property name="left_attach">6</property>
@@ -1078,7 +1107,11 @@
                                       <object class="GtkLabel" id="cFlagLabel1">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Carry Flag</property>
                                         <property name="label" translatable="yes">C</property>
+                                        <attributes>
+                                          <attribute name="weight" value="ultraheavy"/>
+                                        </attributes>
                                       </object>
                                       <packing>
                                         <property name="left_attach">7</property>
@@ -1091,6 +1124,7 @@
                                       <object class="GtkLabel" id="oFlagOutMachine">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Overflow Flag</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">0</property>
@@ -1103,6 +1137,7 @@
                                       <object class="GtkLabel" id="iFlagOutMachine">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Interrupt Flag</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">2</property>
@@ -1115,6 +1150,7 @@
                                       <object class="GtkLabel" id="dFlagOutMachine">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Direction Flag</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
@@ -1127,6 +1163,7 @@
                                       <object class="GtkLabel" id="zFlagOutMachine">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Zero Flag</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">4</property>
@@ -1139,6 +1176,7 @@
                                       <object class="GtkLabel" id="sFlagOutMachine">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Sign Flag</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">3</property>
@@ -1151,6 +1189,7 @@
                                       <object class="GtkLabel" id="aFlagOutMachine">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Arithmetic Flag</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">5</property>
@@ -1163,6 +1202,7 @@
                                       <object class="GtkLabel" id="pFlagOutMachine">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Parity Flag</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">6</property>
@@ -1175,6 +1215,7 @@
                                       <object class="GtkLabel" id="cFlagOutMachine">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Carry Flag</property>
                                       </object>
                                       <packing>
                                         <property name="left_attach">7</property>
@@ -1194,6 +1235,8 @@
                                   <object class="GtkLabel" id="flagsLabel">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
+                                    <property name="margin_left">3</property>
+                                    <property name="margin_right">6</property>
                                     <property name="label" translatable="yes">FLAGS</property>
                                     <property name="angle">270</property>
                                     <attributes>
@@ -1211,13 +1254,25 @@
                               <packing>
                                 <property name="expand">False</property>
                                 <property name="fill">True</property>
-                                <property name="position">2</property>
+                                <property name="position">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="registersEndLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">4</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkBox" id="memoryBox">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <property name="margin_bottom">15</property>
                                 <child>
                                   <object class="GtkScrolledWindow" id="memorySW">
                                     <property name="width_request">330</property>
@@ -1262,13 +1317,32 @@
                               <packing>
                                 <property name="expand">False</property>
                                 <property name="fill">True</property>
-                                <property name="position">3</property>
+                                <property name="position">5</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkBox" id="box4">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <child>
+                                  <object class="GtkLabel" id="hexSwitchLabel">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="margin_right">20</property>
+                                    <property name="label" translatable="yes">HEX</property>
+                                    <property name="angle">270</property>
+                                    <attributes>
+                                      <attribute name="font-desc" value="Monospace 10"/>
+                                      <attribute name="weight" value="ultraheavy"/>
+                                    </attributes>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="pack_type">end</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
                                 <child>
                                   <object class="GtkBox" id="box3">
                                     <property name="visible">True</property>
@@ -1278,6 +1352,9 @@
                                       <object class="GtkSwitch" id="hexSwitch">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">Click to toggle between hexadecimal and decimal/ASCII display</property>
+                                        <property name="margin_top">28</property>
+                                        <property name="active">True</property>
                                       </object>
                                       <packing>
                                         <property name="expand">False</property>
@@ -1289,39 +1366,39 @@
                                   <packing>
                                     <property name="expand">False</property>
                                     <property name="fill">True</property>
-                                    <property name="position">0</property>
+                                    <property name="pack_type">end</property>
+                                    <property name="position">1</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkLabel" id="hexSwitchLabel">
+                                  <object class="GtkLabel" id="stackLabel">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="label" translatable="yes">HEX</property>
+                                    <property name="label" translatable="yes">STACK</property>
                                     <property name="angle">270</property>
                                     <attributes>
-                                      <attribute name="font-desc" value="Monospace 10"/>
+                                      <attribute name="font-desc" value="Monospace 20"/>
                                       <attribute name="weight" value="ultraheavy"/>
                                     </attributes>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
                                     <property name="fill">True</property>
-                                    <property name="position">1</property>
+                                    <property name="position">2</property>
                                   </packing>
                                 </child>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
                                 <property name="fill">True</property>
-                                <property name="pack_type">end</property>
-                                <property name="position">4</property>
+                                <property name="position">6</property>
                               </packing>
                             </child>
                           </object>
                         </child>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
+                        <property name="expand">True</property>
                         <property name="fill">True</property>
                         <property name="position">1</property>
                       </packing>
@@ -1340,7 +1417,7 @@
                 </child>
                 <child>
                   <object class="GtkBox" id="displayHelp">
-                    <property name="height_request">526</property>
+                    <property name="height_request">529</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="halign">start</property>
@@ -1356,7 +1433,7 @@
                         <property name="can_focus">False</property>
                         <child>
                           <object class="GtkBox" id="instructionFormatBox">
-                            <property name="width_request">380</property>
+                            <property name="width_request">350</property>
                             <property name="height_request">506</property>
                             <property name="visible">True</property>
                             <property name="app_paintable">True</property>
@@ -1440,7 +1517,8 @@
                                                   <object class="GtkLabel" id="reg8">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">8 Byte Register</property>
+                                                    <property name="tooltip_text" translatable="yes">An 8 bit register - i.e. AH</property>
+                                                    <property name="label" translatable="yes">8 Bit Register</property>
                                                     <property name="justify">center</property>
                                                   </object>
                                                   <packing>
@@ -1454,7 +1532,8 @@
                                                   <object class="GtkLabel" id="reg16">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">16 Byte Register</property>
+                                                    <property name="tooltip_text" translatable="yes">A 16 bit register - i.e. AX</property>
+                                                    <property name="label" translatable="yes">16 Bit Register</property>
                                                   </object>
                                                   <packing>
                                                     <property name="left_attach">1</property>
@@ -1467,6 +1546,7 @@
                                                   <object class="GtkLabel" id="mem">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">An address to a section of memory</property>
                                                     <property name="yalign">0.49000000953674316</property>
                                                     <property name="label" translatable="yes">Memory</property>
                                                   </object>
@@ -1481,6 +1561,7 @@
                                                   <object class="GtkLabel" id="label">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">A jump label</property>
                                                     <property name="label" translatable="yes">Label</property>
                                                   </object>
                                                   <packing>
@@ -1494,6 +1575,7 @@
                                                   <object class="GtkLabel" id="variable">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">A local variable defined at the top of your document</property>
                                                     <property name="label" translatable="yes">Variable</property>
                                                   </object>
                                                   <packing>
@@ -1507,6 +1589,7 @@
                                                   <object class="GtkLabel" id="immed">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">An immediate number. If followed by an h then it is assumed to be hexadecimal.</property>
                                                     <property name="label" translatable="yes">Number</property>
                                                   </object>
                                                   <packing>
@@ -1560,7 +1643,8 @@
                                                   <object class="GtkLabel" id="reg82">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">8 Byte Register</property>
+                                                    <property name="tooltip_text" translatable="yes">An 8 bit register - i.e. AH</property>
+                                                    <property name="label" translatable="yes">8 Bit Register</property>
                                                     <property name="justify">center</property>
                                                   </object>
                                                   <packing>
@@ -1574,7 +1658,8 @@
                                                   <object class="GtkLabel" id="reg162">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
-                                                    <property name="label" translatable="yes">16 Byte Register</property>
+                                                    <property name="tooltip_text" translatable="yes">A 16 bit register - i.e. AX</property>
+                                                    <property name="label" translatable="yes">16 Bit Register</property>
                                                   </object>
                                                   <packing>
                                                     <property name="left_attach">1</property>
@@ -1587,6 +1672,7 @@
                                                   <object class="GtkLabel" id="mem2">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">An address to a section of memory</property>
                                                     <property name="yalign">0.49000000953674316</property>
                                                     <property name="label" translatable="yes">Memory</property>
                                                   </object>
@@ -1601,6 +1687,7 @@
                                                   <object class="GtkLabel" id="label2">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">A jump label</property>
                                                     <property name="label" translatable="yes">Label</property>
                                                   </object>
                                                   <packing>
@@ -1614,6 +1701,7 @@
                                                   <object class="GtkLabel" id="variable2">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">A local variable defined at the top of your document</property>
                                                     <property name="label" translatable="yes">Variable</property>
                                                   </object>
                                                   <packing>
@@ -1627,6 +1715,7 @@
                                                   <object class="GtkLabel" id="immed2">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">An immediate number. If followed by an h then it is assumed to be hexadecimal.</property>
                                                     <property name="label" translatable="yes">Number</property>
                                                   </object>
                                                   <packing>
@@ -1672,7 +1761,6 @@
                                     </child>
                                     <child>
                                       <object class="GtkTextView" id="instructionDescription">
-                                        <property name="width_request">300</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="wrap_mode">word</property>
@@ -1687,6 +1775,7 @@
                                       <object class="GtkFrame" id="flagsAffectedFrame">
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
+                                        <property name="tooltip_text" translatable="yes">A '*' means it is affected by , a ? means it may be affected.</property>
                                         <property name="margin_top">10</property>
                                         <property name="label_xalign">0</property>
                                         <property name="shadow_type">in</property>
@@ -1708,6 +1797,7 @@
                                                   <object class="GtkLabel" id="oFlagLabel">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Overflow Flag</property>
                                                     <property name="xalign">0.49000000953674316</property>
                                                     <property name="yalign">0.51999998092651367</property>
                                                     <property name="xpad">1</property>
@@ -1724,6 +1814,7 @@
                                                   <object class="GtkLabel" id="dFlagLabel">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Direction Flag</property>
                                                     <property name="label" translatable="yes">D</property>
                                                   </object>
                                                   <packing>
@@ -1737,6 +1828,7 @@
                                                   <object class="GtkLabel" id="iFlagLabel">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Interrupt Flag</property>
                                                     <property name="xalign">0.49000000953674316</property>
                                                     <property name="label" translatable="yes">I</property>
                                                   </object>
@@ -1751,6 +1843,7 @@
                                                   <object class="GtkLabel" id="sFlagLabel">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Sign Flag</property>
                                                     <property name="label" translatable="yes">S</property>
                                                   </object>
                                                   <packing>
@@ -1764,6 +1857,7 @@
                                                   <object class="GtkLabel" id="zFlagLabel">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Zero Flag</property>
                                                     <property name="label" translatable="yes">Z</property>
                                                     <property name="selectable">True</property>
                                                   </object>
@@ -1778,6 +1872,7 @@
                                                   <object class="GtkLabel" id="aFlagLabel">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Arithmetic Flag</property>
                                                     <property name="label" translatable="yes">A</property>
                                                   </object>
                                                   <packing>
@@ -1791,6 +1886,7 @@
                                                   <object class="GtkLabel" id="pFlagLabel">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Parity Flag</property>
                                                     <property name="label" translatable="yes">P</property>
                                                   </object>
                                                   <packing>
@@ -1804,6 +1900,7 @@
                                                   <object class="GtkLabel" id="cFlagLabel">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Carry Flag</property>
                                                     <property name="label" translatable="yes">C</property>
                                                   </object>
                                                   <packing>
@@ -1817,6 +1914,7 @@
                                                   <object class="GtkLabel" id="oFlagOut">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Overflow Flag</property>
                                                   </object>
                                                   <packing>
                                                     <property name="left_attach">0</property>
@@ -1829,6 +1927,7 @@
                                                   <object class="GtkLabel" id="iFlagOut">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Interrupt Flag</property>
                                                   </object>
                                                   <packing>
                                                     <property name="left_attach">2</property>
@@ -1841,6 +1940,7 @@
                                                   <object class="GtkLabel" id="dFlagOut">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Direction Flag</property>
                                                   </object>
                                                   <packing>
                                                     <property name="left_attach">1</property>
@@ -1853,6 +1953,7 @@
                                                   <object class="GtkLabel" id="zFlagOut">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Zero Flag</property>
                                                   </object>
                                                   <packing>
                                                     <property name="left_attach">4</property>
@@ -1865,6 +1966,7 @@
                                                   <object class="GtkLabel" id="sFlagOut">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Sign Flag</property>
                                                   </object>
                                                   <packing>
                                                     <property name="left_attach">3</property>
@@ -1877,6 +1979,7 @@
                                                   <object class="GtkLabel" id="aFlagOut">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Arithmetic Flag</property>
                                                   </object>
                                                   <packing>
                                                     <property name="left_attach">5</property>
@@ -1889,6 +1992,7 @@
                                                   <object class="GtkLabel" id="pFlagOut">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Parity Flag</property>
                                                   </object>
                                                   <packing>
                                                     <property name="left_attach">6</property>
@@ -1901,6 +2005,7 @@
                                                   <object class="GtkLabel" id="cFlagOut">
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">False</property>
+                                                    <property name="tooltip_text" translatable="yes">Carry Flag</property>
                                                   </object>
                                                   <packing>
                                                     <property name="left_attach">7</property>
@@ -2023,7 +2128,6 @@
                                 <child>
                                   <object class="GtkTextView" id="code">
                                     <property name="width_request">402</property>
-                                    <property name="height_request">525</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
@@ -2135,7 +2239,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkEventBox" id="eventbox">
+                  <object class="GtkEventBox" id="seperatorLabelEB">
                     <property name="width_request">20</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>

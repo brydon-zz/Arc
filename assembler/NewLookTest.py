@@ -40,12 +40,45 @@ class Simulator(object):
     background-color:#F5F5F5;
 }
 
+#As88Window #registersLabel {
+    border-bottom:3px solid #000;
+}
+
+#As88Window #registersEndLabel {
+    border-top:3px solid #000;
+}
+
 #As88Window #machineInfoWrapper {
     background-color:#F5F5F5;
 }
 
+
+#As88Window #flagsGrid GtkLabel {
+    border-left:1px solid #000;
+    border-top:1px solid #000;
+    background-color:#E5E5E5;
+}
+
+#As88Window #c {
+    border-bottom: 1px solid #000;
+    border-right: 1px solid #000;
+}
+
+#As88Window #cFlagLabel1 {
+    border-right: 1px solid #000;
+}
+
+#As88Window #a, #As88Window #z, #As88Window #p, #As88Window #s, #As88Window #i, #As88Window #d, #As88Window #o {
+    border-bottom: 1px solid #000;
+}
+
 #As88Window #machineInfoWrapper GtkLabel {
     color:#000;
+}
+
+#As88Window #machineInfoWrapper GtkTextView {
+    color:#000;
+    border:1px solid #000;
 }
 
 #As88Window #instructionHelpBox, #As88Window #instructionHelpBox *, #As88Window #instructionHelpBox * * {
@@ -72,17 +105,17 @@ GtkAboutDialog, GtkAboutDialog * {
 }
 
 #As88Window #seperatorLabelTrue {
-    background-color:#200;
-    border-right:1px solid #333;
-    border-left:1px solid #333;
+    background-color:#522;
+    border-right:1px solid #000;
+    border-left:1px solid #000;
     border-top:0;
     border-bottom:0;
 }
 
 #As88Window #seperatorLabelFalse {
-    background-color:#002;
-    border-right:1px solid #333;
-    border-left:1px solid #333;
+    background-color:#225;
+    border-right:1px solid #000;
+    border-left:1px solid #000;
     border-top:0;
     border-bottom:0;
 }
@@ -126,13 +159,18 @@ GtkAboutDialog, GtkAboutDialog * {
     border:0;
 }
 
-#As88Window #regABox, #As88Window #regBBox, #As88Window #regCBox, #As88Window #regDBox{
-    border:1px solid #000;
-}
-
-#As88Window #regA, #As88Window #regAH, #As88Window #regAL, #As88Window #regB, #As88Window #regBH, #As88Window #regBL, #As88Window #regC, #As88Window #regCH, #As88Window #regCL, #As88Window #regD, #As88Window #regDH, #As88Window #regDL, #As88Window #regSP, #As88Window #regBP, #As88Window #regSI,#As88Window #regDI, #As88Window #regPC {
+#As88Window #regA, #As88Window #regB, #As88Window #regC, #As88Window #regD, #As88Window #regSP, #As88Window #regBP, #As88Window #regSI,#As88Window #regDI, #As88Window #regPC {
     background-color:#E5E5E5;
     border:1px solid #000;
+    font-family:mono;
+    color:#000;
+}
+
+#As88Window #regAH, #As88Window #regAL, #As88Window #regBH, #As88Window #regBL, #As88Window #regCH, #As88Window #regCL, #As88Window #regDH, #As88Window #regDL {
+    background-color:#E5E5E5;
+    border-left:1px solid #000;
+    border-right:1px solid #000;
+    border-bottom:1px solid #000;
     font-family:mono;
     color:#000;
 }
@@ -206,9 +244,9 @@ GtkAboutDialog, GtkAboutDialog * {
         self.win.connect('key_press_event', self.onKeyPressEvent)
         self.win.connect('key_release_event', self.onKeyReleaseEvent)
 
-        self.eventbox.connect('button_press_event', self.clickSeperator)
-        self.eventbox.connect('enter-notify-event', self.hoverOverSeperator)
-        self.eventbox.connect('leave-notify-event', self.hoverOffSeperator)
+        self.seperatorLabelEB.connect('button_press_event', self.clickSeperator)
+        self.seperatorLabelEB.connect('enter-notify-event', self.hoverOverSeperator)
+        self.seperatorLabelEB.connect('leave-notify-event', self.hoverOffSeperator)
 
         self.builder.get_object("new").connect("activate", lambda *args: self.new())
         self.builder.get_object("open").connect("activate", lambda *args: self.openFile())
@@ -347,8 +385,8 @@ GtkAboutDialog, GtkAboutDialog * {
         def handleSyntaxHighlightingToken(typeOfToken, token, (srow, scol), (erow, ecol), line):
             """Get's called by tokenizer to handle each token."""
 
-            print "%d,%d-%d,%d:\t%s\t%s" % \
-                (srow, scol, erow, ecol, tokenize.tok_name[typeOfToken], repr(token))
+            # print "%d,%d-%d,%d:\t%s\t%s" % \
+            #    (srow, scol, erow, ecol, tokenize.tok_name[typeOfToken], repr(token))
 
             if tokenize.tok_name[typeOfToken] == "ENDMARKER":
                 self.updateLineCounter()
@@ -400,41 +438,54 @@ GtkAboutDialog, GtkAboutDialog * {
     def updateRegisters(self):
         """ Simply put, updates the register, flags, and memory gui elements with their respective values. """
 
-        flagStr = "  %-5s %-5s %-5s %-5s %-5s %-1s\n  %-6d%-6d%-6d%-6d%-6d%-1d" % (self.machine.flags.keys()[0], self.machine.flags.keys()[1], self.machine.flags.keys()[2], self.machine.flags.keys()[3], self.machine.flags.keys()[4], self.machine.flags.keys()[5], int(self.machine.flags.values()[0]), int(self.machine.flags.values()[1]), int(self.machine.flags.values()[2]), int(self.machine.flags.values()[3]), int(self.machine.flags.values()[4]), int(self.machine.flags.values()[5]))
+        self.oFlagOutMachine.set_text(str(int(self.machine.flags['O'])))
+        self.dFlagOutMachine.set_text(str(int(self.machine.flags['D'])))
+        self.iFlagOutMachine.set_text(str(int(self.machine.flags['I'])))
+        self.sFlagOutMachine.set_text(str(int(self.machine.flags['S'])))
+        self.zFlagOutMachine.set_text(str(int(self.machine.flags['Z'])))
+        self.aFlagOutMachine.set_text(str(int(self.machine.flags['A'])))
+        self.pFlagOutMachine.set_text(str(int(self.machine.flags['P'])))
+        self.cFlagOutMachine.set_text(str(int(self.machine.flags['C'])))
 
         if self.displayInHex:
-            self.regA.get_buffer().set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['AX']))) + self.machine.intToHex(self.machine.registers['AX']))
-            self.regB.get_buffer().set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['BX']))) + self.machine.intToHex(self.machine.registers['BX']))
-            self.regC.get_buffer().set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['CX']))) + self.machine.intToHex(self.machine.registers['CX']))
-            self.regD.get_buffer().set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['DX']))) + self.machine.intToHex(self.machine.registers['DX']))
-            self.regBP.get_buffer().set_text(self.machine.intToHex(self.machine.registers['BP']))
-            self.regSP.get_buffer().set_text(self.machine.intToHex(self.machine.registers['SP']))
-            self.regDI.get_buffer().set_text(self.machine.intToHex(self.machine.registers['DI']))
-            self.regSI.get_buffer().set_text(self.machine.intToHex(self.machine.registers['SI']))
-            self.regPC.get_buffer().set_text(self.machine.intToHex(self.machine.registers['PC']))
-            # self.regFlags.get_buffer().set_text(flagStr)
+            self.regA.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['AX']))) + self.machine.intToHex(self.machine.registers['AX']))
+            self.regAH.set_text(self.machine.intToHex(self.machine.eightBitRegister('AH')))
+            self.regAL.set_text(self.machine.intToHex(self.machine.eightBitRegister('AL')))
+            self.regB.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['BX']))) + self.machine.intToHex(self.machine.registers['BX']))
+            self.regBH.set_text(self.machine.intToHex(self.machine.eightBitRegister('BH')))
+            self.regBL.set_text(self.machine.intToHex(self.machine.eightBitRegister('BL')))
+            self.regC.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['CX']))) + self.machine.intToHex(self.machine.registers['CX']))
+            self.regCH.set_text(self.machine.intToHex(self.machine.eightBitRegister('CH')))
+            self.regCL.set_text(self.machine.intToHex(self.machine.eightBitRegister('CL')))
+            self.regD.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['DX']))) + self.machine.intToHex(self.machine.registers['DX']))
+            self.regDH.set_text(self.machine.intToHex(self.machine.eightBitRegister('DH')))
+            self.regDL.set_text(self.machine.intToHex(self.machine.eightBitRegister('DL')))
+            self.regBP.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['BP']))) + self.machine.intToHex(self.machine.registers['BP']))
+            self.regSP.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['SP']))) + self.machine.intToHex(self.machine.registers['SP']))
+            self.regDI.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['DI']))) + self.machine.intToHex(self.machine.registers['DI']))
+            self.regSI.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['SI']))) + self.machine.intToHex(self.machine.registers['SI']))
+            self.regPC.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['PC']))) + self.machine.intToHex(self.machine.registers['PC']))
             self.memoryBuffer.set_text("".join([self.machine.intToHex(ord(x)) for x in self.machine.addressSpace[:144]]))
             self.colourMemory()
         else:
-            self.regA.get_buffer().set_text(str(self.machine.registers['AX']))
-            self.regAH.get_buffer().set_text(str(self.machine.eightBitRegister('AH')))
-            self.regAL.get_buffer().set_text(str(self.machine.eightBitRegister('AL')))
-            self.regB.get_buffer().set_text(str(self.machine.registers['BX']))
-            self.regBH.get_buffer().set_text(str(self.machine.eightBitRegister('BH')))
-            self.regBL.get_buffer().set_text(str(self.machine.eightBitRegister('BL')))
-            self.regC.get_buffer().set_text(str(self.machine.registers['CX']))
-            self.regCH.get_buffer().set_text(str(self.machine.eightBitRegister('CH')))
-            self.regCL.get_buffer().set_text(str(self.machine.eightBitRegister('CL')))
-            self.regD.get_buffer().set_text(str(self.machine.registers['DX']))
-            self.regDH.get_buffer().set_text(str(self.machine.eightBitRegister('DH')))
-            self.regDL.get_buffer().set_text(str(self.machine.eightBitRegister('DL')))
-            self.regBP.get_buffer().set_text(str(self.machine.registers['BP']))
-            self.regSP.get_buffer().set_text(str(self.machine.registers['SP']))
-            self.regDI.get_buffer().set_text(str(self.machine.registers['DI']))
-            self.regSI.get_buffer().set_text(str(self.machine.registers['SI']))
-            self.regPC.get_buffer().set_text(str(self.machine.registers['PC']))
-            # self.regFlags.get_buffer().set_text(flagStr),
-            self.memory.get_buffer().set_text("".join([self.escapeSequences(x) for x in self.machine.addressSpace[:287]]))
+            self.regA.set_text(str(self.machine.registers['AX']))
+            self.regAH.set_text(str(self.machine.eightBitRegister('AH')))
+            self.regAL.set_text(str(self.machine.eightBitRegister('AL')))
+            self.regB.set_text(str(self.machine.registers['BX']))
+            self.regBH.set_text(str(self.machine.eightBitRegister('BH')))
+            self.regBL.set_text(str(self.machine.eightBitRegister('BL')))
+            self.regC.set_text(str(self.machine.registers['CX']))
+            self.regCH.set_text(str(self.machine.eightBitRegister('CH')))
+            self.regCL.set_text(str(self.machine.eightBitRegister('CL')))
+            self.regD.set_text(str(self.machine.registers['DX']))
+            self.regDH.set_text(str(self.machine.eightBitRegister('DH')))
+            self.regDL.set_text(str(self.machine.eightBitRegister('DL')))
+            self.regBP.set_text(str(self.machine.registers['BP']))
+            self.regSP.set_text(str(self.machine.registers['SP']))
+            self.regDI.set_text(str(self.machine.registers['DI']))
+            self.regSI.set_text(str(self.machine.registers['SI']))
+            self.regPC.set_text(str(self.machine.registers['PC']))
+            self.memory.get_buffer().set_text("".join([self.escapeSequences(x) for x in self.machine.addressSpace[:288 - self.backSlashCount]]))
             self.colourMemory()
 
     def makeHelpBox(self):
@@ -473,7 +524,6 @@ GtkAboutDialog, GtkAboutDialog * {
                 self.varArg.set_name("varOff")
 
                 if "None" in rawHelpText[2]:
-                    print "None !!"
                     self.noArgsLabel.set_text("No Arguments")
                     self.noArgsLabel.set_visible(True)
                     self.argumentsFrame2.set_visible(False)
@@ -484,7 +534,7 @@ GtkAboutDialog, GtkAboutDialog * {
                     self.argumentsFrame.set_visible(True)
                     instructionArgs = rawHelpText[2].split(",")
 
-                    args1 = instructionArgs[0].split(":")
+                    args1 = instructionArgs[0].split(":")[1:]
 
                     for arg in args1:
                         arg = arg.strip("[]")
@@ -498,6 +548,7 @@ GtkAboutDialog, GtkAboutDialog * {
                         elif arg == "mem":
                             self.memArg.set_name("memOn")
                         elif arg == "immed":
+                            print 'immed'
                             self.immedArg.set_name("immedOn")
                             self.varArg.set_name("varOn")
                         elif arg == "label":
@@ -527,7 +578,7 @@ GtkAboutDialog, GtkAboutDialog * {
                                 self.memArg2.set_name("memOn")
                             elif arg == "immed":
                                 self.immedArg2.set_name("immedOn")
-                                self.varArg.set_name("varOn")
+                                self.varArg2.set_name("varOn")
                             elif arg == "label":
                                 self.labelArg2.set_name("labelOn")
                     else:
@@ -536,7 +587,7 @@ GtkAboutDialog, GtkAboutDialog * {
 
                 flags = rawHelpText[4].split(":")[1].split(",")
 
-                flagsOut = (self.oFlagOut, self.dFlagOut, self.iFlagOut, self.sFlagOut, self.zFlagOut, self.aFlagOut, self.pFlagOut, self.cFlagOUt)
+                flagsOut = (self.oFlagOut, self.dFlagOut, self.iFlagOut, self.sFlagOut, self.zFlagOut, self.aFlagOut, self.pFlagOut, self.cFlagOut)
                 for index, flag in enumerate(flags):
                     flagsOut[index].set_text(flag)
 
@@ -576,16 +627,9 @@ GtkAboutDialog, GtkAboutDialog * {
         self.regSI.set_name("regSI")
         self.regDI.set_name("regDI")
         self.regPC.set_name("regPC")
-        self.builder.get_object("regAEBox").set_name("regABox")
-        self.builder.get_object("regBEBox").set_name("regBBox")
-        self.builder.get_object("regCEBox").set_name("regCBox")
-        self.builder.get_object("regDEBox").set_name("regDBox")
-        # self.builder.get_object("bpEBox").set_name("regBPBox")
-        # self.builder.get_object("spEBox").set_name("regSPBox")
-        # self.builder.get_object("siEBox").set_name("regSIBox")
-        # self.builder.get_object("diEBox").set_name("regDIBox")
-        # self.builder.get_object("pcEBox").set_name("regPCBox")
-        # self.regFlags.set_name("regFlags")
+        self.builder.get_object("registersLabel").set_name("registersLabel")
+        self.builder.get_object("registersEndLabel").set_name("registersEndLabel")
+
         self.memory.set_name("memory")
         self.notebook.set_name("notebook")
         self.seperatorLabel.set_name("seperatorLabelTrue")
@@ -594,6 +638,17 @@ GtkAboutDialog, GtkAboutDialog * {
         self.builder.get_object("memorySW").set_name("memorySW")
         self.builder.get_object("stackSW").set_name("stackSW")
 
+        self.builder.get_object("flagsGrid").set_name("flagsGrid")
+        self.oFlagOutMachine.set_name('o')
+        self.dFlagOutMachine.set_name('d')
+        self.iFlagOutMachine.set_name('i')
+        self.sFlagOutMachine.set_name('s')
+        self.zFlagOutMachine.set_name('z')
+        self.aFlagOutMachine.set_name('a')
+        self.pFlagOutMachine.set_name('p')
+        self.cFlagOutMachine.set_name('c')
+        self.builder.get_object('cFlagLabel1').set_name('cFlagLabel1')
+
         self.oFlagOut.set_name("oFlagOut")
         self.dFlagOut.set_name("dFlagOut")
         self.iFlagOut.set_name("iFlagOut")
@@ -601,7 +656,7 @@ GtkAboutDialog, GtkAboutDialog * {
         self.zFlagOut.set_name("zFlagOut")
         self.aFlagOut.set_name("aFlagOut")
         self.pFlagOut.set_name("pFlagOut")
-        self.cFlagOUt.set_name("cFlagOut")
+        self.cFlagOut.set_name("cFlagOut")
 
         self.builder.get_object("instructionHelpBox").set_name("instructionHelpBox")
 
@@ -638,7 +693,7 @@ GtkAboutDialog, GtkAboutDialog * {
 
         self.notebook = self.builder.get_object("notebook")
 
-        self.eventbox = self.builder.get_object("eventbox")
+        self.seperatorLabelEB = self.builder.get_object("seperatorLabelEB")
         self.seperatorLabel = self.builder.get_object("seperatorLabel")
 
         self.buttonBox = self.builder.get_object("buttonBox")
@@ -654,7 +709,16 @@ GtkAboutDialog, GtkAboutDialog * {
         self.zFlagOut = self.builder.get_object("zFlagOut")
         self.aFlagOut = self.builder.get_object("aFlagOut")
         self.pFlagOut = self.builder.get_object("pFlagOut")
-        self.cFlagOUt = self.builder.get_object("cFlagOut")
+        self.cFlagOut = self.builder.get_object("cFlagOut")
+
+        self.oFlagOutMachine = self.builder.get_object("oFlagOutMachine")
+        self.dFlagOutMachine = self.builder.get_object("dFlagOutMachine")
+        self.iFlagOutMachine = self.builder.get_object("iFlagOutMachine")
+        self.sFlagOutMachine = self.builder.get_object("sFlagOutMachine")
+        self.zFlagOutMachine = self.builder.get_object("zFlagOutMachine")
+        self.aFlagOutMachine = self.builder.get_object("aFlagOutMachine")
+        self.pFlagOutMachine = self.builder.get_object("pFlagOutMachine")
+        self.cFlagOutMachine = self.builder.get_object("cFlagOutMachine")
 
         self.reg8Arg = self.builder.get_object("reg8")
         self.reg16Arg = self.builder.get_object("reg16")
@@ -922,6 +986,7 @@ GtkAboutDialog, GtkAboutDialog * {
 
     def new(self):
         """ Resets the simulation and code """
+        self.backSlashCount = 0
         self.breakPoints = []
         self.updateWindowTitle()
         self.fileName = None
@@ -1052,7 +1117,6 @@ GtkAboutDialog, GtkAboutDialog * {
                 if self.mode == ".SECT .TEXT":  # ends, we've gone one too far, but we count from zero
                     self.machine.codeBounds[1] = self.lineCount - 1
                 elif line.upper() == ".SECT .TEXT":  # starts, we're one too short, and we count from zero
-                    print "Found start"
                     self.machine.codeBounds[0] = self.lineCount
 
                 self.mode = line
@@ -1184,12 +1248,12 @@ GtkAboutDialog, GtkAboutDialog * {
 
             if command[0] not in self.commandArgs.keys():
                 print "Fatal error. " + command[0] + " not recognised."
+                self.outPut("Fatal error. " + command[0] + " not recognised.")
                 self.stopRunning(-1)
                 return
 
             if len(command) - 1 != self.commandArgs[command[0]]:
                 self.outPut("Invalid number of arguments on line " + str(self.machine.registers['PC']) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " argument" + "s"*(self.commandArgs[command[0]] > 1) + " and " + str(len(command) - 1) + (" were " if len(command) - 1 > 1 else " was ") + "given.")
-                print command[:]
                 self.running = False
                 self.ran = True
                 return -1
@@ -1198,7 +1262,7 @@ GtkAboutDialog, GtkAboutDialog * {
                 self.do[command[0]](command, self.machine.registers['PC'])
                 self.updateRegisters()
             else:
-                print "Fatal error. " + command[0] + " not recognised."
+                self.outPut("Fatal error. " + command[0] + " not recognised.")
                 self.stopRunning(-1)
                 return
 
@@ -1389,6 +1453,7 @@ GtkAboutDialog, GtkAboutDialog * {
         # TODO: Optimize this so that it doesn't highlight things way off in memory that aren't displayed?
         backSlashOffsetBeforeTag = 0
         backSlashOffsetAfterTag = 0
+        self.backSlashCount = 0
         sortedBSSandDATAList = []
 
         for index, name in enumerate(self.machine.DATA.keys() + self.machine.BSS.keys()):
@@ -1411,8 +1476,9 @@ GtkAboutDialog, GtkAboutDialog * {
             for x in self.machine.addressSpace[location[0]:location[1]]:
                 if x in self.ESCAPE_CHARS:
                     backSlashOffsetAfterTag += 1
-            before = location[0] * (self.displayInHex + 1) + backSlashOffsetBeforeTag
-            after = (location[1] + 1) * (self.displayInHex + 1) + backSlashOffsetAfterTag
+                    self.backSlashCount += 1
+            before = location[0] * (self.displayInHex + 1) + backSlashOffsetBeforeTag * (not self.displayInHex)
+            after = (location[1] + 1) * (self.displayInHex + 1) + backSlashOffsetAfterTag * (not self.displayInHex)
 
             self.machine.effectiveBSSandDATALocation[location[2]] = [before, after]
 
