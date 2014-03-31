@@ -406,7 +406,7 @@ GtkAboutDialog, GtkAboutDialog * {
                     elif repr(token).upper().strip("'") in self.machine.registers.keys():
                         self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
                         self.codeBuffer.apply_tag(self.textTagBlueText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
-                    elif repr(token).upper().strip("'") in self.machine.eightBitRegisterNames():
+                    elif repr(token).upper().strip("'") in self.machine.getEightBitRegisterNames():
                         self.codeBuffer.apply_tag(self.textTagBlueText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
                     elif repr(token).upper().strip("'") in ["SECT", "DATA", "BSS", "TEXT"]:
                         self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
@@ -449,17 +449,17 @@ GtkAboutDialog, GtkAboutDialog * {
 
         if self.displayInHex:
             self.regA.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['AX']))) + self.machine.intToHex(self.machine.registers['AX']))
-            self.regAH.set_text(self.machine.intToHex(self.machine.eightBitRegister('AH')))
-            self.regAL.set_text(self.machine.intToHex(self.machine.eightBitRegister('AL')))
+            self.regAH.set_text(self.machine.intToHex(self.machine.getEightBitRegister('AH')))
+            self.regAL.set_text(self.machine.intToHex(self.machine.getEightBitRegister('AL')))
             self.regB.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['BX']))) + self.machine.intToHex(self.machine.registers['BX']))
-            self.regBH.set_text(self.machine.intToHex(self.machine.eightBitRegister('BH')))
-            self.regBL.set_text(self.machine.intToHex(self.machine.eightBitRegister('BL')))
+            self.regBH.set_text(self.machine.intToHex(self.machine.getEightBitRegister('BH')))
+            self.regBL.set_text(self.machine.intToHex(self.machine.getEightBitRegister('BL')))
             self.regC.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['CX']))) + self.machine.intToHex(self.machine.registers['CX']))
-            self.regCH.set_text(self.machine.intToHex(self.machine.eightBitRegister('CH')))
-            self.regCL.set_text(self.machine.intToHex(self.machine.eightBitRegister('CL')))
+            self.regCH.set_text(self.machine.intToHex(self.machine.getEightBitRegister('CH')))
+            self.regCL.set_text(self.machine.intToHex(self.machine.getEightBitRegister('CL')))
             self.regD.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['DX']))) + self.machine.intToHex(self.machine.registers['DX']))
-            self.regDH.set_text(self.machine.intToHex(self.machine.eightBitRegister('DH')))
-            self.regDL.set_text(self.machine.intToHex(self.machine.eightBitRegister('DL')))
+            self.regDH.set_text(self.machine.intToHex(self.machine.getEightBitRegister('DH')))
+            self.regDL.set_text(self.machine.intToHex(self.machine.getEightBitRegister('DL')))
             self.regBP.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['BP']))) + self.machine.intToHex(self.machine.registers['BP']))
             self.regSP.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['SP']))) + self.machine.intToHex(self.machine.registers['SP']))
             self.regDI.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['DI']))) + self.machine.intToHex(self.machine.registers['DI']))
@@ -469,17 +469,17 @@ GtkAboutDialog, GtkAboutDialog * {
             self.colourMemory()
         else:
             self.regA.set_text(str(self.machine.registers['AX']))
-            self.regAH.set_text(str(self.machine.eightBitRegister('AH')))
-            self.regAL.set_text(str(self.machine.eightBitRegister('AL')))
+            self.regAH.set_text(str(self.machine.getEightBitRegister('AH')))
+            self.regAL.set_text(str(self.machine.getEightBitRegister('AL')))
             self.regB.set_text(str(self.machine.registers['BX']))
-            self.regBH.set_text(str(self.machine.eightBitRegister('BH')))
-            self.regBL.set_text(str(self.machine.eightBitRegister('BL')))
+            self.regBH.set_text(str(self.machine.getEightBitRegister('BH')))
+            self.regBL.set_text(str(self.machine.getEightBitRegister('BL')))
             self.regC.set_text(str(self.machine.registers['CX']))
-            self.regCH.set_text(str(self.machine.eightBitRegister('CH')))
-            self.regCL.set_text(str(self.machine.eightBitRegister('CL')))
+            self.regCH.set_text(str(self.machine.getEightBitRegister('CH')))
+            self.regCL.set_text(str(self.machine.getEightBitRegister('CL')))
             self.regD.set_text(str(self.machine.registers['DX']))
-            self.regDH.set_text(str(self.machine.eightBitRegister('DH')))
-            self.regDL.set_text(str(self.machine.eightBitRegister('DL')))
+            self.regDH.set_text(str(self.machine.getEightBitRegister('DH')))
+            self.regDL.set_text(str(self.machine.getEightBitRegister('DL')))
             self.regBP.set_text(str(self.machine.registers['BP']))
             self.regSP.set_text(str(self.machine.registers['SP']))
             self.regDI.set_text(str(self.machine.registers['DI']))
@@ -1185,6 +1185,7 @@ GtkAboutDialog, GtkAboutDialog * {
         
         If the code has already been run to completion this prompts the user asking if they wish to restart (deprecate?).
         """
+        print self.machine.BSS
         if self.running:
             # Scroll to view the line
             self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(self.machine.registers['PC']), 0.25, True, .5, .5)

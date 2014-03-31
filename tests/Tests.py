@@ -47,7 +47,7 @@ class Test(unittest.TestCase):
         for x in ['AX', 'BX', 'CX', 'DX']:
             self.machine.registers[x] = 2 ** 15 - 1
             self.functionTable["ADD"](['ADD', x, 'FFh'], 0)
-            self.assertEqual(self.machine.registers[x], -32514, x + ' failed add')
+            self.assertEqual(self.machine.registers[x], -32514)
 
     def testAddLetter(self):
         self.machine.registers['AX'] = 1
@@ -66,35 +66,35 @@ class Test(unittest.TestCase):
         for x in ['AX', 'BX', 'CX', 'DX']:
             self.machine.registers[x] = -200
             self.functionTable["ADD"](['ADD', x, 'fh'], 0)
-            self.assertEqual(self.machine.registers[x], -185, x + ' failed add')
+            self.assertEqual(self.machine.registers[x], -185)
 
     def testAddNegativeSmallNumbers(self):
         """ Adding small positive integers - the easiest case """
         for x in ['AX', 'BX', 'CX', 'DX']:
             self.machine.registers[x] = -200
             self.functionTable["ADD"](['ADD', x, '1'], 0)
-            self.assertEqual(self.machine.registers[x], -199, x + ' failed add')
+            self.assertEqual(self.machine.registers[x], -199)
 
     def testAddOverflow(self):
         """ Adding small positive integers - the easiest case """
         for x in ['AX', 'BX', 'CX', 'DX']:
             self.machine.registers[x] = 2 ** 15 - 1
             self.functionTable["ADD"](['ADD', x, '1'], 0)
-            self.assertEqual(self.machine.registers[x], -2 ** 15, x + ' failed add')
+            self.assertEqual(self.machine.registers[x], -2 ** 15)
 
     def testAddPositiveSmallNumbers(self):
         """ Adding small positive integers - the easiest case """
         for x in ['AX', 'BX', 'CX', 'DX']:
             self.machine.registers[x] = 10
             self.functionTable["ADD"](['ADD', x, '10'], 0)
-            self.assertEqual(self.machine.registers[x], 20, x + ' failed add')
+            self.assertEqual(self.machine.registers[x], 20)
 
     def testAddSmallHexNumbers(self):
         """ Adding hexy small numbers, things with letters"""
         for x in ['AX', 'BX', 'CX', 'DX']:
             self.machine.registers[x] = 10
             self.functionTable["ADD"](['ADD', x, '1fh'], 0)
-            self.assertEqual(self.machine.registers[x], 41, x + ' failed add')
+            self.assertEqual(self.machine.registers[x], 41)
 
     def testAnd(self):
         self.machine.registers['AX'] = int('1101101', 2)
@@ -505,7 +505,7 @@ class Test(unittest.TestCase):
         self.machine.addressSpace[70] = 24
         self.machine.registers['SI'] = 70
         self.functionTable["LODSB"](['LODSB'], 0)
-        self.assertEqual(self.machine.eightBitRegister('AL'), 24)
+        self.assertEqual(self.machine.getEightBitRegister('AL'), 24)
         self.assertEqual(self.machine.registers['SI'], 71)
 
     def testLodsw(self):
@@ -516,8 +516,8 @@ class Test(unittest.TestCase):
         self.machine.registers['SI'] = 70
         self.functionTable["LODSW"](['LODSW'], 0)
 
-        self.assertEqual(self.machine.eightBitRegister('AL'), 24)
-        self.assertEqual(self.machine.eightBitRegister('AH'), 31)
+        self.assertEqual(self.machine.getEightBitRegister('AL'), 24)
+        self.assertEqual(self.machine.getEightBitRegister('AH'), 31)
 
         self.assertEqual(self.machine.registers['SI'], 68)
 
@@ -1000,6 +1000,22 @@ class Test(unittest.TestCase):
         self.machine.registers['BX'] = int('0110101', 2)
         self.functionTable["XOR"](["XOR", "AX", "BX"], 0)
         self.assertEqual(self.machine.registers["AX"], int("1011000", 2))
+
+    def testInc(self):
+        self.machine.registers['AX'] = 1
+        self.functionTable['INC'](["INC", "AX"], 0)
+        self.assertEqual(self.machine.registers['AX'], 2)
+
+    def testDec(self):
+        self.machine.registers['AX'] = 2
+        self.functionTable['DEC'](["DEC", "AX"], 0)
+        self.assertEqual(self.machine.registers['AX'], 1)
+
+    def testIncMem(self):
+        self.machine.BSS = {'test':[0, 2]}
+        self.machine.addressSpace[0] = 0
+        self.functionTable['INC'](["INC", 'test'], 0)
+        self.assertEqual(self.machine.addressSpace[0], 1)
 
     def updateStack(self):
         """ Necessary - the as88 interpreter calls this method to inform the GUI stack guis need changing """

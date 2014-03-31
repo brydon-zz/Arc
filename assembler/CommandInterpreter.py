@@ -18,6 +18,18 @@
 """
 
 class CommandInterpreter(object):
+    _ERROR = -1
+    _LABEL = 1
+    _INT = 2
+    _HEX = 3
+    _LOCALVAR = 4
+    _REG8 = 5
+    _DATA = 6
+    _BSS = 7
+    _REG = 8
+    _MEM = 9
+    _IMMED = 10
+    _CHAR = 11
 
     def __init__(self, gui, assembler):
         """ Link's this module with the self.assembler instance """
@@ -160,40 +172,40 @@ class CommandInterpreter(object):
                 "CMPB":self.CMPB,
                 "DAA":self.DAA,
                 "DAS":self.DAS,
-                "DEC":lambda x, i: self.incdec(x, i, -1),
-                "INC":lambda x, i: self.incdec(x, i, 1),
-                "JA":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 and self.assembler.flags['Z'] == 0),
-                "JAE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 or self.assembler.flags['Z'] == 1),
-                "JB":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 and self.assembler.flags['Z'] == 0),
-                "JBE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 or self.assembler.flags['Z'] == 1),
-                "JC":lambda x, i: self.jf(x, i, self.assembler.flags['C'] == 1),
-                "JCXZ":lambda x, i: self.jf(x, i, self.assembler.registers['CX'] == 0),
-                "JE":lambda x, i: self.jf(x, i, self.assembler.flags['Z'] == 1),
-                "JG":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 and self.assembler.flags['Z'] == 0),
-                "JGE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 or self.assembler.flags['Z'] == 1),
-                "JL":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 and self.assembler.flags['Z'] == 0),
-                "JLE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 or self.assembler.flags['Z'] == 1),
+                "DEC":self.DEC,
+                "INC":self.INC,
+                "JA":self.JA,
+                "JAE":self.JAE,
+                "JB":self.JB,
+                "JBE":self.JBE,
+                "JC":self.JC,
+                "JCXZ":self.JCXZ,
+                "JE":self.JE,
+                "JG":self.JG,
+                "JGE":self.JGE,
+                "JL":self.JL,
+                "JLE":self.JLE,
                 "JMP":self.JMP,
-                "JNA":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 or self.assembler.flags['Z'] == 1),
-                "JNAE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 and self.assembler.flags['Z'] == 0),
-                "JNB":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 or self.assembler.flags['Z'] == 1),
-                "JNBE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 and self.assembler.flags['Z'] == 0),
-                "JNC":lambda x, i: self.jf(x, i, self.assembler.flags['C'] == 0),
-                "JNE":lambda x, i: self.jf(x, i, self.assembler.flags['Z'] == 0),
-                "JNG":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 or self.assembler.flags['Z'] == 1),
-                "JNGE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1 and self.assembler.flags['Z'] == 0),
-                "JNL":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 or self.assembler.flags['Z'] == 1),
-                "JNLE":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0 and self.assembler.flags['Z'] == 0),
-                "JNO":lambda x, i: self.jf(x, i, self.assembler.flags["O"] == 0),
-                "JNP":lambda x, i: self.jf(x, i, self.assembler.flags['P'] == 0),
-                "JNS":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 0),
-                "JNZ":lambda x, i: self.jf(x, i, self.assembler.flags['Z'] == 0),
-                "JO":lambda x, i: self.jf(x, i, self.assembler.flags['O'] == 1),
-                "JP":lambda x, i: self.jf(x, i, self.assembler.flags['P'] == 1),
-                "JPE":lambda x, i: self.jf(x, i, self.assembler.flags['P'] == 1 or self.assembler.flags['Z'] == 1),
-                "JPO":lambda x, i: self.jf(x, i, self.assembler.flags['P'] == 1 or self.assembler.flags['O'] == 1),
-                "JS":lambda x, i: self.jf(x, i, self.assembler.flags['S'] == 1),
-                "JZ":lambda x, i: self.jf(x, i, self.assembler.flags['Z'] == 1),
+                "JNA":self.JNA,
+                "JNAE":self.JNAE,
+                "JNB":self.JNB,
+                "JNBE":self.JNBE,
+                "JNC":self.JNC,
+                "JNE":self.JNE,
+                "JNG":self.JNG,
+                "JNGE":self.JNGE,
+                "JNL":self.JNL,
+                "JNLE":self.JNLE,
+                "JNO":self.JNO,
+                "JNP":self.JNP,
+                "JNS":self.JNS,
+                "JNZ":self.JNZ,
+                "JO":self.JO,
+                "JP":self.JP,
+                "JPE":self.JPE,
+                "JPO":self.JPO,
+                "JS":self.JS,
+                "JZ":self.JZ,
                 "LODSB":self.LODSB,
                 "LODSW":self.LODSW,
                 "LOOP":self.LOOP,
@@ -202,7 +214,7 @@ class CommandInterpreter(object):
                 "LOOPNZ":self.LOOPNZ,
                 "LOOPZ":self.LOOPZ,
                 "MOV":self.MOV,
-                "NOP":lambda x, i: 1,  # best instruction
+                "NOP":self.NOP,  # best instruction
                 "NOT":self.NOT,
                 "OR":self.OR,
                 "POP":self.POP,
@@ -241,15 +253,15 @@ class CommandInterpreter(object):
         args:None
         description:Adjusts the result in AL after two ASCII digits have been added together. If AL>9, the high digit of the result is placed in AH, and the Carry and Auxiliary flags are set.
         flags:?,,,?,?,*,?,*"""
-        if (self.assembler.eightBitRegister('AL') & 15 > 9) or self.assembler.flags['A']:
-            tempAH = self.assembler.eightbitRegister('AH')
-            self.assembler.registers['AX'] = (self.assembler.eightBitRegister('AL') + 6) & 15
-            self.assembler.registers['AX'] += (tempAH + 1) * 256
-            self.assembler.flags['A'] = 1
-            self.assembler.flags['C'] = 1
+        if (self.assembler.getEightBitRegister('AL') & 15 > 9) or self.assembler.getFlag('A'):
+            tempAH = self.assembler.getEightBitRegister('AH')
+            self.assembler.setRegister('AX', (self.assembler.getEightBitRegister('AL') + 6) & 15)
+            self.assembler.setRegister('AX', self.assembler.getREgister('AX') + (tempAH + 1) * 256)
+            self.assembler.setFlag('A')
+            self.assembler.setFlag('C')
         else:
-            self.assembler.flags['A'] = 0
-            self.assembler.flags['C'] = 0
+            self.assembler.setFlag('A', 0)
+            self.assembler.setFlag('C', 0)
 
     def AAD(self, command, i):
         """name:AAD
@@ -257,7 +269,7 @@ class CommandInterpreter(object):
         args:None
         description:Converts unpacked BCD digits in AH and AL to a single binary value in preperation for the DIV instruction.
         flags:?,,,*,*,?,*,?"""
-        self.assembler.registers['AX'] = self.assembler.eightBitRegister('AL') + self.assembler.eightBitRegister('AH') * 10
+        self.assembler.setRegister('AX', self.assembler.getEightBitRegister('AL') + self.assembler.getEightBitRegister('AH') * 10)
 
     def AAM(self, command, i):
         """name:AAM
@@ -265,8 +277,8 @@ class CommandInterpreter(object):
         args:None
         description:Adjusts the result in AX after two unpacked BCD digits have been multiplied together
         flags:?,,,*,*,?,*,?"""
-        tempAL = self.assembler.eightBitRegister('AL')
-        self.assembler.registers['AX'] = (tempAL % 10) + (tempAL / 10) * 256
+        tempAL = self.assembler.getEightBitRegister('AL')
+        self.assembler.setRegister('AX', (tempAL % 10) + (tempAL / 10) * 256)
 
     def AAS(self, command, i):
         """name:AAS
@@ -274,15 +286,15 @@ class CommandInterpreter(object):
         args:None
         description:Adjusts the result in AX after a subtraction operation. If AL>9, AAS decrements AH and sets the Carry and Auxiliary Carry flags.
         flags:?,,,?,?,*,?,*"""
-        if (self.assembler.eightBitRegister('AL') & 15 > 9) or self.assembler.flags['A']:
-            tempAH = self.assembler.eightbitRegister('AH')
-            self.assembler.registers['AX'] = (self.assembler.eightBitRegister('AL') - 6) & 15
-            self.assembler.registers['AX'] += (tempAH - 1) * 256
-            self.assembler.flags['A'] = 1
-            self.assembler.flags['C'] = 1
+        if (self.assembler.getEightBitRegister('AL') & 15 > 9) or self.assembler.getFlag('A'):
+            tempAH = self.assembler.getEightBitRegister('AH')
+            self.assembler.setRegister('AX', (self.assembler.getEightBitRegister('AL') - 6) & 15)
+            self.assembler.setRegister('AX', self.assembler.getRegister('AX') + (tempAH - 1) * 256)
+            self.assembler.setFlag('A')
+            self.assembler.setFlag('C')
         else:
-            self.assembler.flags['A'] = 0
-            self.assembler.flags['C'] = 0
+            self.assembler.setFlag('A', 0)
+            self.assembler.setFlag('C', 0)
 
     def ADC(self, command, i):
         """name:ADC
@@ -298,68 +310,50 @@ class CommandInterpreter(object):
         args:[reg:mem],[reg:mem:immed]
         description:A source operand is added to a destination operand, and the sum is stored in the destination.
         flags:*,,,*,*,*,*,*"""
-        if command[1] == "SP" and command[2].isdigit():  # TODO: REPLACE THIS
+
+        if command[1] == "SP" and command[2].isdigit():
             for j in range(int(command[2]) / 2):
-                if len(self.assembler.stackData) > 0:
-                    self.assembler.stackData.pop()
+                if len(self.assembler.getStack()) > 0:
+                    self.assembler.getStack().pop()
                     self.gui.updateStack()
-            self.assembler.registers['SP'] += int(command[2])
+            self.assembler.setRegister('SP', self.assembler.getRegister('SP') + int(command[2]))
             return
+
         if self.assembler.isHex(command[1]):
             if not inPlace:
                 self.gui.outPut("Error on line " + str(i) + ". " + command[0] + " cannot have a numerical first argument.")
                 self.gui.stopRunning(-1)
                 return
 
-        """ To save on code space, y will serve as "second guy" """
-        if self.assembler.isHex(command[2]):  # y is a digit
-            if command[2][-1] == "h":
-                y = int(command[2][:-1], 16)
-            else:
-                y = int(command[2])
-        elif command[2] in self.assembler.localVars.keys():  # y is a local var
-            y = int(self.assembler.localVars[command[2]])
-        elif command[2] in self.assembler.registers.keys():  # y is a register
-            y = self.assembler.registers[command[2]]
-        elif command[2] in self.assembler.DATA.keys():  # y is a mem address from DATA section
-            y = self.assembler.addressSpace[self.assembler.DATA[command[2]][0]]
-        elif command[2] in self.assembler.BSS.keys():  # y is a mem address from BSS section
-            y = self.assembler.addressSpace[self.assembler.BSS[command[2]][0]]
-        elif len(command[2].strip('"').strip("'")) == 1:
-            y = ord(command[2].strip('"').strip("'"))
-        else:
-            self.gui.outPut("What the heck is going on with your second argument!?!?!")
-            self.gui.stopRunning(-1)
-            return
+        argumentType = self.testArgument(command, 2, i, [self._REG, self._MEM, self._IMMED])
+        y = self.getValue(command[2], argumentType)
 
-        if carry: y += self.assembler.flags['C']
+        if carry: y += self.assembler.getFlag('C')
         if command[0].upper() in ["SUB", "SBB", "CMP", "CMPB", "SCASB", "SCASW"]: y *= -1
 
-        if command[1] in self.assembler.registers.keys():  # x is a register
-            result = self.assembler.registers[command[1]] + y
-            if not inPlace: self.assembler.registers[command[1]] = result
-        elif command[1] in self.assembler.DATA.keys():  # x is a data location
-            result = self.assembler.addressSpace[self.assembler.DATA[command[1]][0]] + y
-            if not inPlace: self.assembler.addressSpace[self.assembler.DATA[command[1]][0]] = result
-        elif command[1] in self.assembler.BSS.keys():  # x is a BSS location
-            result = self.assembler.addressSpace[self.assembler.BSS[command[1]][0]] + y
-            if not inPlace: self.assembler.addressSpace[self.assembler.BSS[command[1]][0]] = result
-        elif inPlace:
+        if not inPlace:
+            argumentType = self.testArgument(command, 1, i, [self._REG, self._MEM])
+            result = self.getValue(command[1], argumentType) + y
+        else:
             result = int(command[1], 10) + y
 
-        if result >= 2 ** 15 and command[1] in self.assembler.registers.keys():
-            while self.assembler.registers[command[1]] >= 2 ** 15:
-                self.assembler.registers[command[1]] -= 2 ** 16
-                self.assembler.flags['O'] = 1
-        elif result < -2 ** 15 and command[1] in self.assembler.registers.keys():
-            while self.assembler.registers[command[1]] < -2 ** 15:
-                self.assembler.registers[command[1]] += 2 ** 16
-                self.assembler.flags['O'] = 1
 
-        if result == 0:
-            self.assembler.flags['Z'] = 1
-        elif result < 0:
-            self.assembler.flags['S'] = 1
+        self.assembler.setFlag('O', 0)
+        if result >= 2 ** 15:
+            while result >= 2 ** 15:
+                result -= 2 ** 16
+            self.assembler.setFlag('O')
+        elif result < -2 ** 15:
+            while result < -2 ** 15:
+                result += 2 ** 16
+            self.assembler.setFlag('O')
+
+        if not inPlace:
+            self.setValue(command[1], argumentType, result)
+
+        self.assembler.setFlag('Z', result == 0)
+        self.assembler.setFlag('S', result < 0)
+        self.assembler.setFlag('P', result % 2)
 
     def AND(self, command, i, inPlace=False):
         """name:AND
@@ -368,38 +362,17 @@ class CommandInterpreter(object):
         description:Each bit in the destination operand is ANDed with the corresponding bit in the source operand
         flags:*,,,*,*,?,*,0"""
 
-        if self.assembler.isHex(command[2]):  # y is a digit
-            if command[2][-1] == "h":
-                t = int(command[2][:-1], 16)
-            else:
-                t = int(command[2])
-        elif command[2] in self.assembler.localVars.keys():  # y is a local var
-            t = self.assembler.localVars[command[2]]
-        elif command[2] in self.assembler.registers:
-            t = self.assembler.registers[command[2]]
-        elif command[2] in self.assembler.DATA.keys():
-            t = self.assembler.DATA[self.assembler.registers[command[2]]]
-        elif command[2] in self.assembler.BSS.keys():
-            t = self.assembler.BSS[self.assembler.registers[command[2]]]
-        else:
-            self.gui.outPut("No Idea what's going on there bud")
-            self.gui.stopRunning(-1)
-            return
+        argumentType = self.testArgument(command, 2, i, (self._IMMED, self._REG, self._MEM))
+        t = self.getValue(command[2], argumentType)
 
-        if command[1] in self.assembler.registers:
-            result = self.assembler.registers[command[1]] & t
-            if not inPlace: self.assembler.registers[command[1]] = result
-        elif command[1] in self.assembler.BSS.keys():
-            result = self.assembler.BSS[command[1]] & t
-            if not inPlace: self.assembler.BSS[command[1]] = result
-        elif command[1] in self.assembler.DATA.keys():
-            result = self.assembler.DATA[command[1]] & t
-            if not inPlace: self.assembler.DATA[command[1]] = result
-        else:
-            self.gui.outPut("There was a fatal error with " + command[0] + " on line " + str(i))
-            self.gui.stopRunning(-1)
-            return
-        self.assembler.flags['C'] = 0
+        argumentType = self.testArgument(command, 1, i, (self._REG, self._MEM))
+        result = self.getValue(command[1], argumentType) & t
+        self.setValue(command[1], argumentType, result)
+
+        self.assembler.setFlag('P', result % 2)
+        self.assembler.setFlag('S', result < 0)
+        self.assembler.setFlag('Z', result == 0)
+        self.assembler.setFlag('C', 0)
 
     def CALL(self, command, i):
         """name:CALL
@@ -408,12 +381,13 @@ class CommandInterpreter(object):
         description:Calls the function in the source operand. The current program counter value is pushed to the stack before the call.
         flags:,,,,,,,
         """
-        if command[1] in self.assembler.lookupTable.keys():
-            self.assembler.jumpLocation = self.assembler.lookupTable[command[1]]
-            self.assembler.stackData.append(self.assembler.registers['PC'] + 1)
+        if command[1] in self.assembler.getLookupTable().keys():
+            self.assembler.setJumpLocation(self.assembler.getLookupTable()[command[1]])
+            self.assembler.getStack().append(self.assembler.getRegister('PC') + 1)
             self.gui.updateStack()
         else:
-            self.gui.outPut("Big issue with this label guy.")
+            self.gui.outPut("Error on line " + str(i) + ". Cannot CALL the label " + command[1] + ". It does not exist.")
+            self.gui.stopRunning(-1)
 
     def CBW(self, command, i):
         """name:CBW
@@ -421,8 +395,8 @@ class CommandInterpreter(object):
         args:None
         description:Extends the sign bit in AL throughout the AH register
         flags:,,,,,,,"""
-        if self.assembler.eightBitRegister("AL") >= 128:
-            self.assembler.registers['AX'] -= 256
+        if self.assembler.getEightBitRegister("AL") >= 128:
+            self.assembler.setRegister('AX', self.assembler.getRegister('AX') - 256)
 
     def CLC(self, command, i):
         """name:CLC
@@ -431,7 +405,7 @@ class CommandInterpreter(object):
         description:Clears the carry flag to zero.
         flags:,,,,,,,0
         """
-        self.assembler.flags["C"] = False
+        self.assembler.setFlag("C", 0)
 
     def CLD(self, command, i):
         """name:CLD
@@ -439,7 +413,7 @@ class CommandInterpreter(object):
         args:None
         description:Clears the Direction flag to zero. String primitive instructions will automatically increment SI and DI
         flags:,0,,,,,,"""
-        self.assembler.flags['D'] = False
+        self.assembler.setFlag("D", 0)
 
     def CLI(self, commmand, i):
         """name:CLI
@@ -447,7 +421,7 @@ class CommandInterpreter(object):
         args:None
         description:Clears the interrupt flag to zero. This disables maskable hardware interrupts until an STI instruction is executed
         flags:,,0,,,,,"""
-        self.assembler.flags['I'] = False
+        self.assembler.setFlag("I", 0)
 
     def CMC(self, command, i):
         """name:CMC
@@ -455,7 +429,7 @@ class CommandInterpreter(object):
         args:None
         description:Toggles the current value of the Carry flag
         flags:,,,,,,,*"""
-        self.assembler.flags['C'] = not self.assembler.flags["C"]
+        self.assembler.setFlag("C", not self.assembler.getFlag('C'))
 
     def CMPB(self, command, i):
         """name:CMPB
@@ -467,7 +441,7 @@ class CommandInterpreter(object):
         b = []
         for x in a:
             if x in ['AH', 'AL', 'BH', 'BL', 'CH', 'CL', 'DH', 'DL']:
-                x = self.assembler.eightBitRegister(x)
+                x = self.assembler.getEightBitRegister(x)
             elif x in ['AX', 'BX', 'CX', 'DX']:
                 self.gui.outPut("Illegal argument for CMPB on line %d. %s is a 16 bit register, perhaps you meant one of the 8 bit %s or %s registers?" % (i, x, x[0] + "H", x[0] + "L"))
                 self.gui.stopRunning(-1)
@@ -485,7 +459,8 @@ class CommandInterpreter(object):
                     except ValueError:
                         x = ord(x)
             elif type(x) != type(1):
-                self.assembler.out("Illegal argument %s for CMPB on line %d. CMPB expects an argument to be a one byte register (ie: AH, AL, etc.), an integer, or a one byte string (ie: \"L\", etc.). Instead %s was given." % (x, i, x))
+                self.gui.outPut("Illegal argument %s for CMPB on line %d. CMPB expects an argument to be a one byte register (ie: AH, AL, etc.), an integer, or a one byte string (ie: \"L\", etc.). Instead %s was given." % (x, i, x))
+                self.gui.stopRunning(-1)
             b.append(x)
 
         self.SUB(["CMPB", str(b[0]), str(b[1])], i, inPlace=True)
@@ -497,17 +472,17 @@ class CommandInterpreter(object):
         description:Adjusts the binary sum in AL after two packed BCD values have been added. Converts the sum to two BCD digits in AL.
         flags:?,,,*,*,*,*,*"""
 
-        if (self.assembler.eightBitRegister('AL') & 15 > 9) or self.assembler.flags['A']:
-            self.assembler.registers['AX'] += 6
-            self.assembler.flags['A'] = 1
+        if (self.assembler.getEightBitRegister('AL') & 15 > 9) or self.assembler.getFlag('A'):
+            self.assembler.setRegister('AX', self.assembler.getRegister('AX') + 6)
+            self.assembler.setFlag('A')
         else:
-            self.assembler.flags['A'] = 0
+            self.assembler.setFlag('A', 0)
 
-        if self.assembler.eightBitRegister('AL') > 159 or self.assembler.flags['C']:
-            self.assembler.registers['AX'] += 96
-            self.assembler.flags['C'] = 1
+        if self.assembler.getEightBitRegister('AL') > 159 or self.assembler.getFlag('C'):
+            self.assembler.setRegister('AX', self.assembler.getRegister('AX') + 96)
+            self.assembler.setFlag('C')
         else:
-            self.assembler.flags['C'] = 0
+            self.assembler.setFlag('C', 0)
 
     def DAS(self, command, i):
         """name:DAS
@@ -516,17 +491,281 @@ class CommandInterpreter(object):
         description:Converts the binary result of a subtraction operation to two packed BCD digits in AL.
         flags:?,,,*,*,*,*,*"""
 
-        if (self.assembler.eightBitRegister('AL') & 15 > 9) or self.assembler.flags['A']:
-            self.assembler.registers['AX'] -= 6
-            self.assembler.flags['A'] = 1
+        if (self.assembler.getEightBitRegister('AL') & 15 > 9) or self.assembler.getFlag('A'):
+            self.assembler.setRegister('AX', self.assembler.getRegister('AX') - 6)
+            self.assembler.setFlag('A')
         else:
-            self.assembler.flags['A'] = 0
+            self.assembler.setFlag('A', 0)
 
-        if self.assembler.eightBitRegister('AL') > 159 or self.assembler.flags['C']:
-            self.assembler.registers['AX'] -= 96
-            self.assembler.flags['C'] = 1
+        if self.assembler.getEightBitRegister('AL') > 159 or self.assembler.getFlag('C'):
+            self.assembler.setRegister('AX', self.assembler.getRegister('AX') - 96)
+            self.assembler.setFlag('C')
         else:
-            self.assembler.flags['C'] = 0
+            self.assembler.setFlag('C', 0)
+
+    def DEC(self, command, i):
+        """name:DEC
+        title:Decrement
+        args: [reg:mem]
+        description:Subtracts one from the register or memory address provided 
+        flags:*,,,*,*,*,*,"""
+        self.incdec(command, i, -1)
+
+    def INC(self, command, i):
+        """name:INC
+        title:Increment
+        args: [reg:mem]
+        description:Adds one to the register or memory address provided 
+        flags:*,,,*,*,*,*,"""
+        self.incdec(command, i, 1)
+
+    def JA(self, command, i):
+        """name:JA
+        title:Jump to a label if above
+        args: [label]
+        description:The same as JG. Jumps if the sign flag is clear and the zero flag is clear 
+        flags:,,,,,,,"""
+        self.jf(self, i, not self.assembler.getFlag('S') and not self.assembler.getFlag('Z'))
+
+    def JAE(self, command, i):
+        """name:JAE
+        title:Jump to a label if above or equal
+        args: [label]
+        description:The same as JGE. Jumps if the sign flag is clear and/or the zero flag is set 
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('S') or self.assembler.getFlag('Z'))
+
+    def JB(self, command, i):
+        """name:JB
+        title:Jump to a label if below
+        args: [label]
+        description:The same as JL. Jumps if the sign flag is set and the zero flag is clear 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('S') and not self.assembler.getFlag('Z'))
+
+    def JBE(self, command, i):
+        """name:JBE
+        title:Jump to a label if below or equal
+        args: [label]
+        description:The same as JLE. Jumps if the sign flag is set and/or the zero flag is set 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('S') or self.assembler.getFlag('Z'))
+
+    def JC(self, command, i):
+        """name:JC
+        title:Jump to a label if carry
+        args: [label]
+        description:Jumps if the carry flag is set 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('C'))
+
+    def JCXZ(self, command, i):
+        """name:JCXZ
+        title:Jump to a label if CX is zero
+        args: [label]
+        description:Jumps if the value of the CX register is zero 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getRegister('CX') == 0)
+
+    def JE(self, command, i):
+        """name:JE
+        title:Jump to a label if equal
+        args: [label]
+        description:Jumps if the zero flag is set 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('Z'))
+
+    def JG(self, command, i):
+        """name:JG
+        title:Jump to a label if greater than
+        args: [label]
+        description:Jumps if the sign flag is clear and the zero flag is clear 
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('S') and not self.assembler.getFlag('Z'))
+
+    def JGE(self, command, i):
+        """name:JGE
+        title:Jump to a label if greater than or equal
+        args: [label]
+        description:Jumps if the sign flag is clear and/or the zero flag is set 
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('S') or self.assembler.getFlag('Z'))
+
+    def JL(self, command, i):
+        """name:JL
+        title:Jump to a label if less than
+        args: [label]
+        description:Jumps if the sign flag is set and the zero flag is clear 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('S') and not self.assembler.getFlag('Z'))
+
+    def JLE(self, command, i):
+        """name:JLE
+        title:Jump to a label if less than or equal
+        args: [label]
+        description:Jumps if the sign flag is set and/or the zero flag is set 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('S') or self.assembler.getFlag('Z'))
+
+    def JNA(self, command, i):
+        """name:JNA
+        title:Jump to a label if not above
+        args: [label]
+        description:The same as JLE. Jumps if the sign flag is set and/or the zero flag is set. 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('S') or self.assembler.getFlag('Z'))
+
+    def JNAE(self, command, i):
+        """name:JNAE
+        title:Jump to a label if not above or equal
+        args: [label]
+        description:The same as JL. Jumps if the sign flag is set and the zero flag is clear 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('S') and not self.assembler.getFlag('Z'))
+
+    def JNB(self, command, i):
+        """name:JNB
+        title:Jump to a label if not below
+        args: [label]
+        description:The same as JGE. Jumps if the sign flag is clear and/or the zero flag is set.
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('S') or self.assembler.getFlag('Z'))
+
+    def JNBE(self, command, i):
+        """name:JNBE
+        title:Jump to a label if not below or equal
+        args: [label]
+        description:The same as JG. Jumps if the sign flag is clear and the zero flag is clear. 
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('S') and not self.assembler.getFlag('Z'))
+
+    def JNC(self, command, i):
+        """name:JNC
+        title:Jump to a label if not carry
+        args: [label]
+        description:Jumps if the carry flag is clear 
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('C'))
+
+    def JNE(self, command, i):
+        """name:JNE
+        title:Jump to a label if not equal
+        args: [label]
+        description:Jumps if the zero flag is clear 
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('Z'))
+
+    def JNG(self, command, i):
+        """name:JNG
+        title:Jump to a label if not greater than
+        args: [label]
+        description:The same as JLE. Jumps if the sign flag is set and/or the zero flag is set. 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('S') or self.assembler.getFlag('Z'))
+
+    def JNGE(self, command, i):
+        """name:JNGE
+        title:Jump to a label if not greater than or equal
+        args: [label]
+        description:The same as JL. Jumps if the sign flag is set and the zero flag is clear. 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('S') and not self.assembler.getFlag('Z'))
+
+    def JNL(self, command, i):
+        """name:JNL
+        title:Jump to a label if not less than
+        args: [label]
+        description:The same as JGE. Jumps if the sign flag is clear and/or the zero flag is set. 
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('S') or self.assembler.getFlag('Z'))
+
+    def JNLE(self, command, i):
+        """name:JNLE
+        title:Jump to a label if not less than or equal
+        args: [label]
+        description:The same as JG. Jumps if the sign flag is clear and the zero flag is clear. 
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('S') and not self.assembler.getFlag('Z'))
+
+    def JNO(self, command, i):
+        """name:JNO
+        title:Jump to a label if not overflow
+        args: [label]
+        description:Jumps if the overflow flag is clear. 
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('O'))
+
+    def JNP(self, command, i):
+        """name:JNP
+        title:Jump to a label if not parity
+        args: [label]
+        description:Jumps if the parity flag is clear.  
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('P'))
+
+    def JNS(self, command, i):
+        """name:JC
+        title:Jump to a label if not sign.
+        args: [label]
+        description:The same as JG. Jumps if the sign flag is clear.
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('S'))
+
+    def JNZ(self, command, i):
+        """name:JC
+        title:Jump to a label if not zero
+        args: [label]
+        description:Jumps if the zero flag is clear 
+        flags:,,,,,,,"""
+        self.jf(command, i, not self.assembler.getFlag('Z'))
+
+    def JO(self, command, i):
+        """name:JC
+        title:Jump to a label if overflow.
+        args: [label]
+        description:Jumps if the overflow flag is set 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('O'))
+
+    def JP(self, command, i):
+        """name:JC
+        title:Jump to a label if parity
+        args: [label]
+        description:Jumps if the parity flag is set 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('P'))
+
+    def JPE(self, command, i):
+        """name:JC
+        title:Jump to a label if parity or equal
+        args: [label]
+        description:Jumps if the parity flag is set and/or the zero flag is set 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('P') or self.assembler.getFlag('Z'))
+
+    def JPO(self, command, i):
+        """name:JC
+        title:Jump to a label if parity or overflow
+        args: [label]
+        description:Jumps if the parity flag is set or the overflow flag is set 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('P') or self.assembler.getFlag('O'))
+
+    def JS(self, command, i):
+        """name:JC
+        title:Jump to a label if sign
+        args: [label]
+        description:The same as JL. Jumps if the sign flag is set. 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('S'))
+
+    def JZ(self, command, i):
+        """name:JC
+        title:Jump to a label if zero
+        args: [label]
+        description:The same as JE. Jumps if the zero flag is set 
+        flags:,,,,,,,"""
+        self.jf(command, i, self.assembler.getFlag('Z'))
 
     def JMP(self, command, i, referer="JMP"):
         """name:JMP
@@ -534,33 +773,33 @@ class CommandInterpreter(object):
         args: [label]
         description:The program counter is adjusted to the value referenced by the label and program execution continues.
         flags:,,,,,,,"""
-        if command[1] in self.assembler.lookupTable.keys() and not self.assembler.isHex(command[1]):
-            self.assembler.jumpLocation = self.assembler.lookupTable[command[1]]
-        elif (command[1].rstrip('b').isdigit() or command[1].rstrip('f').isdigit()) and command[1].strip('bf') in self.assembler.lookupTable.keys():
+        if command[1] in self.assembler.getLookupTable().keys() and not self.assembler.isHex(command[1]):
+            self.assembler.setJumpLocation(self.assembler.getLookupTable()[command[1]])
+        elif (command[1].rstrip('b').isdigit() or command[1].rstrip('f').isdigit()) and command[1].strip('bf') in self.assembler.getLookupTable().keys():
             temp = command[1].rstrip('bf')
             m = -1
-            if type(self.assembler.lookupTable[temp]) == self.LIST_TYPE:
-                for x in self.assembler.lookupTable[temp]:
+            if type(self.assembler.getLookupTable()[temp]) == self.LIST_TYPE:
+                for x in self.assembler.getLookupTable()[temp]:
                     if command[1][-1] == 'b':
-                        if x < self.assembler.registers['PC'] and (m < x or m == -1):
+                        if x < self.assembler.getRegister('PC') and (m < x or m == -1):
                             m = x
                     else:
-                        if x > self.assembler.registers['PC'] and (x < m or m == -1):
+                        if x > self.assembler.getRegister('PC') and (x < m or m == -1):
                             m = x
             else:
-                m = self.assembler.lookupTable[temp]
+                m = self.assembler.getLookupTable()[temp]
 
             if m == -1:
                 self.gui.outPut("Fatal error on line " + str(i) + ". The label " + command[1] + " could not be resolved.")
                 self.gui.stopRunning(-1)
             else:
-                self.assembler.jumpLocation = m
+                self.assembler.setJumpLocation(m)
 
         elif self.assembler.isHex(command[1]):
             if command[1][-1] == "h":
-                self.assembler.jumpLocation = int(command[1][:-1], 16)
+                self.assembler.setJumpLocation(int(command[1][:-1], 16))
             else:
-                self.assembler.jumpLocation = int(command[1])
+                self.assembler.setJumpLocation(int(command[1]))
         else:
             self.gui.outPut("Error on line " + str(i) + ". The label " + command[1] + " is not defined for " + referer + "-ing to.")
 
@@ -570,9 +809,9 @@ class CommandInterpreter(object):
         args: None
         description: Loads a memory byte addressed by SI into AL.
         flags:,,,,,,,"""
-        self.assembler.registers['AX'] = self.assembler.addressSpace[self.assembler.registers['SI']]
+        self.assembler.setRegister('AX', self.assembler.getFromMemoryAddress(self.assembler.getRegister('SI')))
 
-        self.assembler.registers['SI'] += -1 if self.assembler.flags['D'] else 1
+        self.assembler.setRegister('SI', self.assembler.getRegister('SI') - 1 if self.assembler.getFlag('D') else self.assembler.getRegister('SI') + 1)
 
     def LODSW(self, command, i):
         """name:LODSW
@@ -580,9 +819,9 @@ class CommandInterpreter(object):
         args:None
         description:Loads a memory word addressed by SI into AX.
         flags:,,,,,,,"""
-        self.assembler.registers['AX'] = self.assembler.addressSpace[self.assembler.registers['SI']] + self.assembler.addressSpace[self.assembler.registers['SI'] + 1] * 256
+        self.assembler.setRegister('AX', self.assembler.getFromMemoryAddress(self.assembler.getRegister('SI')) + self.assembler.getFromMemoryAddress(self.assembler.getRegister('SI') + 1) * 256)
 
-        self.assembler.registers['SI'] += -2 if self.assembler.flags['D'] else 2
+        self.assembler.setRegister('SI', self.assembler.getRegister('SI') - 2 if self.assembler.getFlag('D') else self.assembler.getRegister('SI') + 2)
 
     def LOOP(self, command, i, flag=True):
         """name:LOOP
@@ -590,9 +829,12 @@ class CommandInterpreter(object):
         args: [label]
         description: Decrements CX and jumps to the label if CX is greater than zero.
         flags:,,,,,,,"""
-        if flag and self.assembler.registers["CX"] > 0:
+
+        self.testArgument(command, 1, i, [self._LABEL])
+
+        if flag and self.assembler.getRegister("CX") > 0:
             self.JMP(command, i, "LOOP")
-            self.assembler.registers["CX"] -= 1
+            self.assembler.setRegister("CX", self.assembler.getRegister('CX') - 1)
 
     def LOOPE(self, command, i):
         """name:LOOPE
@@ -600,7 +842,7 @@ class CommandInterpreter(object):
         args:[label]
         description:Decrements CX and jumps to a label if CX>0 and the Zero flag is set.
         flags:,,,,,,,"""
-        self.LOOP(command, i, self.assembler.flags['Z'])
+        self.LOOP(command, i, self.assembler.getFlag('Z'))
 
     def LOOPNE(self, command, i):
         """name:LOOPNE
@@ -608,7 +850,7 @@ class CommandInterpreter(object):
         args:[label]
         description:Decrements CX and jumps to a label if CX>0 and the Zero flag is clear.
         flags:,,,,,,,"""
-        self.LOOP(command, i, not self.assembler.flags['Z'])
+        self.LOOP(command, i, not self.assembler.getFlag('Z'))
 
     def LOOPNZ(self, command, i):
         """name:LOOPNZ
@@ -616,7 +858,7 @@ class CommandInterpreter(object):
         args:[label]
         description:Decrements CX and jumps to a label if CX>0 and the Zero flag is clear.
         flags:,,,,,,,"""
-        self.LOOP(command, i, not self.assembler.flags['Z'])
+        self.LOOP(command, i, not self.assembler.getFlag('Z'))
 
     def LOOPZ(self, command, i):
         """name:LOOPZ
@@ -624,7 +866,7 @@ class CommandInterpreter(object):
         args:[label]
         description:Decrements CX and jumps to a label if CX>0 and the Zero flag is set.
         flags:,,,,,,,"""
-        self.LOOP(command, i, self.assembler.flags['Z'])
+        self.LOOP(command, i, self.assembler.getFlag('Z'))
 
     def MOV(self, command, i):
         """name:MOV
@@ -633,33 +875,20 @@ class CommandInterpreter(object):
         description:Copies a byte or word from a source operand to a destination operand.
         flags:,,,,,,,"""
 
-        if self.assembler.isHex(command[2]):  # B is digit
-            if command[2][-1] == "h":
-                b = int(command[2][:-1], 16)
-            else:
-                b = int(command[2])
-        elif command[2] in self.assembler.localVars.keys():  # B is local var
-            b = int(self.assembler.localVars[command[2]])
-        elif command[2] in self.assembler.BSS.keys():  # B is BSS mem address
-            b = int(self.assembler.BSS[command[2]][0])
-        elif command[2] in self.assembler.DATA.keys():  # B is DATA mem address
-            b = int(self.assembler.DATA[command[2]][0])
-        elif len(command[2].strip("'").strip('"')) == 1:
-            b = ord(command[2].strip("'").strip('"'))
-        else:
-            self.gui.outPut("Incorrect B val.")
-            self.gui.stopRunning(-1)
+        argumentType = self.testArgument(command, 2, i, (self._IMMED, self._REG, self._MEM))
+        t = self.getValue(command[2], argumentType)
 
-        if command[1] in self.assembler.registers.keys():
-            self.assembler.registers[command[1]] = b
-        elif command[1] in self.assembler.DATA.keys():
-            self.assembler.addressSpace[self.assembler.DATA[command[1]][0]] = b
-        elif command[1] in self.assembler.BSS.keys():
-            self.assembler.addressSpace[self.assembler.BSS[command[1]][0]] = b
-        elif self.assembler.isHex(command[1]):
-            self.gui.outPut("Error, you made your first argument a hex digit. MOV expects its first argument to be a register, or a memory address.")
-        else:
-            self.gui.outPut("MOV expects its first argument to be a memory address or register")
+        argumentType = self.testArgument(command, 1, i, (self._REG, self._MEM))
+
+        self.setValue(command[1], argumentType, t)
+
+    def NOP(self, command, i):
+        """name:NOP
+        title:No Operation
+        args:None
+        description:Does nothing. Usually implemented at machine level as XCHG AX,AX
+        flags:,,,,,,,"""
+        return
 
     def MOVSB(self, command, i):
         """name:MOVSB
@@ -667,8 +896,8 @@ class CommandInterpreter(object):
         args:None
         description:Copies a byte from memory addressed by SI to a memory addressed by DI. SI and DI are increased if the Direction flag is clear (0) and decreased if the Direction flag is set (1).
         flags:,,,,,,,"""
-        self.assembler.addressSpace[self.assembler.registers['DI']] = self.assembler.addressSpace[self.assembler.registers['SI']]
-        self.assembler.registers['SI'] += -1 if self.assembler.flags['D'] else 1
+        self.assembler.setMemoryAddress(self.assembler.getRegister('DI'), self.assembler.getFromMemoryAddress(self.assembler.getRegister('SI')))
+        self.assembler.setRegister('SI', self.assembler.getRegister('SI') - 1 if self.assembler.getFlag('D') else self.assembler.getRegister('SI') + 1)
 
 
     def MOVSW(self, command, i):
@@ -677,9 +906,9 @@ class CommandInterpreter(object):
         args:None
         description:Copies a word from memory addressed by SI to a memory addressed by DI. SI and DI are increased if the Direction flag is clear (0) and decreased if the Direction flag is set (1).
         flags:,,,,,,,"""
-        self.assembler.addressSpace[self.assembler.registers['DI']] = self.assembler.addressSpace[self.assembler.registers['SI']]
-        self.assembler.addressSpace[self.assembler.registers['DI'] + 1] = self.assembler.addressSpace[self.assembler.registers['SI'] + 1]
-        self.assembler.registers['SI'] += -2 if self.assembler.flags['D'] else 2
+        self.assembler.setMemoryAddress(self.assembler.getRegister('DI'), self.assembler.getFromMemoryAddress(self.assembler.getRegister('SI')))
+        self.assembler.setMemoryAddress(self.assembler.getRegister('DI') + 1, self.assembler.getFromMemoryAddress(self.assembler.getRegister('SI') + 1))
+        self.assembler.setRegister('SI', self.assembler.getRegister('SI') - 2 if self.assembler.getFlag('D') else self.assembler.getRegister('SI') + 2)
 
     def NEG(self, command, i):
         """name:NEG
@@ -687,8 +916,16 @@ class CommandInterpreter(object):
         args:[reg]
         description:Calculates the twos complement of the argument in place.
         flags:*,,,*,*,*,*,*"""
-        if command[1] in self.assembler.registers.keys():
-            self.assembler.registers[command[1]] *= -1
+        self.testArgument(command, 1, i, [self._REG])
+
+        result = -self.assembler.getRegister(command[1])
+        self.assembler.setRegister(command[1], result)
+
+        # TODO: OVERFLOW AND CARRY?
+
+        self.assembler.setFlag('P', result % 2)
+        self.assembler.setFlag('S', result < 0)
+        self.assembler.setFlag('Z', result == 0)
 
     def NOT(self, command, i):
         """name:NOT
@@ -696,12 +933,8 @@ class CommandInterpreter(object):
         args:[reg:mem]
         description:Performs a logical not on an operand by reversing each of its bits.
         flags:,,,,,,,"""
-        if command[1] in self.assembler.registers:
-            self.assembler.registers[command[1]] = ~self.assembler.registers[command[1]]
-        elif command[1] in self.assembler.BSS.keys():
-            self.assembler.BSS[command[1]] = ~self.assembler.BSS[command[1]]
-        elif command[1] in self.assembler.DATA.keys():
-            self.assembler.DATA[command[1]] = ~self.assembler.DATA[command[1]]
+        argType = self.testArgument(command, 1, i, [self._REG, self._MEM])
+        self.setValue(command[1], argType, ~self.getValue(command[1], argType))
 
     def OR(self, command, i):
         """name:OR
@@ -710,40 +943,30 @@ class CommandInterpreter(object):
         description:Performs a logical OR between each bit in the destination operand and each bit in the source operand. If either bit is a 1 in each position, the result bit is a 1.
         flags:0,,,*,*,?,*,0"""
 
-        if self.assembler.isHex(command[2]):  # y is a digit
-            if command[2][-1] == "h":
-                t = int(command[2][:-1], 16)
-            else:
-                t = int(command[2])
-        elif command[2] in self.assembler.localVars.keys():  # y is a local var
-            t = self.assembler.localVars[command[2]]
-        elif command[2] in self.assembler.registers:
-            t = self.assembler.registers[command[2]]
-        elif command[2] in self.assembler.DATA.keys():
-            t = self.assembler.DATA[self.assembler.registers[command[2]]]
-        elif command[2] in self.assembler.BSS.keys():
-            t = self.assembler.BSS[self.assembler.registers[command[2]]]
+        argumentType = self.testArgument(command, 2, i, (self._IMMED, self._REG, self._MEM))
+        t = self.getValue(command[2], argumentType)
 
-        if command[1] in self.assembler.registers:
-            self.assembler.registers[command[1]] |= t
-        elif command[1] in self.assembler.BSS.keys():
-            self.assembler.BSS[command[1]] |= t
-        elif command[1] in self.assembler.DATA.keys():
-            self.assembler.DATA[command[1]] |= t
+        argumentType = self.testArgument(command, 1, i, (self._REG, self._MEM))
+        result = self.getValue(command[1], argumentType) | t
+        self.setValue(command[1], argumentType, result)
 
-        self.assembler.flags['O'] = 0
-        self.assembler.flags['C'] = 0
+        self.assembler.setFlag('P', result % 2)
+        self.assembler.setFlag('S', result < 0)
+        self.assembler.setFlag('Z', result == 0)
+        self.assembler.setFlag('O', 0)
+        self.assembler.setFlag('C', 0)
 
     def POP(self, command, i):
         """name:POP
         title:Pop from stack
-        args:[reg:mem]
+        args:[reg]
         description:Copies a word at the current stack pointer location into the destination operand, and adds 2 to the SP.
         flags:,,,,,,,"""
-        if command[1] in self.assembler.registers:
-            self.assembler.registers[command[1]] = int(self.assembler.stackData.pop())
-            self.assembler.registers['SP'] += 2
-            self.gui.updateStack()
+        self.testArgument(command, 1, i, [self._REG])
+
+        self.assembler.setRegister(command[1], int(self.assembler.getStack().pop()))
+        self.assembler.setRegister('SP', self.assembler.getRegister('SP') + 2)
+        self.gui.updateStack()
 
     def POPF(self, command, i):
         """name:POPF
@@ -751,20 +974,20 @@ class CommandInterpreter(object):
         args:None
         description:POPF pops the top of the stack into the 16-bit Flags register.
         flags:*,*,*,*,*,*,*,*"""
-        flags = self.assembler.stackData.pop()
+        flags = self.assembler.getStack().pop()
 
-        self.assembler.flags['C'] = flags % 2
+        self.assembler.setFlag('C', flags % 2)
         flags /= 4
-        self.assembler.flags['P'] = flags % 2
+        self.assembler.setFlag('P', flags % 2)
         flags /= 4
-        self.assembler.flags['A'] = flags % 2
+        self.assembler.setFlag('A', flags % 2)
         flags /= 4
-        self.assembler.flags['Z'] = flags % 2
+        self.assembler.setFlag('Z', flags % 2)
         flags /= 2
-        self.assembler.flags['S'] = flags % 2
+        self.assembler.setFlag('S', flags % 2)
 
         self.gui.updateStack()
-        self.assembler.registers['SP'] += 2
+        self.assembler.setRegister('SP', self.assembler.getRegister('SP') + 2)
 
     def PUSH(self, command, i):
         """name:PUSH
@@ -772,41 +995,21 @@ class CommandInterpreter(object):
         args:[reg:mem:immed]
         description:Subtracts 2 from SP and copies the source operand into the stack location pointed to by SP.
         flags:,,,,,,,"""
-        if self.assembler.isHex(command[1]):  # PUSHing a number to the stack, it's prolly hex so ignore the A-F chars
-            if command[1][-1] == "h":
-                self.assembler.stackData.append(int(command[1][:-1], 16))
-            else:
-                self.assembler.stackData.append(int(command[1]))
-            self.assembler.registers['SP'] -= 2
-            self.gui.updateStack()
-        elif command[1] in self.assembler.registers:
-            self.assembler.stackData.append(int(self.assembler.registers[command[1]]))
-            self.assembler.registers['SP'] -= 2
-            self.gui.updateStack()
-        elif command[1] in self.assembler.DATA.keys():  # PUSHing a string from .SECT .DATA to the stack
-            self.assembler.stackData.append(self.assembler.DATA[command[1]][0])
-            self.assembler.registers['SP'] -= 2
-            self.gui.updateStack()
-        elif command[1] in self.assembler.localVars.keys():  # PUSHing a local int to the stack
-            self.assembler.stackData.append(self.assembler.localVars[command[1]])
-            self.assembler.registers['SP'] -= 2
-            self.gui.updateStack()
-        elif command[1] in self.assembler.BSS.keys():
-            self.assembler.stackData.append(self.assembler.BSS[command[1]][0])
-            self.assembler.registers['SP'] -= 2
-            self.gui.updateStack()
-        elif "(" in command[1] and ")" in command[1]:
+        argType = self.testArgument(command, 1, i, [self._REG, self._MEM, self._IMMED])
+
+        self.assembler.getStack().append(self.getValue(command[1], argType))
+
+        """if "(" in command[1] and ")" in command[1]:
             temp = command[1][command[1].find("(") + 1:command[1].find(")")]
-            if temp in self.assembler.BSS.keys():
+            if temp in self.assembler.getBSS().keys():
                 # TODO: memory
                 1 + 1
             else:
                 self.gui.outPut("Error on line " + str(i) + ". I don't understand what (" + temp + ") is")
-                self.gui.stopRunning(-1)
-        else:
-            print(command)
-            self.gui.outPut("Unknown error on line " + str(i) + ".")
-            self.gui.stopRunning(-1)
+                self.gui.stopRunning(-1)"""
+
+        self.assembler.setRegister('SP', self.assembler.getRegister('SP') - 2)
+        self.gui.updateStack()
 
     def PUSHF(self, command, i):
         """name:PUSHF
@@ -814,9 +1017,9 @@ class CommandInterpreter(object):
         args:None
         description:PUSHF pushes the Flags register onto the stack.
         flags:,,,,,,,"""
-        flags = self.assembler.flags['S'] * (128) + self.assembler.flags['Z'] * (64) + self.assembler.flags['A'] * (16) + self.assembler.flags['P'] * (4) + self.assembler.flags['C']
-        self.assembler.stackData.append(flags)
-        self.assembler.registers['SP'] -= 2
+        flags = self.assembler.getFlag('S') * (128) + self.assembler.getFlag('Z') * (64) + self.assembler.getFlag('A') * (16) + self.assembler.getFlag('P') * (4) + self.assembler.getFlag('C')
+        self.assembler.getStack().append(flags)
+        self.assembler.setRegister('SP', self.assembler.getRegister('SP') - 2)
         self.gui.updateStack()
 
     def RCL(self, command, i):
@@ -825,24 +1028,23 @@ class CommandInterpreter(object):
         args:[reg]
         description:Rotates the destionation operand left. The carry flag is copied into the lowest bit, and the highest bit is copied into the Carry flag
         flags:*,,,,,,,*"""
-        if command[1] in self.assembler.registers:
-            temp = self.assembler.registers[command[1]] < 0
+        self.testArgument(command, 1, i, [self._REG])
 
-            if temp:
-                self.assembler.registers[command[1]] += 2 ** 16
+        reg = self.assembler.getRegister(command[1])
+        temp = reg < 0
 
-            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] << 1
+        if temp:
+            reg += 2 ** 16
 
-            self.assembler.registers[command[1]] += self.assembler.flags['C']
+        reg = reg << 1
+        reg += self.assembler.getFlag('C')
 
-            while self.assembler.registers[command[1]] >= 2 ** 15:
-                self.assembler.registers[command[1]] -= 2 ** 16
+        while reg >= 2 ** 15:
+            reg -= 2 ** 16
 
-            self.assembler.flags['C'] = temp
-        else:
-            self.gui.outPut("RCL expects its argument to be a register.")
-            self.gui.stopRunning(-1)
-            return
+        self.assembler.setRegister(command[1], reg)
+
+        self.assembler.setFlag('C', temp)
 
     def RCR(self, command, i):
         """name:RCR
@@ -850,25 +1052,26 @@ class CommandInterpreter(object):
         args:[reg]
         description:Rotates the destination operand right, using the source operand to determine the number of rotations. The carry flag is copied into the highest bit, and the lowest bit is copied into the Carry flag.
         flags:*,,,,,,,*"""
-        if command[1] in self.assembler.registers:
-            temp = self.assembler.registers[command[1]] % 2
+        self.testArgument(command, 1, i, [self._REG])
 
-            if self.assembler.registers[command[1]] < 0:
-                self.assembler.registers[command[1]] += 2 ** 16
+        reg = self.assembler.getRegister(command[1])
 
-            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] >> 1
+        temp = reg % 2
 
-            while self.assembler.registers[command[1]] >= 2 ** 15:
-                self.assembler.registers[command[1]] -= 2 ** 16
+        if reg < 0:
+            reg += 2 ** 16
 
-            if self.assembler.flags['C']:
-                self.assembler.registers[command[1]] -= 2 ** 15
+        reg = reg >> 1
 
-            self.assembler.flags['C'] = temp
-        else:
-            self.gui.outPut("RCR expects its argument to be a register.")
-            self.gui.stopRunning(-1)
-            return
+        while reg >= 2 ** 15:
+            reg -= 2 ** 16
+
+        if self.assembler.getFlag('C'):
+            reg -= 2 ** 15
+
+        self.assembler.setRegister(command[1], reg)
+
+        self.assembler.setFlag('C', temp)
 
     def REP(self, command, i):
         """name:REP
@@ -877,11 +1080,11 @@ class CommandInterpreter(object):
         description:Repeats a string primitive instruction, using CX as a counter. CX is decremented each time the instruction is repeated, until CX = 0. EG REP MOVSB
         flags:,,,,,,,"""
         if command[1] in ["MOVS", "MOVSB", "CMPS", "CMPSB", "CMPSW", "SCAS", "SCASB", "SCASW", "STOS", "STOSB", "STOSW", "LODS", "LODSB", "LODSW"]:
-            while self.assembler.registers['CX'] > 0:
+            while self.assembler.getRegister('CX') > 0:
                 self.getFunctionTable()[command[1:], i]
-                self.assembler.registers['CX'] -= 1
+                self.assembler.setRegister('CX', self.assembler.getRegister('CX') - 1)
         else:
-            self.gui.outPut("Innapropriate command used with REP")
+            self.gui.outPut("Innapropriate command used with REP,")
             self.gui.stopRunning(-1)
 
     def REPE(self, command, i):
@@ -891,9 +1094,9 @@ class CommandInterpreter(object):
         description:Repeats a string primitive instruction, using CX as a counter. CX is decremented each time the instruction is repeated, until CX = 0 while the zero flag is set. EG REP MOVSB
         flags:,,,,*,,,"""
         if command[1] in ["CMPS", "CMPSB", "CMPSW", "SCAS", "SCASB", "SCASW"]:
-            while self.assembler.flags["Z"] and self.assembler.registers['CX'] > 0:
+            while self.assembler.getFlag("Z") and self.assembler.getRegister('CX') > 0:
                 self.getFunctionTable()[command[1:], i]
-                self.assembler.registers['CX'] -= 1
+                self.assembler.setRegister('CX', self.assembler.getRegister('CX') - 1)
         else:
             self.gui.outPut("Innapropriate command used with " + command[0])
             self.gui.stopRunning(-1)
@@ -905,9 +1108,9 @@ class CommandInterpreter(object):
         description:Repeats a string primitive instruction, using CX as a counter. CX is decremented each time the instruction is repeated, until CX = 0 while the zero flag is clear. EG REP MOVSB
         flags:,,,,*,,,"""
         if command[1] in ["CMPS", "CMPSB", "CMPSW", "SCAS", "SCASB", "SCASW"]:
-            while not self.assembler.flags["Z"] and self.assembler.registers['CX'] > 0:
+            while not self.assembler.getFlag("Z") and self.assembler.getRegister('CX') > 0:
                 self.getFunctionTable()[command[1:], i]
-                self.assembler.registers['CX'] -= 1
+                self.assembler.setRegister('CX', self.assembler.getRegister('CX') - 1)
         else:
             self.gui.outPut("Innapropriate command used with " + command[0])
             self.gui.stopRunning(-1)
@@ -934,18 +1137,17 @@ class CommandInterpreter(object):
         args:[None:immed]
         description:Pop a return address from the stack. An optional argument tells the CPU to add a value to SP after popping the return address.
         flags:,,,,,,,"""
-        if len(self.assembler.stackData) == 0:
+        if len(self.assembler.getStack()) == 0:
             self.gui.outPut("Fatal Error: The stack is empty and RET was called, there was no address to return to!")
             self.gui.stopRunning(-1)
-        elif self.assembler.codeBounds[0] <= self.assembler.stackData[-1] <= self.assembler.codeBounds[1]:
-            self.assembler.jumpLocation = self.assembler.stackData.pop()
-            ADD(self.assembler.registers['SP'], self.command[1], i, inPlace=False)
+        elif self.assembler.getCodeBounds()[0] <= self.assembler.getStack()[-1] <= self.assembler.getCodeBounds()[1]:
+            self.assembler.setJumpLocation(self.assembler.getStack().pop())
             self.gui.updateStack()
         else:
             self.gui.outPut("Returning on a suspect address.")
-            print self.assembler.codeBounds[0]
-            print self.assembler.stackData[-1]
-            print self.assembler.codeBounds[1]
+            print self.assembler.getCodeBounds()[0]
+            print self.assembler.getStack()[-1]
+            print self.assembler.getCodeBounds()[1]
             self.gui.stopRunning(-1)
 
     def ROL(self, command, i):
@@ -954,24 +1156,23 @@ class CommandInterpreter(object):
         args:[reg]
         description:Rotates the destination operand left. The highest bit is copied into the Carry flag and moved into the loewst bit position.
         flags:*,,,,,,,*"""
-        if command[1] in self.assembler.registers:
-            temp = self.assembler.registers[command[1]] < 0
+        self.testArgument(command, 1, i, [self._REG])
 
-            if temp:
-                self.assembler.registers[command[1]] += 2 ** 16
+        reg = self.assembler.getRegister(command[1])
+        temp = reg < 0
 
-            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] << 1
+        if temp:
+            reg += 2 ** 16
 
-            while self.assembler.registers[command[1]] >= 2 ** 15:  # this is when 0100
-                self.assembler.registers[command[1]] -= 2 ** 16
+        reg = reg << 1
 
-            self.assembler.registers[command[1]] += temp
+        while reg >= 2 ** 15:  # this is when 0100
+            reg -= 2 ** 16
 
-            self.assembler.flags['C'] = temp
-        else:
-            self.gui.outPut("RCL expects its argument to be a register.")
-            self.gui.stopRunning(-1)
-            return
+        reg += temp
+
+        self.assembler.setRegister(command[1], reg)
+        self.assembler.setFlag('C', temp)
 
     def ROR(self, command, i):
         """name:ROR
@@ -979,24 +1180,23 @@ class CommandInterpreter(object):
         args:[reg]
         description:Rotates the destination operand right. The lowest bit is copied into both the Carry flag and the highest bit position.
         flags:*,,,,,,,*"""
-        if command[1] in self.assembler.registers:
-            temp = self.assembler.registers[command[1]] % 2
+        self.testArgument(command, 1, i, [self._REG])
 
-            while self.assembler.registers[command[1]] < 0:
-                self.assembler.registers[command[1]] += 2 ** 16
+        reg = self.assembler.getRegister(command[1])
+        temp = reg % 2
 
-            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] >> 1
+        while reg < 0:
+            reg += 2 ** 16
 
-            if self.assembler.registers[command[1]] >= 2 ** 15:
-                self.assembler.registers[command[1]] -= 2 ** 16
+        reg = reg >> 1
 
-            self.assembler.registers[command[1]] -= temp * 2 ** 15
+        if reg >= 2 ** 15:
+            reg -= 2 ** 16
 
-            self.assembler.flags['C'] = temp
-        else:
-            self.gui.outPut("RCL expects its argument to be a register.")
-            self.gui.stopRunning(-1)
-            return
+        reg -= temp * 2 ** 15
+
+        self.assembler.setRegister(command[1], reg)
+        self.assembler.setFlag('C', temp)
 
     def SAHF(self, command, i):
         """name:SAHF
@@ -1004,9 +1204,9 @@ class CommandInterpreter(object):
         args:None
         description:Copies AH into bits 0 through 7 of the Flags register. The Trap, Interrupt, DIrection, and Overflow flags are not affected.
         flags:,,,*,*,*,*,*"""
-        flags = self.assembler.eightBitRegister('AH')
+        flags = self.assembler.getEightBitRegister('AH')
         for f in ['C', 'P', 'A', 'Z', 'S', 'I', 'D', 'O']:
-            self.assembler.flags[f] = self.flags % 2
+            self.assembler.setFlags(f, flags % 2)
             flags /= 2
         self.gui.updateStack()
 
@@ -1024,25 +1224,22 @@ class CommandInterpreter(object):
         args:[reg]
         description:Shifts each bit in the destination operand to the right. THe lowest bit is copied into the Carry flag, and the highest bit retains its previous value. This hift is often used with signed operands, because it preserves the number's sign.
         flags:*,,,*,*,?,*,*"""
-        if command[1] in self.assembler.registers:
-            temp = self.assembler.registers[command[1]] < 0
-            self.assembler.flags['C'] = self.assembler.registers[command[1]] % 2
+        self.testArgument(command, 1, i, [self._REG])
 
-            if temp:
-                self.assembler.registers[command[1]] += 2 ** 16
+        reg = self.assembler.getRegister(command[1])
+        temp = reg < 0
+        self.assembler.setFlag('C', reg % 2)
 
-            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] >> 1
+        if temp:
+            reg += 2 ** 16
 
-            if self.assembler.registers[command[1]] >= 2 ** 15:  # this is when 0100
-                self.assembler.registers[command[1]] -= 2 ** 16
+        reg = reg >> 1
 
-            self.assembler.registers[command[1]] -= temp * 2 ** 15
+        while reg >= 2 ** 15:  # this is when 0100
+            reg -= 2 ** 16
 
-
-        else:
-            self.gui.outPut("SAR expects its argument to be a register.")
-            self.gui.stopRunning(-1)
-            return
+        reg -= temp * 2 ** 15
+        self.assembler.setRegister(command[1], reg)
 
     def SBB(self, command, i):
         """name:SBB
@@ -1050,6 +1247,10 @@ class CommandInterpreter(object):
         args:[reg:mem],[reg:mem:immed]
         description:Subtracts the source operand from the destination operand and then subtracts the Carry flag from the destination.
         flags:*,,,*,*,*,*,*"""
+
+        self.testArgument(command, 1, i, [self._REG, self._MEM])
+        self.testArgument(command, 2, i, [self._REG, self._MEM, self._IMMED])
+
         self.ADD(command, i, carry=True)
 
     def SCASB(self, command, i):
@@ -1058,8 +1259,8 @@ class CommandInterpreter(object):
         args:None
         description:Scans a string in memory pointed to by DI for a value that matches AL. DI is increased if the Direction flag is clear (0) and decreased if the Direction flag is set (1).
         flags:*,,,*,*,*,*,*"""
-        self.SUB(['SCASB', str(self.assembler.eightBitRegister('AL')), str(self.assembler.addressSpace[self.assembler.registers['DI']])], i, inPlace=True)
-        self.assembler.registers['DI'] += -1 if self.assembler.flags['D'] else 1
+        self.SUB(['SCASB', str(self.assembler.getEightBitRegister('AL')), str(self.assembler.getFromMemoryAddress(self.assembler.getRegister('DI')))], i, inPlace=True)
+        self.assembler.setRegister('DI', self.assembler.getRegister('DI') - 1 if self.assembler.getFlag('D') else self.assembler.getRegister('DI') + 1)
 
     def SCASW(self, command, i):
         """name:SCASW
@@ -1067,8 +1268,8 @@ class CommandInterpreter(object):
         args:None
         description:Scans a string in memory pointed to by DI for a value that matches AX. DI is increased if the Direction flag is clear (0) and decreased if the Direction flag is set (1).
         flags:,,,,,,,"""
-        self.SUB(['SCASW', str(self.assembler.registers['AX']), str(self.assembler.addressSpace[self.assembler.registers['DI'] + 1] + 256 * self.assembler.addressSpace[self.assembler.registers['DI']])], i, inPlace=True)
-        self.assembler.registers['DI'] += -2 if self.assembler.flags['D'] else 2
+        self.SUB(['SCASW', str(self.assembler.getRegister('AX')), str(self.assembler.getFromMemoryAddress(self.assembler.getRegister('DI') + 1) + 256 * self.assembler.getFromMemoryAddress(self.assembler.getRegister('DI')))], i, inPlace=True)
+        self.assembler.setRegister('DI', self.assembler.getRegister('DI') - 2 if self.assembler.getFlag('D') else self.assembler.getRegister('DI') + 2)
 
     def SHL(self, command, i):
         """name:SHL
@@ -1077,22 +1278,21 @@ class CommandInterpreter(object):
         description:Shifts each bit in the destination operand to the left. The highest bit is copied into the Carry flag and the lowest bit is filled with a zero.
         flags:*,,,*,*,?,*,*"""
 
-        if command[1] in self.assembler.registers:
-            temp = self.assembler.registers[command[1]] < 0
+        self.testArgument(command, 1, i, [self._REG])
 
-            if temp:
-                self.assembler.registers[command[1]] += 2 ** 16
+        reg = self.assembler.getRegister(command[1])
+        temp = reg < 0
 
-            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] << 1
+        if temp:
+            reg += 2 ** 16
 
-            if self.assembler.registers[command[1]] >= 2 ** 15:  # this is when 0100
-                self.assembler.registers[command[1]] -= 2 ** 16
+        reg = reg << 1
 
-            self.assembler.flags['C'] = temp
-        else:
-            self.gui.outPut("RCL expects its argument to be a register.")
-            self.gui.stopRunning(-1)
-            return
+        if reg >= 2 ** 15:  # this is when 0100
+            reg -= 2 ** 16
+
+        self.assembler.setRegister(command[1], reg)
+        self.assembler.setFlag('C', temp)
 
     def SHR(self, command, i):
         """name:SHR
@@ -1101,22 +1301,21 @@ class CommandInterpreter(object):
         description:SHifts each bit in the destination operand to the right. The highest bit is filled with a zero, and the lowest bit is copied into the Carry flag.
         flags:*,,,*,*,?,*,*"""
 
-        if command[1] in self.assembler.registers:
-            temp = self.assembler.registers[command[1]] % 2
+        self.testArgument(command, 1, i, [self._REG])
 
-            if self.assembler.registers[command[1]] < 0:
-                self.assembler.registers[command[1]] += 2 ** 16
+        reg = self.assembler.getRegister(command[1])
+        temp = reg % 2
 
-            self.assembler.registers[command[1]] = self.assembler.registers[command[1]] >> 1
+        if reg < 0:
+            reg += 2 ** 16
 
-            if self.assembler.registers[command[1]] >= 2 ** 15:  # this is when 0100
-                self.assembler.registers[command[1]] -= 2 ** 16
+        reg = reg >> 1
 
-            self.assembler.flags['C'] = temp
-        else:
-            self.gui.outPut("RCL expects its argument to be a register.")
-            self.gui.stopRunning(-1)
-            return
+        if reg >= 2 ** 15:  # this is when 0100
+            reg -= 2 ** 16
+
+        self.assembler.setRegister(command[1], reg)
+        self.assembler.setFlag('C', temp)
 
     def STC(self, command, i):
         """name:STC
@@ -1124,7 +1323,7 @@ class CommandInterpreter(object):
         args:None
         description:Sets the Carry flag to 1
         flags:,,,,,,,1"""
-        self.assembler.flags["C"] = True
+        self.assembler.setFlag("C")
 
     def STD(self, command, i):
         """name:STD
@@ -1132,7 +1331,7 @@ class CommandInterpreter(object):
         args:None
         description:Sets the Direction flag to 1
         flags:,1,,,,,,"""
-        self.assembler.flags["D"] = True
+        self.assembler.setFlag("D")
 
     def STI(self, command, i):
         """name:STI
@@ -1140,7 +1339,7 @@ class CommandInterpreter(object):
         args:None
         description:Sets the Interrupt flag to 1
         flags:,,1,,,,,"""
-        self.assembler.flags["I"] = True
+        self.assembler.setFlag("I")
 
     def STOSB(self, command, i):
         """name:STOSB
@@ -1148,8 +1347,8 @@ class CommandInterpreter(object):
         args:None
         description:Stores the value of AL in the memory location addressed by DI. DI is increased if the Direction flag is clear (0), and decreased if the Direction flag is set (1).
         flags:,,,,,,,"""
-        self.assembler.addressSpace[self.assembler.registers["DI"]] = chr(self.assembler.eightBitRegister("AL"))
-        self.assembler.registers["DI"] += -1 if self.assembler.flags['D'] else 1
+        self.assembler.setMemoryAddress(self.assembler.getRegister("DI"), chr(self.assembler.getEightBitRegister("AL")))
+        self.assembler.setRegister('DI', self.assembler.getRegister('DI') - 1 if self.assembler.getFlag('D') else self.assembler.getRegister('DI') + 1)
 
     def STOSW(self, command, i):
         """name:STOSW
@@ -1157,9 +1356,9 @@ class CommandInterpreter(object):
         args:None
         description:Stores the value of AX in the memory location addressed by DI. DI is increased if the Direction flag is clear (0), and decreased if the Direction flag is set (1).
         flags:,,,,,,,"""
-        self.assembler.addressSpace[self.assembler.registers["DI"]] = chr(self.assembler.eightBitRegister("AH"))
-        self.assembler.addressSpace[self.assembler.registers["DI"] + 1] = chr(self.assembler.eightBitRegister("AL"))
-        self.assembler.registers["DI"] += -2 if self.assembler.flags['D'] else 2
+        self.assembler.setMemoryAddress(self.assembler.getRegister("DI"), chr(self.assembler.getEightBitRegister("AH")))
+        self.assembler.setMemoryAddress(self.assembler.getRegister("DI") + 1, chr(self.assembler.getEightBitRegister("AL")))
+        self.assembler.setRegister('DI', self.assembler.getRegister('DI') - 2 if self.assembler.getFlag('D') else self.assembler.getRegister('DI') + 2)
 
     def SUB(self, command, i, inPlace=False):
         """name:SUB
@@ -1175,28 +1374,28 @@ class CommandInterpreter(object):
         args:None
         description:Calls a system trap: evaluates based on the last piece of data on the stack
         flags:,,,,,,,"""
-        if len(self.assembler.stackData) == 0:
+        if len(self.assembler.getStack()) == 0:
             self.gui.outPut("Invalid system trap: SYS called on line %d without any arguments on stack." % i)
             self.gui.stopRunning(-1)
-        elif not int(self.assembler.stackData[-1]) in self.SYSCodes.values():
-            self.gui.outPut("Invalid system trap on line %d: The first argument \"%s\" on the stack is not understood" % (i, self.assembler.stackData[-1]))
+        elif not int(self.assembler.getStack()[-1]) in self.SYSCodes.values():
+            self.gui.outPut("Invalid system trap on line %d: The first argument \"%s\" on the stack is not understood" % (i, self.assembler.getStack()[-1]))
             self.gui.stopRunning(-1)
         else:
-            if int(self.assembler.stackData[-1]) == self.SYSCodes["_EXIT"]:
+            if int(self.assembler.getStack()[-1]) == self.SYSCodes["_EXIT"]:
                 self.gui.stopRunning()
-            elif int(self.assembler.stackData[-1]) == self.SYSCodes["_GETCHAR"]:
+            elif int(self.assembler.getStack()[-1]) == self.SYSCodes["_GETCHAR"]:
                 self.gui.getChar()
-            elif int(self.assembler.stackData[-1]) == self.SYSCodes["_OPEN"]:
+            elif int(self.assembler.getStack()[-1]) == self.SYSCodes["_OPEN"]:
                 1 + 1
-            elif int(self.assembler.stackData[-1]) == self.SYSCodes["_PRINTF"]:
+            elif int(self.assembler.getStack()[-1]) == self.SYSCodes["_PRINTF"]:
                 try:
                     i = 2
                     args = []
-                    while True:
+                    while True:  # TODO: fix this VV
                         if self.assembler.addressSpace.count("0") == 0:
-                            formatStr = "".join(self.assembler.addressSpace[int(self.assembler.stackData[-i]):])
+                            formatStr = "".join(self.assembler.addressSpace[int(self.assembler.getStack()[-i]):])
                         else:
-                            formatStr = "".join(self.assembler.addressSpace[int(self.assembler.stackData[-i]):self.assembler.addressSpace.index("0", int(self.assembler.stackData[-i]))])
+                            formatStr = "".join(self.assembler.addressSpace[int(self.assembler.getStack()[-i]):self.assembler.addressSpace.index("0", int(self.assembler.getStack()[-i]))])
                         i += 1
                         print formatStr
                         numArgs = formatStr.count("%") - formatStr.count("\%")
@@ -1222,57 +1421,173 @@ class CommandInterpreter(object):
         args:[reg],[reg]
         description:Exchanges the contents of the source and destination operands
         flags:,,,,,,,"""
-        if command[1] in self.assembler.registers and command[2] in self.assembler.registers:
-            self.assembler.registers[command[1]], self.assembler.registers[command[2]] = self.assembler.registers[command[2]], self.assembler.registers[command[1]]
-        else:
-            self.gui.outPut("Error on line " + str(i) + ". XCHG expects both its arguments to be registers.")
+        argType1 = self.testArgument(command, 1, i, [self._REG])
+        argType2 = self.testArgument(command, 2, i, [self._REG])
+
+        if argType1 == argType2 == self._REG:
+            temp = self.assembler.getRegister(command[1])
+            self.assembler.setRegister(command[1], self.assembler.getRegister(command[2]))
+            self.assembler.setRegister(command[2], temp)
 
     def XOR(self, command, i):
         """name:XOR
         title:Exclusive OR
         args:[reg:mem],[reg:mem:immed]
         description:Each bit in the source operand is exclusive ORed with its corresponding bit in the destination. The destination bit is a 1 only when the original source and destination bits are different.
-        flags:0,,,*,*,?,*,0"""
+        flags:0,,,*,*,?,*,0
+        flags:ODISZAPC"""
 
-        if self.assembler.isHex(command[2]):  # y is a digit
-            if command[2][-1] == "h":
-                t = int(command[2][:-1], 16)
-            else:
-                t = int(command[2])
-        elif command[2] in self.assembler.localVars.keys():  # y is a local var
-            t = self.assembler.localVars[command[2]]
-        elif command[2] in self.assembler.registers:
-            t = self.assembler.registers[command[2]]
-        elif command[2] in self.assembler.DATA.keys():
-            t = self.assembler.DATA[self.assembler.registers[command[2]]]
-        elif command[2] in self.assembler.BSS.keys():
-            t = self.assembler.BSS[self.assembler.registers[command[2]]]
+        argumentType = self.testArgument(command, 2, i, (self._IMMED, self._REG, self._MEM))
+        t = self.getValue(command[2], argumentType)
 
-        if command[1] in self.assembler.registers:
-            self.assembler.registers[command[1]] ^= t
-        elif command[1] in self.assembler.BSS.keys():
-            self.assembler.BSS[command[1]] ^= t
-        elif command[1] in self.assembler.DATA.keys():
-            self.assembler.DATA[command[1]] ^= t
+        argumentType = self.testArgument(command, 1, i, (self._REG, self._MEM))
+        result = self.getValue(command[1], argumentType) ^ t
+        self.setValue(command[1], argumentType, result)
 
-        self.assembler.flags['O'] = 0
-        self.assembler.flags['C'] = 0
+        self.assembler.setFlag('Z', result == 0)
+        self.assembler.setFlag('S', result < 0)
+        self.assembler.setFlag('P', result % 2)
+        self.assembler.setFlag('O', 0)
+        self.assembler.setFlag('C', 0)
 
     def incdec(self, command, i, p):
         """ A function for incrementing or decermenting a register.  p is the polarity (-1 for dec, 1 for inc) """
-        if command[1] in self.assembler.registers.keys():
-            self.assembler.registers[command[1]] += p;
-        elif command[1] in self.assembler.BSS.keys():
-            self.assembler.addressSpace[self.assembler.BSS[command[1]][0]] += p
-        elif command[1] in self.assembler.DATA.keys():
-            self.assembler.addressSpace[self.assembler.DATA[command[1]][0]] += p
-        else:
-            self.gui.outPut("Invalid " + command[0] + " on line " + str(i) + ". " + command[0] + " expects its argument to be either a register or memory address.")
+        argumentType = self.testArgument(command, 1, i, (self._REG, self._MEM))
+        result = self.getValue(command[1], argumentType) + p
+
+        self.setValue(command[1], argumentType, result)
 
     def jf(self, command, i, flag):
         """ JMP if the flag is true, used for jo, jg, jge, etc. """
         if flag:
             self.JMP(command, i)
+
+    def testArgument(self, command, numArg, i, argList, automaticErrors=True):
+        """ Tests the arguments to ensure they are legal. 
+        Where command is the argument to test and argList is a tuple of legal argument types.
+        Returns a constant detailing the argument type found. Or the _ERROR constant if the argument doesnt match."""
+
+        if self._REG in argList:
+            if command[numArg] in self.assembler.getRegisterNames():
+                return self._REG
+        if self._MEM in argList:
+            if command[numArg] in self.assembler.getBSS().keys():
+                return self._BSS
+            elif command[numArg] in self.assembler.getDATA().keys():
+                return self._DATA
+        if self._REG8 in argList:
+            if command[numArg] in self.assembler.getEightBitRegisterNames():
+                return self._REG8
+        if self._IMMED in argList:
+            if self.assembler.isLocalVar(command[numArg]):
+                return self._LOCALVAR
+            elif self.assembler.isHex(command[numArg]):
+                if command[numArg][-1] == "h":
+                    return self._HEX
+                else:
+                    return self._INT
+            elif len(command[numArg]) == 3 and len(command[numArg].strip("'").strip('"')) == 1:
+                return self._CHAR
+        if self._LABEL in argList:
+            if command[numArg] in self.assembler.getLookupTable():
+                return self._LABEL
+
+        if automaticErrors: self.wrongArgsError(command, i, argList, numArg)
+        return self._ERROR
+
+    def getValue(self, arg, argumentType):
+        if argumentType == self._REG8:
+            return self.assembler.getEightBitRegister(arg)
+        elif argumentType == self._REG:
+            return self.assembler.getRegister(arg)
+        elif argumentType == self._IMMED:
+            return arg
+        elif argumentType == self._HEX:  # B is digit
+            return int(arg[:-1], 16)
+        elif argumentType == self._INT:
+            return int(arg)
+        elif argumentType == self._LOCALVAR:
+            return int(self.assembler.getLocalVar(arg))
+        elif argumentType == self._BSS:
+            return int(self.assembler.getFromMemoryAddress(self.assembler.getBSS()[arg][0]))
+        elif argumentType == self._DATA:
+            return int(self.assembler.getFromMemoryAddress(self.assembler.getDATA()[arg][0]))
+        elif argumentType == self._LABEL:
+            return self.assembler.getLabelFromLookupTable(arg)
+        elif argumentType == self._CHAR:
+            return ord(arg.strip("'").strip('"'))
+
+    def setValue(self, arg, argType, to):
+        if argType == self._REG8:
+            if to >= 256:
+                while to >= 256:
+                    to -= 512
+                self.assembler.setFlag('O')
+            elif to < -256:
+                while to < -256:
+                    to += 512
+                self.assembler.setFlag('O')
+
+            self.assembler.setEightBitRegister(arg, to)
+        elif argType == self._REG:  # Each regster is 2 bytes
+            if to >= 2 ** 15:
+                while to >= 2 ** 15:
+                    to -= 2 ** 16
+                self.assembler.setFlag('O')
+            elif to < -2 ** 15:
+                while to < -2 ** 15:
+                    to += 2 ** 16
+                self.assembler.setFlag('O')
+
+            self.assembler.setRegister(arg, to)
+        elif argType == self._BSS:  # each memory cell is 1 byte
+            if to >= 256:
+                while to >= 256:
+                    to -= 512
+                self.assembler.setFlag('O')
+            elif to < -256:
+                while to < -256:
+                    to += 512
+                self.assembler.setFlag('O')
+
+            self.assembler.setMemoryAddress(self.assembler.getBSS()[arg][0], to)
+        elif argType == self._DATA:  # Each memory cell is 1 byte
+            if to >= 256:
+                while to >= 256:
+                    to -= 512
+                self.assembler.setFlag('O')
+            elif to < -256:
+                while to < -256:
+                    to += 512
+                self.assembler.setFlag('O')
+
+            self.assembler.setMemoryAddress(self.assembler.getDATA()[arg][0], to)
+
+    def wrongArgsError(self, command, i, args, numArg):
+        argList = []
+        if self._REG in args:
+            argList.append("16 bit register")
+        if self._REG8 in args:
+            argList.append("8 bit register")
+        if self._IMMED in args:
+            argList.append("number")
+            argList.append("local variable")
+            argList.append("single character")
+        if self._MEM in args:
+            argList.append("memory location")
+        if self._LABEL in args:
+            argList.append("jump label")
+
+        if len(argList) > 1:
+            argStr = ", ".join(argList[:-1])
+            argStr += ", and " + argList[-1]
+
+        if len(argList) == 0:
+            self.gui.outPut("Error on line %s. %s expected no arguments! Received %s." % command[numArg])
+        else:
+            self.gui.outPut("Error on line %s. %s expected %s %s as a %s argument. Received %s." % (i, command[0], "one of" * (len(argList) > 1), argStr, "first" if numArg == 1 else "second", command[numArg]))
+
+        self.gui.stopRunning(-1)
 
 """   10 more to go
 "CMP":2,  # Compare operands

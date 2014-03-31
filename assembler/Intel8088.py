@@ -43,15 +43,67 @@ class Intel8088(object):
 
         self.jumpLocation = -1
 
-    def eightBitRegisterNames(self):
+    def getEightBitRegisterNames(self):
         """ Returns a tuple of the names of the eight bit registers. 
             ("AH", "AL", "BH", "BL", "CH", "CL", "DH", "DL") """
 
         return ("AH", "AL", "BH", "BL", "CH", "CL", "DH", "DL")
 
-    def eightBitRegister(self, s):
+    def setJumpLocation(self, l):
+        self.jumpLocation = l
+
+    def getLookupTable(self):
+        return self.lookupTable
+
+    def getRegisterNames(self):
+        """ Returns a tuple of the names of the sixteen bit registers. 
+            ("AX", "BX", "CX", "DX", "BP", "SP", "DI", "SI", "PC") """
+        return ("AX", "BX", "CX", "DX", "BP", "SP", "DI", "SI", "PC")
+
+    def setRegister(self, reg, to):
+        """ Sets the value of the 16 bit register 'reg' to the value 'to'.
+        If 'reg' isn't a valid sixteen bit register a TypeError is raised."""
+        if reg in self.registers.keys():
+            self.registers[reg] = to
+        else:
+            raise TypeError
+
+    def getRegister(self, reg):
+        """ Returns the value of the 16 bit register 'reg'.
+        If 'reg' isn't a valid sixteen bit register a TypeError is raised."""
+        if reg in self.registers.keys():
+            return self.registers[reg]
+        else:
+            raise TypeError
+
+    def setEightBitRegister(self, reg, to):
+        """ Sets the eight bit register 'reg' to the value 'to' while 
+        preserving the state of the other associated register.
+        If 'reg' isn't a valid eight bit register a TypeError is raised.
+        I.E. setting AH will not influence AL. """
+        if reg == 'AL':
+            self.registers['AX'] = to + self.getEightBitRegister('AH') * 256
+        elif reg == 'BL':
+            self.registers['BX'] = to + self.getEightBitRegister('BH') * 256
+        elif reg == 'CL':
+            self.registers['CX'] = to + self.getEightBitRegister('CH') * 256
+        elif reg == 'DL':
+            self.registers['DX'] = to + self.getEightBitRegister('DH') * 256
+        elif reg == "AH":
+            self.registers['AX'] = to * 256 + self.getEightBitRegister('AL')
+        elif reg == "BH":
+            self.registers['BX'] = to * 256 + self.getEightBitRegister('BL')
+        elif reg == "CH":
+            self.registers['CX'] = to * 256 + self.getEightBitRegister('CL')
+        elif reg == "DH":
+            self.registers['DX'] = to * 256 + self.getEightBitRegister('DL')
+        else:
+            raise TypeError
+
+    def getEightBitRegister(self, s):
         """ Returns the 8 bit register s, if it exists, otherwise returns 0.
-        i.e. self.eightBitRegister('BH') is the top 8 bits of BX """
+        If 's' isn't a value eightbit register, then it raises a TypeError
+        i.e. self.getEightBitRegister('BH') is the top 8 bits of BX """
         try:
             temp = ""
 
@@ -71,6 +123,8 @@ class Intel8088(object):
                 temp = self.intToHex(self.registers["DX"])[-4:-2]
             elif s == "DL":
                 temp = self.intToHex(self.registers["DX"])[-2:]
+            else:
+                raise TypeError
 
             return int(temp, 16)
 
@@ -97,6 +151,45 @@ class Intel8088(object):
     def escapeSequences(self, string):
         """ Escapes all things that may need escaped. """
         return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
+
+    def getFromMemoryAddress(self, addr, toAddr=-1):
+        """ Returns the value located at address 'addr'.
+        If the optional toAddr is supplied then it returns a sub-list including the range. """
+        if toAddr == -1:
+            return self.addressSpace[addr]
+        else:
+            return self.addressSpace[addr:toAddr]
+
+    def getLocalVar(self, arg):
+        return self.localVars[arg]
+
+    def isLocalVar(self, v):
+        return v in self.localVars.keys()
+
+    def getLabelFromLookupTable(self, label):
+        return self.lookupTable[label]
+
+    def setFlag(self, f, a=1):
+        self.flags[f] = a
+
+    def getFlag(self, f):
+        return self.flags[f]
+
+    def getStack(self):
+        return self.stackData
+
+    def getBSS(self):
+        return self.BSS
+
+    def getDATA(self):
+        return self.DATA
+
+    def getCodeBounds(self):
+        return self.codeBounds
+
+    def setMemoryAddress(self, addr, to):
+        """ Sets the value located at address 'addr' to 'to'"""
+        self.addressSpace[addr] = to
 
     def isHex(self, string):
         try:
