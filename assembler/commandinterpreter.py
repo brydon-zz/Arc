@@ -1,4 +1,7 @@
 """
+This program executes the basic units of the intel 8088 instruction set.
+It assumes working with the Intel8088 class as the "machine" parent class.
+ 
     Copyright (C) 2014 Brydon Eastman
 
     This program is free software; you can redistribute it and/or modify
@@ -168,6 +171,7 @@ class CommandInterpreter(object):
                 "CLC":self.CLC,
                 "CLD":self.CLD,
                 "CLI":self.CLI,
+                "CMP":self.CMP,
                 "CMPB":self.CMPB,
                 "DAA":self.DAA,
                 "DAS":self.DAS,
@@ -437,37 +441,47 @@ class CommandInterpreter(object):
         flags:,,,,,,,*"""
         self.machine.setFlag("C", not self.machine.getFlag('C'))
 
+    def CMP(self, command, i):
+        """name:CMP
+        title:Compare
+        args:[reg:mem],[reg:mem:immed]
+        description:Compares the destination word to the source word by performing an implied subtraction of the source from the destination.
+        flags:*,,,*,*,*,*,*"""
+
+        argType = self.testArgument(command, 1, i, [self._REG, self._MEM])
+        if argType == self._ERROR: return self.ERRSTR
+
+        x = self.getValue(command[1], argType)
+
+        argType = self.testArgument(command, 2, i, [self._REG, self._MEM, self._IMMED])
+        if argType == self._ERROR: return self.ERRSTR
+
+        y = self.getValue(command[2], argType)
+
+        self.SUB(["CMP", str(x), str(y)], i, inPlace=True)
+
     def CMPB(self, command, i):
         """name:CMPB
         title:Compare Byte
         args:[reg8:mem],[reg8:mem:immed]
         description:Compares the destination byte to the source byte by performing an implied subtraction of the source from the destination.
         flags:*,,,*,*,*,*,*"""
-        a = command[1:3]
-        b = []
-        for x in a:
-            if x in ['AH', 'AL', 'BH', 'BL', 'CH', 'CL', 'DH', 'DL']:
-                x = self.machine.getEightBitRegister(x)
-            elif x in ['AX', 'BX', 'CX', 'DX']:
+        for x in command[1:3]:
+            if x in ['AX', 'BX', 'CX', 'DX']:
                 self.machine.stopRunning(-1)
                 return "Illegal argument for CMPB on line %d. %s is a 16 bit register, perhaps you meant one of the 8 bit %s or %s registers?" % (i, x, x[0] + "H", x[0] + "L")
-            elif type(x) == type(""):
-                x = self.machine.replaceEscapedSequences(x.rstrip("'\"").lstrip("'\""))
 
-                if len(x) != 1:
-                    self.machine.stopRunning(-1)
-                    return "Illegal argument %s for CMPB on line %d. CMPB expects all strings to be ONE byte in length." % (x, i)
-                else:
-                    try:
-                        x = int(x, 16) % 255
-                    except ValueError:
-                        x = ord(x)
-            elif type(x) != type(1):
-                self.machine.stopRunning(-1)
-                return "Illegal argument %s for CMPB on line %d. CMPB expects an argument to be a one byte register (ie: AH, AL, etc.), an integer, or a one byte string (ie: \"L\", etc.). Instead %s was given." % (x, i, x)
-            b.append(x)
+        argType = self.testArgument(command, 1, i, [self._REG8, self._MEM])
+        if argType == self._ERROR: return self.ERRSTR
 
-        self.SUB(["CMPB", str(b[0]), str(b[1])], i, inPlace=True)
+        x = self.getValue(command[1], argType)
+
+        argType = self.testArgument(command, 2, i, [self._REG8, self._MEM, self._IMMED])
+        if argType == self._ERROR: return self.ERRSTR
+
+        y = self.getValue(command[2], argType)
+
+        self.SUB(["CMPB", str(x), str(y)], i, inPlace=True)
 
     def DAA(self, command, i):
         """name:DAA
@@ -1623,8 +1637,7 @@ class CommandInterpreter(object):
         else:
             self.ERRSTR = "Error on line %s. %s expected %s %s as a %s argument. Received \"%s\"." % (i, command[0], "either a" * (len(argList) > 1), argStr, "first" if numArg == 1 else "second", command[numArg])
 
-"""   10 more to go
-"CMP":2,  # Compare operands
+"""   9 more to go
 "CMPSB":-1,  # Compare bytes in memory
 "CMPSW":-1,  # Compare words in memory
 "DIV":2,  # Unsigned divide 

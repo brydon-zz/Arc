@@ -18,16 +18,16 @@
 """
 
 import unittest
-import assembler.CommandInterpreter, assembler.Intel8088
+import assembler.commandinterpreter, assembler.intel8088
 
 class Test(unittest.TestCase):
     """ Unittest calls setUp before each test method (a test method is any method that starts with "test" - they all "assert" something. """
 
     def setUp(self):
         """ Just reset the basic properties of an assembler between tests """
-        self.machine = assembler.Intel8088.Intel8088()
+        self.machine = assembler.intel8088.Intel8088()
 
-        as88 = assembler.CommandInterpreter.CommandInterpreter(self.machine)
+        as88 = assembler.commandinterpreter.CommandInterpreter(self.machine)
         self.functionTable = as88.getFunctionTable()
 
     # TODO: pop push mov and add with negative numbers, pop push move and add with digits, pop push move and add with overflow numbers,
@@ -119,12 +119,46 @@ class Test(unittest.TestCase):
         self.machine.registers['BX'] = 8
         self.functionTable['CMPB'](['CMPB', 'BL', '8'], 0)
         self.assertTrue(self.machine.flags['Z'])
+        self.machine.registers['BX'] = 10
+        self.machine.flags['Z'] = 0
+        self.functionTable['CMPB'](['CMPB', 'BL', '10'], 0)
+        self.assertTrue(self.machine.flags['Z'])
+        self.machine.flags['Z'] = 0
+        self.functionTable['CMPB'](['CMPB', 'BL', 'Ah'], 0)
+        self.assertTrue(self.machine.flags['Z'])
+        self.machine.flags['Z'] = 0
+        self.functionTable['CMPB'](['CMPB', 'BL', '"\n"'], 0)
+        self.assertTrue(self.machine.flags['Z'])
+
 
     def testCmpbWithLetters(self):
         """ Testing CMPB"""
         self.machine.registers['BX'] = 76
         self.functionTable['CMPB'](['CMPB', 'BL', "'L'"], 0)
         self.assertTrue(self.machine.flags['Z'])
+
+    def testCmp(self):
+        """ Testing CMP """
+        self.machine.registers['BX'] = 300
+        self.machine.registers['AX'] = 300
+        self.functionTable['CMP'](["CMP", 'AX', 'BX'], 0)
+        self.assertTrue(self.machine.flags['Z'])
+
+        self.machine.flags['Z'] = 0
+        self.functionTable['CMP'](["CMP", 'AX', '300'], 0)
+        self.assertTrue(self.machine.flags['Z'])
+
+        self.machine.flags['Z'] = 0
+        self.functionTable['CMP'](["CMP", 'AX', '301'], 0)
+        self.assertFalse(self.machine.flags['Z'])
+
+        self.machine.flags['Z'] = 0
+        self.functionTable['CMP'](["CMP", 'AX', '12Ch'], 0)
+        self.assertTrue(self.machine.flags['Z'])
+
+        self.machine.flags['Z'] = 0
+        self.functionTable['CMP'](["CMP", 'AX', '"f"'], 0)
+        self.assertFalse(self.machine.flags['Z'])
 
     """ 
     ******* Jump Tests ********
