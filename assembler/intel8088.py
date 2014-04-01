@@ -454,7 +454,7 @@ class Intel8088(object):
                 self.stopRunning(-1)
                 return "Too many commas on line " + str(self.getRegister('PC')) + "?"
 
-            command = [x.strip() for x in line.replace(" ", ",").split(",")]
+            command = [self.replaceEscapedSequences(x.strip()) for x in line.replace(" ", ",").split(",")]
 
             for x in range(command.count("")):
                 command.remove("")
