@@ -510,7 +510,7 @@ class CommandInterpreter(object):
     def DEC(self, command, i):
         """name:DEC
         title:Decrement
-        args: [reg:mem]
+        args:[reg:mem]
         description:Subtracts one from the register or memory address provided 
         flags:*,,,*,*,*,*,"""
         self.incdec(command, i, -1)
@@ -518,7 +518,7 @@ class CommandInterpreter(object):
     def INC(self, command, i):
         """name:INC
         title:Increment
-        args: [reg:mem]
+        args:[reg:mem]
         description:Adds one to the register or memory address provided 
         flags:*,,,*,*,*,*,"""
         self.incdec(command, i, 1)
@@ -526,7 +526,7 @@ class CommandInterpreter(object):
     def JA(self, command, i):
         """name:JA
         title:Jump to a label if above
-        args: [label]
+        args:[label]
         description:The same as JG. Jumps if the sign flag is clear and the zero flag is clear 
         flags:,,,,,,,"""
         self.jf(self, i, not self.machine.getFlag('S') and not self.machine.getFlag('Z'))
@@ -534,7 +534,7 @@ class CommandInterpreter(object):
     def JAE(self, command, i):
         """name:JAE
         title:Jump to a label if above or equal
-        args: [label]
+        args:[label]
         description:The same as JGE. Jumps if the sign flag is clear and/or the zero flag is set 
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('S') or self.machine.getFlag('Z'))
@@ -542,7 +542,7 @@ class CommandInterpreter(object):
     def JB(self, command, i):
         """name:JB
         title:Jump to a label if below
-        args: [label]
+        args:[label]
         description:The same as JL. Jumps if the sign flag is set and the zero flag is clear 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('S') and not self.machine.getFlag('Z'))
@@ -550,7 +550,7 @@ class CommandInterpreter(object):
     def JBE(self, command, i):
         """name:JBE
         title:Jump to a label if below or equal
-        args: [label]
+        args:[label]
         description:The same as JLE. Jumps if the sign flag is set and/or the zero flag is set 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('S') or self.machine.getFlag('Z'))
@@ -558,7 +558,7 @@ class CommandInterpreter(object):
     def JC(self, command, i):
         """name:JC
         title:Jump to a label if carry
-        args: [label]
+        args:[label]
         description:Jumps if the carry flag is set 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('C'))
@@ -566,7 +566,7 @@ class CommandInterpreter(object):
     def JCXZ(self, command, i):
         """name:JCXZ
         title:Jump to a label if CX is zero
-        args: [label]
+        args:[label]
         description:Jumps if the value of the CX register is zero 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getRegister('CX') == 0)
@@ -574,7 +574,7 @@ class CommandInterpreter(object):
     def JE(self, command, i):
         """name:JE
         title:Jump to a label if equal
-        args: [label]
+        args:[label]
         description:Jumps if the zero flag is set 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('Z'))
@@ -582,7 +582,7 @@ class CommandInterpreter(object):
     def JG(self, command, i):
         """name:JG
         title:Jump to a label if greater than
-        args: [label]
+        args:[label]
         description:Jumps if the sign flag is clear and the zero flag is clear 
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('S') and not self.machine.getFlag('Z'))
@@ -590,7 +590,7 @@ class CommandInterpreter(object):
     def JGE(self, command, i):
         """name:JGE
         title:Jump to a label if greater than or equal
-        args: [label]
+        args:[label]
         description:Jumps if the sign flag is clear and/or the zero flag is set 
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('S') or self.machine.getFlag('Z'))
@@ -598,7 +598,7 @@ class CommandInterpreter(object):
     def JL(self, command, i):
         """name:JL
         title:Jump to a label if less than
-        args: [label]
+        args:[label]
         description:Jumps if the sign flag is set and the zero flag is clear 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('S') and not self.machine.getFlag('Z'))
@@ -606,7 +606,7 @@ class CommandInterpreter(object):
     def JLE(self, command, i):
         """name:JLE
         title:Jump to a label if less than or equal
-        args: [label]
+        args:[label]
         description:Jumps if the sign flag is set and/or the zero flag is set 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('S') or self.machine.getFlag('Z'))
@@ -614,7 +614,7 @@ class CommandInterpreter(object):
     def JNA(self, command, i):
         """name:JNA
         title:Jump to a label if not above
-        args: [label]
+        args:[label]
         description:The same as JLE. Jumps if the sign flag is set and/or the zero flag is set. 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('S') or self.machine.getFlag('Z'))
@@ -622,7 +622,7 @@ class CommandInterpreter(object):
     def JNAE(self, command, i):
         """name:JNAE
         title:Jump to a label if not above or equal
-        args: [label]
+        args:[label]
         description:The same as JL. Jumps if the sign flag is set and the zero flag is clear 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('S') and not self.machine.getFlag('Z'))
@@ -630,7 +630,7 @@ class CommandInterpreter(object):
     def JNB(self, command, i):
         """name:JNB
         title:Jump to a label if not below
-        args: [label]
+        args:[label]
         description:The same as JGE. Jumps if the sign flag is clear and/or the zero flag is set.
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('S') or self.machine.getFlag('Z'))
@@ -638,7 +638,7 @@ class CommandInterpreter(object):
     def JNBE(self, command, i):
         """name:JNBE
         title:Jump to a label if not below or equal
-        args: [label]
+        args:[label]
         description:The same as JG. Jumps if the sign flag is clear and the zero flag is clear. 
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('S') and not self.machine.getFlag('Z'))
@@ -646,7 +646,7 @@ class CommandInterpreter(object):
     def JNC(self, command, i):
         """name:JNC
         title:Jump to a label if not carry
-        args: [label]
+        args:[label]
         description:Jumps if the carry flag is clear 
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('C'))
@@ -654,7 +654,7 @@ class CommandInterpreter(object):
     def JNE(self, command, i):
         """name:JNE
         title:Jump to a label if not equal
-        args: [label]
+        args:[label]
         description:Jumps if the zero flag is clear 
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('Z'))
@@ -662,7 +662,7 @@ class CommandInterpreter(object):
     def JNG(self, command, i):
         """name:JNG
         title:Jump to a label if not greater than
-        args: [label]
+        args:[label]
         description:The same as JLE. Jumps if the sign flag is set and/or the zero flag is set. 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('S') or self.machine.getFlag('Z'))
@@ -670,7 +670,7 @@ class CommandInterpreter(object):
     def JNGE(self, command, i):
         """name:JNGE
         title:Jump to a label if not greater than or equal
-        args: [label]
+        args:[label]
         description:The same as JL. Jumps if the sign flag is set and the zero flag is clear. 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('S') and not self.machine.getFlag('Z'))
@@ -678,7 +678,7 @@ class CommandInterpreter(object):
     def JNL(self, command, i):
         """name:JNL
         title:Jump to a label if not less than
-        args: [label]
+        args:[label]
         description:The same as JGE. Jumps if the sign flag is clear and/or the zero flag is set. 
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('S') or self.machine.getFlag('Z'))
@@ -686,7 +686,7 @@ class CommandInterpreter(object):
     def JNLE(self, command, i):
         """name:JNLE
         title:Jump to a label if not less than or equal
-        args: [label]
+        args:[label]
         description:The same as JG. Jumps if the sign flag is clear and the zero flag is clear. 
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('S') and not self.machine.getFlag('Z'))
@@ -694,7 +694,7 @@ class CommandInterpreter(object):
     def JNO(self, command, i):
         """name:JNO
         title:Jump to a label if not overflow
-        args: [label]
+        args:[label]
         description:Jumps if the overflow flag is clear. 
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('O'))
@@ -702,7 +702,7 @@ class CommandInterpreter(object):
     def JNP(self, command, i):
         """name:JNP
         title:Jump to a label if not parity
-        args: [label]
+        args:[label]
         description:Jumps if the parity flag is clear.  
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('P'))
@@ -710,7 +710,7 @@ class CommandInterpreter(object):
     def JNS(self, command, i):
         """name:JC
         title:Jump to a label if not sign.
-        args: [label]
+        args:[label]
         description:The same as JG. Jumps if the sign flag is clear.
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('S'))
@@ -718,7 +718,7 @@ class CommandInterpreter(object):
     def JNZ(self, command, i):
         """name:JC
         title:Jump to a label if not zero
-        args: [label]
+        args:[label]
         description:Jumps if the zero flag is clear 
         flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('Z'))
@@ -726,7 +726,7 @@ class CommandInterpreter(object):
     def JO(self, command, i):
         """name:JC
         title:Jump to a label if overflow.
-        args: [label]
+        args:[label]
         description:Jumps if the overflow flag is set 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('O'))
@@ -734,7 +734,7 @@ class CommandInterpreter(object):
     def JP(self, command, i):
         """name:JC
         title:Jump to a label if parity
-        args: [label]
+        args:[label]
         description:Jumps if the parity flag is set 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('P'))
@@ -742,7 +742,7 @@ class CommandInterpreter(object):
     def JPE(self, command, i):
         """name:JC
         title:Jump to a label if parity or equal
-        args: [label]
+        args:[label]
         description:Jumps if the parity flag is set and/or the zero flag is set 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('P') or self.machine.getFlag('Z'))
@@ -750,7 +750,7 @@ class CommandInterpreter(object):
     def JPO(self, command, i):
         """name:JC
         title:Jump to a label if parity or overflow
-        args: [label]
+        args:[label]
         description:Jumps if the parity flag is set or the overflow flag is set 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('P') or self.machine.getFlag('O'))
@@ -758,7 +758,7 @@ class CommandInterpreter(object):
     def JS(self, command, i):
         """name:JC
         title:Jump to a label if sign
-        args: [label]
+        args:[label]
         description:The same as JL. Jumps if the sign flag is set. 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('S'))
@@ -766,7 +766,7 @@ class CommandInterpreter(object):
     def JZ(self, command, i):
         """name:JC
         title:Jump to a label if zero
-        args: [label]
+        args:[label]
         description:The same as JE. Jumps if the zero flag is set 
         flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('Z'))
@@ -774,7 +774,7 @@ class CommandInterpreter(object):
     def JMP(self, command, i, referer="JMP"):
         """name:JMP
         title:Jump unconditionally to a label
-        args: [label]
+        args:[label]
         description:The program counter is adjusted to the value referenced by the label and program execution continues.
         flags:,,,,,,,"""
         if command[1] in self.machine.getLookupTable().keys() and not self.machine.isHex(command[1]):
@@ -810,7 +810,7 @@ class CommandInterpreter(object):
     def LODSB(self, command, i):
         """name:LODSB
         title:Load accumulator from string
-        args: None
+        args:None
         description: Loads a memory byte addressed by SI into AL.
         flags:,,,,,,,"""
         self.machine.setRegister('AX', self.machine.getFromMemoryAddress(self.machine.getRegister('SI')))
@@ -830,7 +830,7 @@ class CommandInterpreter(object):
     def LOOP(self, command, i, flag=True):
         """name:LOOP
         title: Loop
-        args: [label]
+        args:[label]
         description: Decrements CX and jumps to the label if CX is greater than zero.
         flags:,,,,,,,"""
 
@@ -1095,7 +1095,7 @@ class CommandInterpreter(object):
     def REP(self, command, i):
         """name:REP
         title:Repeating string primitive command
-        args: [MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:STOSB:STOSW:LODS:LODSB:LODSW]
+        args:[MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:STOSB:STOSW:LODS:LODSB:LODSW]
         description:Repeats a string primitive instruction, using CX as a counter. CX is decremented each time the instruction is repeated, until CX = 0. EG REP MOVSB
         flags:,,,,,,,"""
         if command[1] in ["MOVS", "MOVSB", "CMPS", "CMPSB", "CMPSW", "SCAS", "SCASB", "SCASW", "STOS", "STOSB", "STOSW", "LODS", "LODSB", "LODSW"]:
@@ -1109,7 +1109,7 @@ class CommandInterpreter(object):
     def REPE(self, command, i):
         """name:REPE
         title:Repeating string primitive command if equal
-        args: [MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:STOSB:STOSW:LODS:LODSB:LODSW]
+        args:[MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:STOSB:STOSW:LODS:LODSB:LODSW]
         description:Repeats a string primitive instruction, using CX as a counter. CX is decremented each time the instruction is repeated, until CX = 0 while the zero flag is set. EG REP MOVSB
         flags:,,,,*,,,"""
         if command[1] in ["CMPS", "CMPSB", "CMPSW", "SCAS", "SCASB", "SCASW"]:
@@ -1123,7 +1123,7 @@ class CommandInterpreter(object):
     def REPNE(self, command, i):
         """name:REPNE
         title:Repeating string primitive command if not equal
-        args: [MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:STOSB:STOSW:LODS:LODSB:LODSW]
+        args:[MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:STOSB:STOSW:LODS:LODSB:LODSW]
         description:Repeats a string primitive instruction, using CX as a counter. CX is decremented each time the instruction is repeated, until CX = 0 while the zero flag is clear. EG REP MOVSB
         flags:,,,,*,,,"""
         if command[1] in ["CMPS", "CMPSB", "CMPSW", "SCAS", "SCASB", "SCASW"]:
@@ -1137,7 +1137,7 @@ class CommandInterpreter(object):
     def REPNZ(self, command, i):
         """name:REPNZ
         title:Repeating string primitive command if not zero
-        args: [MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:STOSB:STOSW:LODS:LODSB:LODSW]
+        args:[MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:STOSB:STOSW:LODS:LODSB:LODSW]
         description:Repeats a string primitive instruction, using CX as a counter. CX is decremented each time the instruction is repeated, until CX = 0 while the zero flag is clear. EG REP MOVSB
         flags:,,,,*,,,"""
         self.REPNE(command, i)
@@ -1145,7 +1145,7 @@ class CommandInterpreter(object):
     def REPZ(self, command, i):
         """name:REPZ
         title:Repeating string primitive command if zero
-        args: [MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:STOSB:STOSW:LODS:LODSB:LODSW]
+        args:[MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:STOSB:STOSW:LODS:LODSB:LODSW]
         description:Repeats a string primitive instruction, using CX as a counter. CX is decremented each time the instruction is repeated, until CX = 0 while the zero flag is set. EG REP MOVSB
         flags:,,,,*,,,"""
         self.REPE(command, i)
