@@ -1531,8 +1531,12 @@ class CommandInterpreter(object):
                     return self._HEX
                 else:
                     return self._INT
-            elif len(command[numArg]) == 3 and len(command[numArg].strip("'").strip('"')) == 1:
-                return self._CHAR
+            elif len(command[numArg]) >= 3 and ((command[numArg][0] == '"' and command[numArg][-1] == '"') or (command[numArg][0] == "'" and command[numArg][-1] == "'")):
+                try:
+                    ord(command[numArg].lstrip("'\"").rstrip("'\""))
+                    return self._CHAR
+                except TypeError:
+                    """ Fall thru """
         if self._LABEL in argList:
             if command[numArg] in self.machine.getLookupTable():
                 return self._LABEL
