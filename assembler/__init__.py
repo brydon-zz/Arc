@@ -19,7 +19,7 @@
     email to brydon.eastman@gmail.com.
 """
 
-from newlooktest import Simulator
+from simulatorgui import Simulator
 from gi.repository import Gtk
 
 if __name__ == "__main__":
