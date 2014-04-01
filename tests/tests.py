@@ -116,19 +116,31 @@ class Test(unittest.TestCase):
 
     def testCmpb(self):
         """ Testing CMPB"""
+        print "Testing CMPB"
         self.machine.registers['BX'] = 8
         self.functionTable['CMPB'](['CMPB', 'BL', '8'], 0)
         self.assertTrue(self.machine.flags['Z'])
+
         self.machine.registers['BX'] = 10
         self.machine.flags['Z'] = 0
         self.functionTable['CMPB'](['CMPB', 'BL', '10'], 0)
         self.assertTrue(self.machine.flags['Z'])
+
         self.machine.flags['Z'] = 0
         self.functionTable['CMPB'](['CMPB', 'BL', 'Ah'], 0)
         self.assertTrue(self.machine.flags['Z'])
+
         self.machine.flags['Z'] = 0
         self.functionTable['CMPB'](['CMPB', 'BL', '"\n"'], 0)
         self.assertTrue(self.machine.flags['Z'])
+
+        self.machine.flags['Z'] = 0
+        self.functionTable['CMPB'](['CMPB', 'BL', "'\n'"], 0)
+        self.assertTrue(self.machine.flags['Z'])
+
+        self.machine.flags['Z'] = 0
+        self.functionTable['CMPB'](['CMPB', 'BL', '"\n\''], 0)
+        self.assertFalse(self.machine.flags['Z'])
 
 
     def testCmpbWithLetters(self):
