@@ -19,7 +19,7 @@
 
 from gi.repository import Gtk, Gdk, GObject, Pango, GdkPixbuf
 
-import intel8088, readliner, sys, os, tokenize, time
+import intel8088, readliner, entrydialog, sys, os, tokenize, time
 
 """"Simulator Class for Intel 8088 Architecture"""
 class Simulator(object):
@@ -606,7 +606,6 @@ GtkAboutDialog, GtkAboutDialog * {
         self.outText.set_name("outText")
         self.code.set_name("code")
         self.lineNumberTV.set_name("lines")
-        # self.entry.set_name("entry")
         self.stack.set_name("stack")
         self.regA.set_name("regA")
         self.regAH.set_name("regAH")
@@ -662,7 +661,6 @@ GtkAboutDialog, GtkAboutDialog * {
         """ Binds critical GUI elements from the builder object to variable names. """
         self.outText = self.builder.get_object("outText")
         self.code = self.builder.get_object("code")
-        # self.entry = self.builder.get_object("entry")
         self.stack = self.builder.get_object("stack")
         self.machineInfoWrapper = self.builder.get_object("machineInfoWrapper")
 
@@ -1077,8 +1075,9 @@ GtkAboutDialog, GtkAboutDialog * {
             # remove the > from the previous line, -1 means we're at the first line
             if self.machine.lastLine != -1:
                 startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 0)
-                endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 1)
-                self.codeBuffer.delete(startOfArrow, endOfArrow)
+                if not startOfArrow.ends_line():
+                    endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 1)
+                    self.codeBuffer.delete(startOfArrow, endOfArrow)
 
             self.outPutFromMachine(self.machine.step())
             self.updateRegisters()
@@ -1137,6 +1136,12 @@ GtkAboutDialog, GtkAboutDialog * {
             if string != None:
                 self.outPut(string)
 
+            if self.machine.requestsGetChar():
+                self.machine.respondGetChar(self.getChar())
+                if self.machine.isRunningAll():
+                    print "running it all o'er again"
+                    self.runAll()
+
             if not self.machine.isRunning():
                 # The machine shut down without signalling, an error must've occurred
                 self.stopRunning(-1)
@@ -1169,7 +1174,7 @@ GtkAboutDialog, GtkAboutDialog * {
         self.zFlagOutMachine.set_text("")
 
     def updateWindowTitle(self):
-        self.win.set_title(self._PROGRAMNAME + " - " + ("*"*self.codeBuffer.get_modified()) + ("Untitled" if self.fileName == None else self.fileName))
+        self.win.set_title(self._PROGRAMNAME + " - " + ("*"*self.codeBuffer.get_modified()) + ("Untitled" if self.fileName == None else self.fileName.split(self._PATHDELIM)[-1]))
 
     def textChanged(self, widget):
         """ This function gets called everytime the 'code' text changes.
@@ -1180,7 +1185,7 @@ GtkAboutDialog, GtkAboutDialog * {
 
             startOfLineIter = self.codeBuffer.get_iter_at_line_offset(lineNumber, 0)
 
-            if lineNumber + 1 == self.codeBuffer.get_line_count():
+            if lineNumber + 1 >= self.codeBuffer.get_line_count():
                 endOfLineIter = self.codeBuffer.get_end_iter()
             else:
                 endOfLineIter = self.codeBuffer.get_iter_at_line_offset(lineNumber + 1, 0)
@@ -1266,6 +1271,13 @@ GtkAboutDialog, GtkAboutDialog * {
                 self.codeBuffer.delete(startOfArrow, endOfArrow)
             else:
                 startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 0)
+                if not startOfArrow.ends_line():
+                    endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 1)
+                    if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
+                        self.codeBuffer.delete(startOfArrow, endOfArrow)
+        else:
+            startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 0)
+            if not startOfArrow.ends_line():
                 endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 1)
                 if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
                     self.codeBuffer.delete(startOfArrow, endOfArrow)
@@ -1279,10 +1291,15 @@ GtkAboutDialog, GtkAboutDialog * {
     def getChar(self):
         # TODO: make this a dialog
         """ Get's chars from the entry element. Interfaces with as88 system trap """
+        entry = entrydialog.EntryDialog(title="Waiting for input", label="Waiting for input", buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK), modal=True, parent=self.win)
+        result = entry.run()
 
-        self.outPut(self.inBuffer + "\n")
-        self.machine.setRegisters('AX', ord(self.inBuffer[0]))
-        self.inBuffer = self.inBuffer[1:]
+        if result == None:
+            result = ""
+
+        entry.destroy()
+
+        return result + "\n"
 
     def colourMemory(self):
         """ Colour codes the items in the memory for easy identification """
@@ -1341,6 +1358,7 @@ GtkAboutDialog, GtkAboutDialog * {
             dialog.format_secondary_text("There are unsaved changes.")
 
             response = dialog.run()
+
 
             if response == Gtk.ResponseType.NO:
                 dialog.destroy()

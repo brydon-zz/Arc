@@ -43,6 +43,8 @@ class Intel8088(object):
         self.running = False
         self.ran = False
         self.runningAll = False
+        self.getCharFlag = False
+        self.inBuffer = ""
 
         self.addressSpace = []
         for i in range(1024):
@@ -54,6 +56,21 @@ class Intel8088(object):
 
         self.commandArgs = as88.getCommandArgs()
         self.do = as88.getFunctionTable()
+
+    def requestsGetChar(self):
+        return self.getCharFlag
+
+    def getChar(self):
+        if self.inBuffer == "":
+            self.getCharFlag = True
+        else:
+            self.setRegister('AX', ord(self.inBuffer[0]))
+            self.inBuffer = self.inBuffer[1:]
+
+    def respondGetChar(self, string):
+        self.getCharFlag = False
+        self.setRegister('AX', ord(string[0]))
+        self.inBuffer = string[1:]
 
     def getFunctionDescriptions(self, function):
         return self.do[function].__doc__
@@ -386,6 +403,7 @@ class Intel8088(object):
     def stopRunning(self, i=1):
         self.running = False
         self.ran = True
+        self.runningAll = False
         print "Machine Stop Running Called " + str(i)
 
     def addBreakPoint(self, bp):
@@ -396,15 +414,19 @@ class Intel8088(object):
 
     def runAll(self):
         totalResult = ""
+        self.runningAll = True
         while self.running:
             if self.getRegister('PC') in self.breakPoints:
                 response = self.step()
                 if response != None:
                     totalResult += response
+                self.runningAll = False
                 break
             response = self.step()
             if response != None:
                     totalResult += response
+            if self.getCharFlag:
+                break
 
         return totalResult
 
@@ -451,7 +473,10 @@ class Intel8088(object):
                 return "Invalid number of arguments on line " + str(self.getRegister('PC')) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " argument" + "s"*(self.commandArgs[command[0]] > 1) + " and " + str(len(command) - 1) + (" were " if len(command) - 1 > 1 else " was ") + "given."
 
             if command[0] in self.do.keys():
-                response = self.do[command[0]](command, self.getRegister('PC'))
+                try:
+                    response = self.do[command[0]](command, self.getRegister('PC'))
+                except:
+                    response = "Fatal error occurred on line " + str(self.getRegister('PC'))
             else:
                 self.stopRunning(-1)
                 return "Fatal error. " + command[0] + " not recognised."
