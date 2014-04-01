@@ -27,7 +27,7 @@ class Test(unittest.TestCase):
         """ Just reset the basic properties of an assembler between tests """
         self.machine = assembler.Intel8088.Intel8088()
 
-        as88 = assembler.CommandInterpreter.CommandInterpreter(self, self.machine)
+        as88 = assembler.CommandInterpreter.CommandInterpreter(self.machine)
         self.functionTable = as88.getFunctionTable()
 
     # TODO: pop push mov and add with negative numbers, pop push move and add with digits, pop push move and add with overflow numbers,
@@ -612,18 +612,18 @@ class Test(unittest.TestCase):
     def testPopInRegister(self):
         """ testing popping into a register """
         for x in ['AX', 'BX', 'CX', 'DX']:
-            self.machine.stackData = [10]
+            self.machine.stack = [10]
             self.functionTable["POP"](['pop', x], 0)
             self.assertEqual(self.machine.registers[x], 10, x + " failed to Pop")
 
     def testPopf(self):
-        self.machine.stackData.append(1 + 4 + 64)
+        self.machine.stack.append(1 + 4 + 64)
         self.functionTable['POPF'](['POPF'], 0)
         self.assertTrue(self.machine.flags['C'])
         self.assertTrue(self.machine.flags['P'])
         self.assertTrue(self.machine.flags['Z'])
 
-        self.machine.stackData.append(1 + 4 + 16 + 64 + 128)
+        self.machine.stack.append(1 + 4 + 16 + 64 + 128)
         self.functionTable['POPF'](['POPF'], 0)
         self.assertTrue(self.machine.flags['C'])
         self.assertTrue(self.machine.flags['P'])
@@ -634,34 +634,34 @@ class Test(unittest.TestCase):
     def testPushHex(self):
         """ testing pushing a hex number, with letters in it """
         self.functionTable["PUSH"](['push', '1fh'], 0)
-        self.assertEqual(self.machine.stackData, [31])
+        self.assertEqual(self.machine.stack, [31])
 
     def testPushInt(self):
         """ Testing pushing a raw number """
         self.functionTable["PUSH"](['push', '11'], 0)
-        self.assertEqual(self.machine.stackData, [11])
+        self.assertEqual(self.machine.stack, [11])
 
     def testPushLocalvar(self):
         """ Teting pushing a LOCAL variable (i.e. an assembler level var) """
         self.machine.localVars = {"test":25}
         self.functionTable["PUSH"](['push', 'test'], 0)
-        self.assertEqual(self.machine.stackData, [25])
+        self.assertEqual(self.machine.stack, [25])
 
     def testPushRegister(self):
         """ testing pushing FROM a register """
         for x in self.machine.registers.keys():
-            self.machine.stackData = []
+            self.machine.stack = []
             self.machine.registers[x] = 10
             self.functionTable["PUSH"](['push', x], 0)
-            self.assertEqual(self.machine.stackData, [10])
+            self.assertEqual(self.machine.stack, [10])
 
     def testPushf(self):
         self.machine.flags = {"Z":True, "S":True, "C":True, "A":True, "P":True}
         self.functionTable['PUSHF'](['PUSHF'], 0)
-        self.assertEqual(self.machine.stackData[-1], 1 + 4 + 16 + 64 + 128)
+        self.assertEqual(self.machine.stack[-1], 1 + 4 + 16 + 64 + 128)
         self.machine.flags = {"Z":False, "S":True, "C":False, "A":True, "P":False}
         self.functionTable['PUSHF'](['PUSHF'], 0)
-        self.assertEqual(self.machine.stackData[-1], 16 + 128)
+        self.assertEqual(self.machine.stack[-1], 16 + 128)
 
     def testRcl(self):
         self.machine.registers['AX'] = 2 ** 13 + 1 + 2 ** 12
@@ -1016,10 +1016,6 @@ class Test(unittest.TestCase):
         self.machine.addressSpace[0] = 0
         self.functionTable['INC'](["INC", 'test'], 0)
         self.assertEqual(self.machine.addressSpace[0], 1)
-
-    def updateStack(self):
-        """ Necessary - the as88 interpreter calls this method to inform the GUI stack guis need changing """
-        1 + 1
 
     def outPut(self, s):
         """ Necessary - the as88 interpreter calls the assemblers output methods when errors happen """

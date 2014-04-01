@@ -19,7 +19,7 @@
 
 from gi.repository import Gtk, Gdk, GObject, Pango, GdkPixbuf
 
-import CommandInterpreter, Intel8088, ReadLiner, sys, os, tokenize, time
+import intel8088, readliner, sys, os, tokenize, time
 
 """"Simulator Class for Intel 8088 Architecture"""
 class Simulator(object):
@@ -28,9 +28,10 @@ class Simulator(object):
     _DESCRIPTION = "A Program for Writing and Simulating Intel 8088 Assembly Code"
     _WEBSITE = "http://www.beastman.ca/"
     _LICENSE = Gtk.License.GPL_2_0
+    _PATHDELIM = os.path.sep
 
     def __init__(self):
-        self._PATH = "/".join(os.path.dirname(os.path.realpath(__file__)).split("/")[:-1])
+        self._PATH = self._PATHDELIM.join(os.path.dirname(os.path.realpath(__file__)).split(self._PATHDELIM)[:-1])
         self._KEYTIMEOUT = 4  # TODO: maybe replace this with focus lost?
 
         """ Begin GUI """
@@ -218,7 +219,7 @@ GtkAboutDialog, GtkAboutDialog * {
         self.breakpointDClickTime = 0
         # Make stuff from the GLADE file and setup events
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(self._PATH + "/xml/GladeMockup3-3.glade")
+        self.builder.add_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "xml", "GladeMockup3-3.glade"]))
 
         self.win = self.builder.get_object("window")
         self.win.set_name('As88Window')
@@ -261,7 +262,7 @@ GtkAboutDialog, GtkAboutDialog * {
         self.builder.get_object("about").connect("activate", lambda *args: self.makeAboutDialogue())
 
         # Window Icon -> what shows up in unity bar/toolbar/etc.
-        self.win.set_icon_from_file(self._PATH + "/images/icon.png")
+        self.win.set_icon_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "icon.png"]))
 
         self.setUpTextTags()
 
@@ -277,6 +278,8 @@ GtkAboutDialog, GtkAboutDialog * {
 
         self.downFile = ""
 
+        self.machine = intel8088.Intel8088()
+
         self.new()
 
         # GUI elements
@@ -287,9 +290,8 @@ GtkAboutDialog, GtkAboutDialog * {
 
         # return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
         self.ESCAPE_CHARS = ['\b', '\n', '\v', '\t', '\f', "'", '"', '\a', '\r']
-        self.inBuffer = ""
+
         self.displayInHex = True
-        self.getCharFlag = False
 
         self.LIST_TYPE = type([1, 1])
         self.keysDown = {}
@@ -316,11 +318,11 @@ GtkAboutDialog, GtkAboutDialog * {
                 else:
                     end = self.linesBuffer.get_iter_at_line_offset(breakPoint + 1, 0)
 
-                if breakPoint in self.breakPoints:
-                    self.breakPoints.remove(breakPoint)
+                if self.machine.isBreakPoint(breakPoint):
+                    self.machine.removeBreakPoint(breakPoint)
                     self.linesBuffer.remove_tag(self.textTagBreakpoint, start, end)
                 else:
-                    self.breakPoints.append(breakPoint)
+                    self.machine.addBreakPoint(breakPoint)
                     self.linesBuffer.apply_tag(self.textTagBreakpoint, start, end)
             else:
                 self.breakpointDClickTime = time.time()
@@ -346,8 +348,6 @@ GtkAboutDialog, GtkAboutDialog * {
         """ Opens and reads in the file fileName """
         try:
             self.fileName = None
-            self.running = False
-            self.ran = False
 
             f = open(fileName, 'r')
 
@@ -403,7 +403,7 @@ GtkAboutDialog, GtkAboutDialog * {
                     self.codeBuffer.remove_all_tags(self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
                     if repr(token).upper().strip("'") in self.functions:
                         self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
-                    elif repr(token).upper().strip("'") in self.machine.registers.keys():
+                    elif repr(token).upper().strip("'") in self.machine.getRegisterNames():
                         self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
                         self.codeBuffer.apply_tag(self.textTagBlueText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
                     elif repr(token).upper().strip("'") in self.machine.getEightBitRegisterNames():
@@ -437,55 +437,56 @@ GtkAboutDialog, GtkAboutDialog * {
 
     def updateRegisters(self):
         """ Simply put, updates the register, flags, and memory gui elements with their respective values. """
+        if self.machine.isRunningAll(): return  # if the user's clicked the runAll button, then theres no point updating every iter. it's inefficient
 
-        self.oFlagOutMachine.set_text(str(int(self.machine.flags['O'])))
-        self.dFlagOutMachine.set_text(str(int(self.machine.flags['D'])))
-        self.iFlagOutMachine.set_text(str(int(self.machine.flags['I'])))
-        self.sFlagOutMachine.set_text(str(int(self.machine.flags['S'])))
-        self.zFlagOutMachine.set_text(str(int(self.machine.flags['Z'])))
-        self.aFlagOutMachine.set_text(str(int(self.machine.flags['A'])))
-        self.pFlagOutMachine.set_text(str(int(self.machine.flags['P'])))
-        self.cFlagOutMachine.set_text(str(int(self.machine.flags['C'])))
+        self.oFlagOutMachine.set_text(str(int(self.machine.getFlag('O'))))
+        self.dFlagOutMachine.set_text(str(int(self.machine.getFlag('D'))))
+        self.iFlagOutMachine.set_text(str(int(self.machine.getFlag('I'))))
+        self.sFlagOutMachine.set_text(str(int(self.machine.getFlag('S'))))
+        self.zFlagOutMachine.set_text(str(int(self.machine.getFlag('Z'))))
+        self.aFlagOutMachine.set_text(str(int(self.machine.getFlag('A'))))
+        self.pFlagOutMachine.set_text(str(int(self.machine.getFlag('P'))))
+        self.cFlagOutMachine.set_text(str(int(self.machine.getFlag('C'))))
 
         if self.displayInHex:
-            self.regA.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['AX']))) + self.machine.intToHex(self.machine.registers['AX']))
+            self.regA.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('AX')))) + self.machine.intToHex(self.machine.getRegister('AX')))
             self.regAH.set_text(self.machine.intToHex(self.machine.getEightBitRegister('AH')))
             self.regAL.set_text(self.machine.intToHex(self.machine.getEightBitRegister('AL')))
-            self.regB.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['BX']))) + self.machine.intToHex(self.machine.registers['BX']))
+            self.regB.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('BX')))) + self.machine.intToHex(self.machine.getRegister('BX')))
             self.regBH.set_text(self.machine.intToHex(self.machine.getEightBitRegister('BH')))
             self.regBL.set_text(self.machine.intToHex(self.machine.getEightBitRegister('BL')))
-            self.regC.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['CX']))) + self.machine.intToHex(self.machine.registers['CX']))
+            self.regC.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('CX')))) + self.machine.intToHex(self.machine.getRegister('CX')))
             self.regCH.set_text(self.machine.intToHex(self.machine.getEightBitRegister('CH')))
             self.regCL.set_text(self.machine.intToHex(self.machine.getEightBitRegister('CL')))
-            self.regD.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['DX']))) + self.machine.intToHex(self.machine.registers['DX']))
+            self.regD.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('DX')))) + self.machine.intToHex(self.machine.getRegister('DX')))
             self.regDH.set_text(self.machine.intToHex(self.machine.getEightBitRegister('DH')))
             self.regDL.set_text(self.machine.intToHex(self.machine.getEightBitRegister('DL')))
-            self.regBP.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['BP']))) + self.machine.intToHex(self.machine.registers['BP']))
-            self.regSP.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['SP']))) + self.machine.intToHex(self.machine.registers['SP']))
-            self.regDI.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['DI']))) + self.machine.intToHex(self.machine.registers['DI']))
-            self.regSI.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['SI']))) + self.machine.intToHex(self.machine.registers['SI']))
-            self.regPC.set_text("0"*(4 - len(self.machine.intToHex(self.machine.registers['PC']))) + self.machine.intToHex(self.machine.registers['PC']))
-            self.memoryBuffer.set_text("".join([self.machine.intToHex(ord(x)) for x in self.machine.addressSpace[:144]]))
+            self.regBP.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('BP')))) + self.machine.intToHex(self.machine.getRegister('BP')))
+            self.regSP.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('SP')))) + self.machine.intToHex(self.machine.getRegister('SP')))
+            self.regDI.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('DI')))) + self.machine.intToHex(self.machine.getRegister('DI')))
+            self.regSI.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('SI')))) + self.machine.intToHex(self.machine.getRegister('SI')))
+            self.regPC.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('PC')))) + self.machine.intToHex(self.machine.getRegister('PC')))
+            self.memoryBuffer.set_text("".join([self.machine.intToHex(ord(x)) for x in self.machine.getFromMemoryAddress(0, 144)]))
             self.colourMemory()
         else:
-            self.regA.set_text(str(self.machine.registers['AX']))
+            self.regA.set_text(str(self.machine.getRegister('AX')))
             self.regAH.set_text(str(self.machine.getEightBitRegister('AH')))
             self.regAL.set_text(str(self.machine.getEightBitRegister('AL')))
-            self.regB.set_text(str(self.machine.registers['BX']))
+            self.regB.set_text(str(self.machine.getRegister('BX')))
             self.regBH.set_text(str(self.machine.getEightBitRegister('BH')))
             self.regBL.set_text(str(self.machine.getEightBitRegister('BL')))
-            self.regC.set_text(str(self.machine.registers['CX']))
+            self.regC.set_text(str(self.machine.getRegister('CX')))
             self.regCH.set_text(str(self.machine.getEightBitRegister('CH')))
             self.regCL.set_text(str(self.machine.getEightBitRegister('CL')))
-            self.regD.set_text(str(self.machine.registers['DX']))
+            self.regD.set_text(str(self.machine.getRegister('DX')))
             self.regDH.set_text(str(self.machine.getEightBitRegister('DH')))
             self.regDL.set_text(str(self.machine.getEightBitRegister('DL')))
-            self.regBP.set_text(str(self.machine.registers['BP']))
-            self.regSP.set_text(str(self.machine.registers['SP']))
-            self.regDI.set_text(str(self.machine.registers['DI']))
-            self.regSI.set_text(str(self.machine.registers['SI']))
-            self.regPC.set_text(str(self.machine.registers['PC']))
-            self.memory.get_buffer().set_text("".join([self.escapeSequences(x) for x in self.machine.addressSpace[:288 - self.backSlashCount]]))
+            self.regBP.set_text(str(self.machine.getRegister('BP')))
+            self.regSP.set_text(str(self.machine.getRegister('SP')))
+            self.regDI.set_text(str(self.machine.getRegister('DI')))
+            self.regSI.set_text(str(self.machine.getRegister('SI')))
+            self.regPC.set_text(str(self.machine.getRegister('PC')))
+            self.memory.get_buffer().set_text("".join([self.escapeSequences(x) for x in self.machine.getFromMemoryAddress(0, 144 - self.backSlashCount)]))
             self.colourMemory()
 
     def makeHelpBox(self):
@@ -511,7 +512,7 @@ GtkAboutDialog, GtkAboutDialog * {
             """Called whenever the selected item in the TreeView."""
             model, treeiter = selection.get_selected()
             if treeiter != None:
-                rawHelpText = str(self.do[model[treeiter][0]].__doc__).split("\n")
+                rawHelpText = str(self.machine.getFunctionDescriptions(model[treeiter][0])).split("\n")
                 instructionName = rawHelpText[0].split(":")[1]
                 instructionTitle = rawHelpText[1].split(":")[1]
                 instructionDescription = rawHelpText[3].split(":")[1]
@@ -540,7 +541,6 @@ GtkAboutDialog, GtkAboutDialog * {
                         arg = arg.strip("[]")
                         if arg == "reg":
                             self.reg16Arg.set_name("reg16On")
-                            self.reg8Arg.set_name("reg8On")
                         elif arg == "reg16":
                             self.reg16Arg.set_name("reg16On")
                         elif arg == "reg8":
@@ -548,7 +548,6 @@ GtkAboutDialog, GtkAboutDialog * {
                         elif arg == "mem":
                             self.memArg.set_name("memOn")
                         elif arg == "immed":
-                            print 'immed'
                             self.immedArg.set_name("immedOn")
                             self.varArg.set_name("varOn")
                         elif arg == "label":
@@ -569,7 +568,6 @@ GtkAboutDialog, GtkAboutDialog * {
                             arg = arg.strip("[]")
                             if arg == "reg":
                                 self.reg16Arg2.set_name("reg16On")
-                                self.reg8Arg2.set_name("reg8On")
                             elif arg == "reg16":
                                 self.reg16Arg2.set_name("reg16On")
                             elif arg == "reg8":
@@ -804,16 +802,16 @@ GtkAboutDialog, GtkAboutDialog * {
     def updateStatusLabel(self, *args):
         """ Updates the status label at the bottom of the screen, including current line number,
         status of the simulation, etc. """
-        self.statusLabel.set_text(" Line: " + str(self.codeBuffer.get_iter_at_offset(self.codeBuffer.props.cursor_position).get_line()) + "\t" + self.running * "Running")
+        self.statusLabel.set_text(" Line: " + str(self.codeBuffer.get_iter_at_offset(self.codeBuffer.props.cursor_position).get_line()) + "\t" + self.machine.isRunning() * "Running")
 
-    def updateStack(self, data=""):
+    def updateStack(self):
         """ Updates the stack gui element """
-        # self.outBuffer.apply_tag(self.textTagBold, self.outBuffer.get_start_iter(), self.outBuffer.get_end_iter())
-        if data != "": self.machine.stackData.append(str(data))
+
+        if self.machine.isRunningAll(): return
         if self.displayInHex:
-            GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(hex(int(x)).split("x")[1])) + hex(int(x)).split("x")[1] for x in self.machine.stackData])))
+            self.stackBuffer.set_text("\n".join(["0"*(4 - len(hex(int(x)).split("x")[1])) + hex(int(x)).split("x")[1] for x in self.machine.getStack()]))
         else:
-            GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(str(x))) + str(x) for x in self.machine.stackData])))
+            self.stackBuffer.set_text("\n".join(["0"*(4 - len(str(x))) + str(x) for x in self.machine.getStack()]))
 
     def setupTextBuffers(self):
         """ Binds various textBuffers to local variables """
@@ -856,7 +854,7 @@ GtkAboutDialog, GtkAboutDialog * {
         New, Open, Save, Run All, Step Once, Stop Stimulation """
 
         new = Gtk.Image()
-        new.set_from_file(self._PATH + "/images/newFileIcon.png")
+        new.set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "newFileIcon.png"]))
 
         newEB = Gtk.EventBox()
         newEB.add(new)
@@ -865,7 +863,7 @@ GtkAboutDialog, GtkAboutDialog * {
         self.buttonBox.pack_start(newEB, False, False, 1)
 
         openImage = Gtk.Image()
-        openImage.set_from_file(self._PATH + "/images/openIcon.png")
+        openImage.set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "openIcon.png"]))
 
         openEB = Gtk.EventBox()
         openEB.add(openImage)
@@ -874,7 +872,7 @@ GtkAboutDialog, GtkAboutDialog * {
         self.buttonBox.pack_start(openEB, False, False, 1)
 
         save = Gtk.Image()
-        save.set_from_file(self._PATH + "/images/saveIcon.png")
+        save.set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "saveIcon.png"]))
 
         saveEB = Gtk.EventBox()
         saveEB.add(save)
@@ -883,7 +881,7 @@ GtkAboutDialog, GtkAboutDialog * {
         self.buttonBox.pack_start(saveEB, False, False, 1)
 
         allIcon = Gtk.Image()
-        allIcon.set_from_file(self._PATH + "/images/allIcon.png")
+        allIcon.set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "allIcon.png"]))
 
         allEB = Gtk.EventBox()
         allEB.add(allIcon)
@@ -892,7 +890,7 @@ GtkAboutDialog, GtkAboutDialog * {
         self.buttonBox.pack_start(allEB, False, False, 1)
 
         step = Gtk.Image()
-        step.set_from_file(self._PATH + "/images/stepIcon.png")
+        step.set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "stepIcon.png"]))
 
         stepEB = Gtk.EventBox()
         stepEB.add(step)
@@ -901,7 +899,7 @@ GtkAboutDialog, GtkAboutDialog * {
         self.buttonBox.pack_start(stepEB, False, False, 1)
 
         stop = Gtk.Image()
-        stop.set_from_file(self._PATH + "/images/stopIcon.png")
+        stop.set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "stopIcon.png"]))
 
         stopEB = Gtk.EventBox()
         stopEB.add(stop)
@@ -923,39 +921,39 @@ GtkAboutDialog, GtkAboutDialog * {
     def pressNewButton(self, widget, event):
         if self.downFile == "": self.downFile = widget.get_child().props.file
 
-        widget.get_child().set_from_file(self._PATH + "/images/empty.png")
+        widget.get_child().set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "empty.png"]))
         self.new()
 
     def pressOpenButton(self, widget, event):
         if self.downFile == "": self.downFile = widget.get_child().props.file
 
-        widget.get_child().set_from_file(self._PATH + "/images/empty.png")
+        widget.get_child().set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "empty.png"]))
         self.openFile()
 
     def pressStepButton(self, widget, event):
         if self.downFile == "": self.downFile = widget.get_child().props.file
 
-        widget.get_child().set_from_file(self._PATH + "/images/empty.png")
+        widget.get_child().set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "empty.png"]))
         self.stepButtonClicked()
 
     def pressAllButton(self, widget, event):
         if self.downFile == "": self.downFile = widget.get_child().props.file
 
-        widget.get_child().set_from_file(self._PATH + "/images/empty.png")
+        widget.get_child().set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "empty.png"]))
         self.runAll()
 
     def pressSaveButton(self, widget, event):
         if self.downFile == "": self.downFile = widget.get_child().props.file
 
-        widget.get_child().set_from_file(self._PATH + "/images/empty.png")
+        widget.get_child().set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "empty.png"]))
         self.saveFile()
 
     def pressStopButton(self, widget, event):
         if self.downFile == "": self.downFile = widget.get_child().props.file
 
-        widget.get_child().set_from_file(self._PATH + "/images/empty.png")
+        widget.get_child().set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "empty.png"]))
 
-        if self.running: self.stopRunning(1)
+        if self.machine.isRunning(): self.stopRunning(1)
         self.updateStatusLabel()
 
     def saveFile(self, saveAs=False):
@@ -986,8 +984,9 @@ GtkAboutDialog, GtkAboutDialog * {
 
     def new(self):
         """ Resets the simulation and code """
+        self.clearGui()
+
         self.backSlashCount = 0
-        self.breakPoints = []
         self.updateWindowTitle()
         self.fileName = None
 
@@ -996,43 +995,30 @@ GtkAboutDialog, GtkAboutDialog * {
         self.codeBuffer.remove_all_tags(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter())
         self.codeBuffer.set_text("")
 
-        self.machine = Intel8088.Intel8088()
+        self.machine.restart()
 
-        as88 = CommandInterpreter.CommandInterpreter(self, self.machine)
-
-        self.commandArgs = as88.getCommandArgs()
-        self.do = as88.getFunctionTable()
-        self.functions = self.do.keys()
+        self.functions = self.machine.getFunctions()
         self.functions.sort()
         # self.sysCodes = as88.getSysCodes()
-
-        self.lineCount = 0
-
-        self.mode = "head"
-        self.running = False
-        self.ran = False
 
     def runAll(self):
         """ If the simulation isn't running, then it is started and run in full with the GUI only being updated afterwards.
             If the simulation is running, then it runs until completion from it's current state, with GUI only being updated after.
             If the simulation has already run, then it prompts the user if he wishes to restart, and does so. """
-        if not self.ran:  # If we aren't waiting on a restart prompt
-            if not self.running:  # if We're not running, start
+        if not self.machine.hasRun():  # If we aren't waiting on a restart prompt
+            if not self.machine.isRunning():  # if We're not running, start
                 self.startRunning()
             else:
-                startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 0)  # If we are running, we got a arrow to get ridda
-                endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 1)
-                self.codeBuffer.delete(startOfArrow, endOfArrow)
+                startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 0)  # If we are running, we got a arrow to get ridda
+                if not startOfArrow.ends_line():
+                    endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 1)
+                    if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
+                        self.codeBuffer.delete(startOfArrow, endOfArrow)
 
-            while self.running:
-                if self.machine.registers['PC'] in self.breakPoints:
-                    currentLineIter = self.codeBuffer.get_iter_at_line(self.machine.registers['PC'])
-                    self.codeBuffer.insert(currentLineIter, ">")
-                    self.step()
-                    break
-                self.step()
+            self.outPutFromMachine(self.machine.runAll())
 
             self.updateRegisters()
+            self.updateStack()
         else:
             if self.restartPrompt(): self.runAll()
 
@@ -1059,123 +1045,17 @@ GtkAboutDialog, GtkAboutDialog * {
         First pass for forward references, and setting up local vars, etc.
         The self.running flag is set so the user can step thru accordingly. """
 
-        self.ran = False
-
-        # self.clearGui()
-        # GObject.idle_add(lambda: self.codeBuffer.set_text(self.codeString))
+        self.clearGui()
 
         self.updateRegisters()
+        self.updateStack()
         self.code.set_editable(False)
 
         self.lines = self.codeBuffer.get_text(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter(), False).split("\n")
 
-        self.lineCount = 0
+        errorMessage = self.machine.loadCode(self.lines)
 
-        self.mode = "head"
-        self.machine.restart()
-
-        errorCount = 0
-
-        BSScount = 0
-
-        # This for Loop is gonna go thru the lines, set up a nice lookUp table for jumps
-        # and record program start and end. and set up some memory stuff.
-
-        """ FIRST PASS """
-
-        for line in self.lines:
-            # Looping thru every line
-            # we will go thru, at most, 4 modes
-            # a "head" mode - where constants are defined
-            #      eg _EXIT = 1 etc.
-            # a "text" mode (".SECT .TEXT") where the code is located
-            #      on the first loop thru we just keep track of where this is, and set up a jump table
-            # a "data" mode (".SECT .DATA") where variables are defined
-            #      str: .ASCIZ "%s f"
-            # a "bss" mode (".SECT .BSS") where memory chunks are defined
-            #      fdes: .SPACE 2
-            line = line.strip()
-
-            if "!" in line:
-                line = line[:line.find("!")].strip()  # ignore comments
-
-            self.lineCount += 1
-
-            if self.mode == "head" and "=" in line:
-                line = line.split('=')
-                line[0] = line[0].strip()
-                line[1] = line[1].strip()
-                if line[0] in self.machine.localVars.keys():
-                    self.outPut("Error on line " + str(self.lineCount) + ", cannot define \''" + line[0] + "\' more than once.")
-                    errorCount += 1
-                else: self.machine.localVars[line[0]] = line[1]
-                continue
-
-            if ".SECT" in line.upper():
-
-                # record where the .SECT .TEXT section starts, and ends
-                if self.mode == ".SECT .TEXT":  # ends, we've gone one too far, but we count from zero
-                    self.machine.codeBounds[1] = self.lineCount - 1
-                elif line.upper() == ".SECT .TEXT":  # starts, we're one too short, and we count from zero
-                    self.machine.codeBounds[0] = self.lineCount
-
-                self.mode = line
-                continue
-
-            if ":" in line:  # Spliting on a colon, for defining vars, or jump locations, etc.
-                temp = line.split(":")[0]
-                if self.mode == ".SECT .TEXT":
-                    # a : in .SECT .TEXT means a jump location
-                    # we can define multiple jump locations by digits
-                    # but only one by ascii per each ascii name
-
-                    if temp not in self.machine.lookupTable.keys():
-                        self.machine.lookupTable[temp] = self.lineCount
-                    else:
-                        if temp.isdigit():  # If we're defining multiple jump locations for one digit, keep a list
-                            if type(self.machine.lookupTable[temp]) == self.LIST_TYPE:
-                                self.machine.lookupTable[temp].append(self.lineCount)
-                            else:
-                                self.machine.lookupTable[temp] = [self.machine.lookupTable[temp], self.lineCount]
-                        else:
-                            self.outPut("Duplicate entry: \"" + temp + "\" on line " + str(self.lineCount) + " and line " + str(self.machine.lookupTable[temp]))
-                            errorCount += 1
-                elif self.mode == ".SECT .DATA":
-                    # info in .SECT .DATA follows the format
-                    # str: .ASCIZ "hello world"
-                    # where .ASCIZ means an ascii string with a zero at the end
-                    # and .ASCII means an ascii string
-
-                    if ".ASCIZ" in line.upper() or ".ASCII" in line.upper():  # If we're dealing with a string
-                        if line.count("\"") < 2:  # each string to be defined should be in quotes, raise error if quotes are messed
-                            self.outPut("fatal error on line " + str(self.lineCount))
-                            errorCount += 1
-                            return None
-                        temp2 = self.replaceEscapedSequences(line[line.find("\"") + 1:line.rfind("\"")])  # otherwise grab the stuff in quotes
-                        self.machine.DATA[temp] = [BSScount, BSScount + len(temp2) + (".ASCIZ" in line.upper()) - 1]  # and set temp equal to a list of hex vals of each char
-                        self.machine.addressSpace[BSScount:BSScount + len(temp2)] = temp2 + "0"*(".ASCIZ" in line.upper())
-                        BSScount += len(temp2) + (".ASCIZ" in line.upper())
-
-                elif self.mode == ".SECT .BSS":
-                    # info in .SECT .BSS follows the format
-                    # fdes: .SPACE 2
-                    # Where essentially .BSS just defines memory space
-
-                    temp2 = line.split(".SPACE")[1]  # let's find the size of the mem chunk to def
-                    self.machine.BSS[temp.strip()] = [BSScount, BSScount + int(temp2.strip()) - 1]  # and def it in bss as it's start and end pos
-                    BSScount += int(temp2.strip())
-
-        if self.mode == ".SECT .TEXT" and self.machine.codeBounds[1] == -1:
-            self.machine.codeBounds[1] = len(self.lines)
-
-        # TODO: error check before second pass
-        """ SECOND PASS """
-        if errorCount == 0:
-            self.machine.registers['PC'] = self.machine.codeBounds[0]
-            self.running = True
-        else:
-            self.outPut("Your code cannot be run, it contains %d errors" % errorCount)
-
+        self.outPut(errorMessage)
 
     def stepButtonClicked(self):
         """ Defines what happens if the step button is clicked.
@@ -1185,99 +1065,32 @@ GtkAboutDialog, GtkAboutDialog * {
         
         If the code has already been run to completion this prompts the user asking if they wish to restart (deprecate?).
         """
-        print self.machine.BSS
-        if self.running:
+        if self.machine.isRunning():
             # Scroll to view the line
-            self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(self.machine.registers['PC']), 0.25, True, .5, .5)
-            self.codeBuffer.place_cursor(self.code.get_buffer().get_iter_at_line(self.machine.registers['PC']))
+            self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(self.machine.getRegister('PC')), 0.25, True, .5, .5)
+            self.codeBuffer.place_cursor(self.code.get_buffer().get_iter_at_line(self.machine.getRegister('PC')))
 
             # insert a >
-            currentLineIter = self.codeBuffer.get_iter_at_line(self.machine.registers['PC'])
+            currentLineIter = self.codeBuffer.get_iter_at_line(self.machine.getRegister('PC'))
             self.codeBuffer.insert(currentLineIter, ">")
 
             # remove the > from the previous line, -1 means we're at the first line
             if self.machine.lastLine != -1:
-                startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 0)
-                endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 1)
+                startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 0)
+                endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 1)
                 self.codeBuffer.delete(startOfArrow, endOfArrow)
-            self.step()
 
-        elif self.ran:
+            self.outPutFromMachine(self.machine.step())
+            self.updateRegisters()
+            self.updateStack()
+
+        elif self.machine.hasRun():
             """ Prompt the user to restart """
             if self.restartPrompt(): self.stepButtonClicked()
 
         else:
             self.startRunning()
             self.stepButtonClicked()
-
-    def step(self):
-        """ This executes a single line of code. 
-        Parses the command and performs basic error checking 
-            (are we done the program? 
-            does the command follow proper syntax (i.e. right arguments)?
-            is the command recognised?)
-        Before passing it off to the command interpreter class."""
-        if self.running:
-
-            if self.machine.registers['PC'] >= self.machine.codeBounds[1]:
-                self.stopRunning()
-                return
-
-            line = self.lines[self.machine.registers['PC']].replace("\t", "")  # clear out tabs
-
-            if "!" in line:  # exclamations mean comments
-                line = line[:line.find("!")].strip()  # ignore comments
-
-            if ":" in line:  # colons mean labels, we dealt with those already.
-                line = line[line.find(":") + 1:].strip()  # ignore jump points
-
-            if line.count(",") > 1:  # any command can have at most 2 arguments.
-                self.outPut("What's up with all the commas on line " + str(self.machine.registers['PC']) + "?")
-                self.running = False
-                self.ran = True
-                return -1
-
-            command = [x.strip() for x in line.replace(" ", ",").split(",")]
-
-            for x in range(command.count("")):
-                command.remove("")
-
-            if command == None or command == []:
-                self.machine.lastLine = self.machine.registers['PC']
-                self.machine.registers['PC'] += 1
-                return  # skip the empty lines
-
-            if command[0] not in self.commandArgs.keys():
-                print "Fatal error. " + command[0] + " not recognised."
-                self.outPut("Fatal error. " + command[0] + " not recognised.")
-                self.stopRunning(-1)
-                return
-
-            if len(command) - 1 != self.commandArgs[command[0]]:
-                self.outPut("Invalid number of arguments on line " + str(self.machine.registers['PC']) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " argument" + "s"*(self.commandArgs[command[0]] > 1) + " and " + str(len(command) - 1) + (" were " if len(command) - 1 > 1 else " was ") + "given.")
-                self.running = False
-                self.ran = True
-                return -1
-
-            if command[0] in self.do.keys():
-                self.do[command[0]](command, self.machine.registers['PC'])
-                self.updateRegisters()
-            else:
-                self.outPut("Fatal error. " + command[0] + " not recognised.")
-                self.stopRunning(-1)
-                return
-
-            if self.machine.jumpLocation != -1:
-                self.machine.lastLine = self.machine.registers['PC']
-                self.machine.registers['PC'] = self.machine.jumpLocation
-                self.machine.jumpLocation = -1
-            else:
-                self.machine.lastLine = self.machine.registers['PC']
-                self.machine.registers['PC'] += 1
-
-            if self.machine.registers['PC'] >= self.machine.codeBounds[1]:
-                self.stopRunning()
-                return
 
     def onKeyPressEvent(self, widget, event):
         """ Handles Key Down events, puts the corresponding keyval into a list self.keysDown.
@@ -1292,15 +1105,8 @@ GtkAboutDialog, GtkAboutDialog * {
         # label.set_markup('<span size="xx-large">%s\n%d</span>' % (mod, keyval))
 
         if keyname == 'Return' or keyname == 'KP_Enter':
-            if not self.getCharFlag:
-                if not self.code.has_focus():
-                    self.stepButtonClicked()
-            else:
-                # self.inBuffer = self.entry.get_text() + "\n"
-                self.machine.registers["AX"] = ord(self.inBuffer[0])
-                self.outPut(self.inBuffer + "\n")
-                self.inBuffer = self.inBuffer[1:]
-                self.getCharFlag = False
+            if not self.code.has_focus():
+                self.stepButtonClicked()
             return
 
         self.keysDown[keyname] = time.time()
@@ -1322,26 +1128,45 @@ GtkAboutDialog, GtkAboutDialog * {
             self.keysDown = {}
             self.exit()
 
+    def outPutFromMachine(self, string):
+        """ Outputs the result of a machine query.
+        Different then regular output since we have to do a few simple checks before we print."""
+        if string == self.machine._OVER:
+            self.stopRunning()
+        else:
+            if string != None:
+                self.outPut(string)
+
+            if not self.machine.isRunning():
+                # The machine shut down without signalling, an error must've occurred
+                self.stopRunning(-1)
+
     def outPut(self, string):
-        """ Outputs the argument """
+        """ Outputs the message "string" to the designated textview in the GUI """
         self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), string)
         self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(), 0.1, True, .5, .5)
 
     def clearGui(self):
-        """ Empties the text buffers of all relevant GUI elements"""
-        GObject.idle_add(lambda: (self.outText.get_buffer().set_text(""),
-                            self.code.get_buffer().set_text(""),
-                            self.regA.get_buffer().set_text(""),
-                            self.regB.get_buffer().set_text(""),
-                            self.regC.get_buffer().set_text(""),
-                            self.regD.get_buffer().set_text(""),
-                            self.regBP.get_buffer().set_text(""),
-                            self.regSP.get_buffer().set_text(""),
-                            self.regDI.get_buffer().set_text(""),
-                            self.regSI.get_buffer().set_text(""),
-                            self.regPC.get_buffer().set_text(""),
-                            # self.regFlags.get_buffer().set_text(""),
-                            self.memory.get_buffer().set_text("")))
+        """ Empties the text components of all relevant GUI elements"""
+        self.outText.get_buffer().set_text("")
+        self.regA.set_text("")
+        self.regB.set_text("")
+        self.regC.set_text("")
+        self.regD.set_text("")
+        self.regBP.set_text("")
+        self.regSP.set_text("")
+        self.regDI.set_text("")
+        self.regSI.set_text("")
+        self.regPC.set_text("")
+        self.memory.get_buffer().set_text("")
+        self.aFlagOutMachine.set_text("")
+        self.cFlagOutMachine.set_text("")
+        self.oFlagOutMachine.set_text("")
+        self.dFlagOutMachine.set_text("")
+        self.iFlagOutMachine.set_text("")
+        self.pFlagOutMachine.set_text("")
+        self.sFlagOutMachine.set_text("")
+        self.zFlagOutMachine.set_text("")
 
     def updateWindowTitle(self):
         self.win.set_title(self._PROGRAMNAME + " - " + ("*"*self.codeBuffer.get_modified()) + ("Untitled" if self.fileName == None else self.fileName))
@@ -1349,7 +1174,7 @@ GtkAboutDialog, GtkAboutDialog * {
     def textChanged(self, widget):
         """ This function gets called everytime the 'code' text changes.
         Syntax Highglighting is applied on the changed line appropriately. """
-        if not self.running:
+        if not self.machine.isRunning():
             self.updateWindowTitle()
             lineNumber = self.codeBuffer.get_iter_at_offset(self.codeBuffer.props.cursor_position).get_line()
 
@@ -1362,7 +1187,7 @@ GtkAboutDialog, GtkAboutDialog * {
 
             lineText = self.codeBuffer.get_text(startOfLineIter, endOfLineIter, False)
 
-            self.syntaxHighlight(ReadLiner.ReadLiner(lineText), lineOffset=lineNumber)
+            self.syntaxHighlight(readliner.ReadLiner(lineText), lineOffset=lineNumber)
 
     def makeAboutDialogue(self):
         """ Makes an About Dialog displaying basic info about the program
@@ -1375,7 +1200,7 @@ GtkAboutDialog, GtkAboutDialog * {
         about.set_comments(self._DESCRIPTION)
         about.set_website(self._WEBSITE)
         about.set_license_type(self._LICENSE)
-        about.set_logo(GdkPixbuf.Pixbuf.new_from_file(self._PATH + "/images/logo.png"))
+        about.set_logo(GdkPixbuf.Pixbuf.new_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "logo.png"])))
         about.run()
         about.destroy()
 
@@ -1392,7 +1217,7 @@ GtkAboutDialog, GtkAboutDialog * {
             offset = ret[0].get_offset()
             for element in self.machine.effectiveBSSandDATALocation:
                 if self.machine.effectiveBSSandDATALocation[element][0] <= offset <= self.machine.effectiveBSSandDATALocation[element][1]:
-                    if element in self.machine.BSS.keys(): tooltip.set_text("%s (from %s to %s)" % (element, self.machine.intToHex(self.machine.BSS[element][0]) if self.displayInHex else str(self.machine.BSS[element][0]), self.machine.intToHex(self.machine.BSS[element][1]) if self.displayInHex else str(self.machine.BSS[element][1])))
+                    if element in self.machine.getBSSKeys(): tooltip.set_text("%s (from %s to %s)" % (element, self.machine.intToHex(self.machine.BSS[element][0]) if self.displayInHex else str(self.machine.BSS[element][0]), self.machine.intToHex(self.machine.BSS[element][1]) if self.displayInHex else str(self.machine.BSS[element][1])))
                     else: tooltip.set_text("%s (from %s to %s)" % (element, self.machine.intToHex(self.machine.DATA[element][0]) if self.displayInHex else str(self.machine.DATA[element][0]), self.machine.intToHex(self.machine.DATA[element][1]) if self.displayInHex else str(self.machine.DATA[element][1])))
                     break
         else:
@@ -1423,21 +1248,27 @@ GtkAboutDialog, GtkAboutDialog * {
 
     def stopRunning(self, i=1):
         """ Ends the current simulation, if i=1 then succesfully, otherwise there was an issue """
-        self.running = False
-        self.ran = True
+        print "Gui stop running"
+        if self.machine.isRunning():
+            # Stop the machine if it isn't already stopped.
+            # Normally the machine stops first, but sometimes the gui
+            # get's the signal first.
+            # For instance, if the stop button is clicked
+            self.machine.stopRunning()
+
         self.code.set_editable(True)
 
-        startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.registers['PC'], 0)
-        endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.registers['PC'], 1)
+        startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getRegister('PC'), 0)
+        if not startOfArrow.ends_line():
+            endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getRegister('PC'), 1)
 
-        if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
-            self.codeBuffer.delete(startOfArrow, endOfArrow)
-        else:
-            startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 0)
-            endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.lastLine, 1)
             if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
                 self.codeBuffer.delete(startOfArrow, endOfArrow)
-
+            else:
+                startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 0)
+                endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 1)
+                if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
+                    self.codeBuffer.delete(startOfArrow, endOfArrow)
 
         if i == 1:
             self.outPut("\n----\nCode executed succesfully.\n")
@@ -1446,14 +1277,12 @@ GtkAboutDialog, GtkAboutDialog * {
         # TODO: EOF, anything important like that should go here.
 
     def getChar(self):
+        # TODO: make this a dialog
         """ Get's chars from the entry element. Interfaces with as88 system trap """
-        if self.inBuffer == "":
-            self.getCharFlag = True
-            self.outPut("Waiting for input:")
-        else:
-            self.outPut(self.inBuffer + "\n")
-            self.machine.registers['AX'] = ord(self.inBuffer[0])
-            self.inBuffer = self.inBuffer[1:]
+
+        self.outPut(self.inBuffer + "\n")
+        self.machine.setRegisters('AX', ord(self.inBuffer[0]))
+        self.inBuffer = self.inBuffer[1:]
 
     def colourMemory(self):
         """ Colour codes the items in the memory for easy identification """
@@ -1463,10 +1292,10 @@ GtkAboutDialog, GtkAboutDialog * {
         self.backSlashCount = 0
         sortedBSSandDATAList = []
 
-        for index, name in enumerate(self.machine.DATA.keys() + self.machine.BSS.keys()):
+        for index, name in enumerate(self.machine.getDATAKeys() + self.machine.getBSSKeys()):
 
-            if name in self.machine.DATA.keys(): location = self.machine.DATA[name]
-            else: location = self.machine.BSS[name]
+            if name in self.machine.getDATAKeys(): location = self.machine.getFromDATA(name)
+            else: location = self.machine.getFromBSS(name)
 
             if len(sortedBSSandDATAList) == 0:
                 sortedBSSandDATAList.append([location[0], location[1], name])
@@ -1480,7 +1309,7 @@ GtkAboutDialog, GtkAboutDialog * {
 
         for index, location in enumerate(sortedBSSandDATAList):
             backSlashOffsetBeforeTag = backSlashOffsetAfterTag
-            for x in self.machine.addressSpace[location[0]:location[1]]:
+            for x in self.machine.getFromMemoryAddress(location[0], location[1]):
                 if x in self.ESCAPE_CHARS:
                     backSlashOffsetAfterTag += 1
                     self.backSlashCount += 1
@@ -1494,7 +1323,7 @@ GtkAboutDialog, GtkAboutDialog * {
     def exit(self, *args):
         """ Determines whether or not to exit, if there is an unsaved file or active simulation it prompts the user.
         Then decides whether to exit the program or not based on the users response. """
-        if self.running:
+        if self.machine.isRunning():
             dialog = Gtk.MessageDialog(self.win, 0, Gtk.MessageType.QUESTION,
             Gtk.ButtonsType.YES_NO, "Do you want to quit?", title="Are you sure?")
             dialog.format_secondary_text("There is a simulation currently in progress.")

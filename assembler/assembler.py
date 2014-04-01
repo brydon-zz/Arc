@@ -18,7 +18,7 @@
 """
 
 from gi.repository import Gtk, Gdk, GObject, Pango
-import CommandInterpreter, Intel8088
+import commandinterpreter, intel8088
 
 # TODO: issues with restarting
 # TODO: Implement the WHOLE reg set
@@ -168,9 +168,9 @@ class Simulator(object):
         self.displayInHex = True
         self.getCharFlag = False
 
-        self.machine = Intel8088.Intel8088()
+        self.machine = intel8088.Intel8088()
 
-        as88 = CommandInterpreter.CommandInterpreter(self, self.machine)
+        as88 = commandinterpreter.CommandInterpreter(self, self.machine)
 
         self.commandArgs = as88.getCommandArgs()
         self.do = as88.getFunctionTable()
@@ -396,11 +396,11 @@ class Simulator(object):
     def updateStack(self, data=""):
         """ Updates the stack gui element """
         # self.outBuffer.apply_tag(self.textTagBold, self.outBuffer.get_start_iter(), self.outBuffer.get_end_iter())
-        if data != "": self.machine.stackData.append(str(data))
+        if data != "": self.machine.stack.append(str(data))
         if self.displayInHex:
-            GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(hex(int(x)).split("x")[1])) + hex(int(x)).split("x")[1] for x in self.machine.stackData])))
+            GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(hex(int(x)).split("x")[1])) + hex(int(x)).split("x")[1] for x in self.machine.stack])))
         else:
-            GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(str(x))) + str(x) for x in self.machine.stackData])))
+            GObject.idle_add(lambda: self.stackBuffer.set_text("\n".join(["0"*(4 - len(str(x))) + str(x) for x in self.machine.stack])))
 
     def outPut(self, string, i=""):
         """ Outputs the arguments, in the fashion i: string"""
