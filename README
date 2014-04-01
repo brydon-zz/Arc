@@ -1,6 +1,20 @@
-Intel 8088 Simulator
+<h1>Intel 8088 Simulator</h1>
 
-This project lets users write/save/edit and simulate intel 8088 assembly code.
+<p>This program is an interactive Intel 8088 CPU and assembly code IDE.
+It provides an environment for users to write Intel 8088 Assembly Code.
+Complete with syntax highlighting and a helpful index of Intel 8088 
+instructions and descriptions of their operation. It is ideal for users
+who wish to learn Intel 8088 assembly code or for users who wish to 
+obtain a deeper understanding of assembly code in general.
+</p>
+<p>
+The user can simulate their code by stepping thru each instruction line
+by line or by running all the code at once.  The user can set multiple
+breakpoints to aid in debugging and interpreting the code.  The program
+has a graphical representation of the registers and memory space of the
+Intel 8088 to assist the user in understanding the assembly code their
+writing.
+</p>
 
                     GNU GENERAL PUBLIC LICENSE
    TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
