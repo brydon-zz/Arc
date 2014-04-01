@@ -29,189 +29,16 @@ class Simulator(object):
     _WEBSITE = "http://www.beastman.ca/"
     _LICENSE = Gtk.License.GPL_2_0
     _PATHDELIM = os.path.sep
+    _CSSFILENAME = "default.css"
+    _INTERFACEXMLFILENAME = "defaultInterface.xml"
 
     def __init__(self):
         self._PATH = self._PATHDELIM.join(os.path.dirname(os.path.realpath(__file__)).split(self._PATHDELIM)[:-1])
         self._KEYTIMEOUT = 4  # TODO: maybe replace this with focus lost?
 
         """ Begin GUI """
-        styles = """
-#As88Window #helpTree {
-    color:#000;
-    background-color:#F5F5F5;
-}
-
-#As88Window #registersLabel {
-    border-bottom:3px solid #000;
-}
-
-#As88Window #registersEndLabel {
-    border-top:3px solid #000;
-}
-
-#As88Window #machineInfoWrapper {
-    background-color:#F5F5F5;
-}
-
-
-#As88Window #flagsGrid GtkLabel {
-    border-left:1px solid #000;
-    border-top:1px solid #000;
-    background-color:#E5E5E5;
-}
-
-#As88Window #c {
-    border-bottom: 1px solid #000;
-    border-right: 1px solid #000;
-}
-
-#As88Window #cFlagLabel1 {
-    border-right: 1px solid #000;
-}
-
-#As88Window #a, #As88Window #z, #As88Window #p, #As88Window #s, #As88Window #i, #As88Window #d, #As88Window #o {
-    border-bottom: 1px solid #000;
-}
-
-#As88Window #machineInfoWrapper GtkLabel {
-    color:#000;
-}
-
-#As88Window #machineInfoWrapper GtkTextView {
-    color:#000;
-    border:1px solid #000;
-}
-
-#As88Window #instructionHelpBox, #As88Window #instructionHelpBox *, #As88Window #instructionHelpBox * * {
-    color:#000;
-    background-color:#E5E5E5;
-}
-
-GtkAboutDialog, GtkAboutDialog * {
-    color: #000;
-}
-
-#As88Window #lines {
-    color:#999;
-    border-right:1px solid #333;
-    border-left:1px solid #333;
-    font-family:mono;
-}
-
-#As88Window #codeScrolled {
-    border-bottom: 3px solid #000;
-    border-top:0;
-    border-left:0;
-    border-right:0;
-}
-
-#As88Window #seperatorLabelTrue {
-    background-color:#522;
-    border-right:1px solid #000;
-    border-left:1px solid #000;
-    border-top:0;
-    border-bottom:0;
-}
-
-#As88Window #seperatorLabelFalse {
-    background-color:#225;
-    border-right:1px solid #000;
-    border-left:1px solid #000;
-    border-top:0;
-    border-bottom:0;
-}
-
-#As88Window #seperatorLabelOverTrue {
-    background-color:#666;
-    border-right:1px solid #000;
-    border-left:1px solid #000;
-    border-top:0;
-    border-bottom:0;
-}
-
-#As88Window #seperatorLabelOverFalse {
-    background-color:#666;
-    border-right:1px solid #000;
-    border-left:1px solid #000;
-    border-top:0;
-    border-bottom:0;
-}
-
-#As88Window {
-    background-color:#000;
-}
-
-#As88Window #notebook {
-    color:#fff;
-    margin-top:0;
-    padding-top:0;
-    margin-right:0;
-    padding-right:0;
-    margin-left:0;
-    padding-left:0;
-    background-color:#000;
-    border: 1px solid #333;
-}
-
-#As88Window #stack, #As88Window #memory {
-    background-color:#E5E5E5;
-    font-family:mono;
-    color:#000;
-    border:0;
-}
-
-#As88Window #regA, #As88Window #regB, #As88Window #regC, #As88Window #regD, #As88Window #regSP, #As88Window #regBP, #As88Window #regSI,#As88Window #regDI, #As88Window #regPC {
-    background-color:#E5E5E5;
-    border:1px solid #000;
-    font-family:mono;
-    color:#000;
-}
-
-#As88Window #regAH, #As88Window #regAL, #As88Window #regBH, #As88Window #regBL, #As88Window #regCH, #As88Window #regCL, #As88Window #regDH, #As88Window #regDL {
-    background-color:#E5E5E5;
-    border-left:1px solid #000;
-    border-right:1px solid #000;
-    border-bottom:1px solid #000;
-    font-family:mono;
-    color:#000;
-}
-
-#As88Window #outText {
-    background-color:#333;
-    font-family:mono;
-    color:#FFF;
-    border:0;
-}
-
-#As88Window #code {
-    font-family: mono;
-}
-
-#As88Window #stackSW {
-    border-right:1px solid black;
-}
-
-#As88Window #memorySW {
-    border:1px solid black;
-}
-
-#As88Window #outScrolled {
-    border:0;
-}
-
-#As88Window #reg16Off, #As88Window #reg8Off, #As88Window #memOff, #As88Window #labelOff, #As88Window #immedOff, #As88Window #varOff {
-    border:1px solid #000;
-    color:#666;
-    background-color:#E5E5E5;
-}
-
-#As88Window #reg16On, #As88Window #reg8On, #As88Window #memOn, #As88Window #labelOn, #As88Window #immedOn, #As88Window #varOn {
-    border:1px solid #F00;
-    color:#000;
-    background-color:#F5F5F5;
-}
-
-"""
+        cssFile = self._PATHDELIM.join([self._PATHDELIM + "styles", self._CSSFILENAME])
+        styles = open(self._PATH + cssFile, 'r').read()
 
         """Handlers for the actions in the interface."""
 
@@ -219,7 +46,7 @@ GtkAboutDialog, GtkAboutDialog * {
         self.breakpointDClickTime = 0
         # Make stuff from the GLADE file and setup events
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "xml", "GladeMockup3-3.glade"]))
+        self.builder.add_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "xml", self._INTERFACEXMLFILENAME]))
 
         self.win = self.builder.get_object("window")
         self.win.set_name('As88Window')
