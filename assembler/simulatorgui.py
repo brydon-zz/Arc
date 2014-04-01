@@ -346,6 +346,7 @@ GtkAboutDialog, GtkAboutDialog * {
 
     def open(self, fileName):
         """ Opens and reads in the file fileName """
+        print fileName
         try:
             self.fileName = None
 
@@ -421,7 +422,10 @@ GtkAboutDialog, GtkAboutDialog * {
                 # print "%d,%d-%d,%d:\t%s\t%s" % \
                 #    (srow, scol, erow, ecol, tokenize.tok_name[typeOfToken], repr(token))
 
-        tokenize.tokenize(f.readline, handleSyntaxHighlightingToken)
+        try:
+            tokenize.tokenize(f.readline, handleSyntaxHighlightingToken)
+        except:
+            """ Let slide, thisis called if there is incorrect indentation, etc, in the source being read """
 
     def hoverOverSeperator(self, a, b):
         """Change the style of the separator label when hovered on."""
@@ -486,7 +490,7 @@ GtkAboutDialog, GtkAboutDialog * {
             self.regDI.set_text(str(self.machine.getRegister('DI')))
             self.regSI.set_text(str(self.machine.getRegister('SI')))
             self.regPC.set_text(str(self.machine.getRegister('PC')))
-            self.memory.get_buffer().set_text("".join([self.escapeSequences(x) for x in self.machine.getFromMemoryAddress(0, 144 - self.backSlashCount)]))
+            self.memory.get_buffer().set_text("".join([self.escapeSequences(x) for x in self.machine.getFromMemoryAddress(0, 288 - self.backSlashCount)]))
             self.colourMemory()
 
     def makeHelpBox(self):
