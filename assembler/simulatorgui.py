@@ -1,4 +1,21 @@
 """
+The Simulator's GUI 
+Uses the GTK3 library. Features include
+
+    - Development Environment with Syntax Highlighting
+    - Simulates the execution of 8088 Assembly Code
+    - Provides Graphical Representation of Registers, Memory, and Stack
+    - Helpful Documentation of the Instruction Set.
+    
+The interface loads in the basic structure from an XML file and styles 
+it according to a CSS file. It then creates an Intel 8088 Machine.
+You can load in assembly language files and edit them in place then simulate them.
+Stepping through code one line at a time or executing the whole lot.
+You can set breakpoints for ease of debugging.
+
+The simulator passes the command to the Intel 8088 Machine.
+The GUI displays the values of the registers, stack, and memory.   
+
     Copyright (C) 2014 Brydon Eastman
 
     This program is free software; you can redistribute it and/or modify
@@ -50,43 +67,21 @@ class Simulator(object):
 
         self.win = self.builder.get_object("window")
         self.win.set_name('As88Window')
-        self.win.connect("delete-event", self.exit)
 
         # Set Up the CSS
-                # Creating local vars for gui elements
+        # Creating local vars for gui elements
         self.assignGuiElementsToVariables()
 
         # Text buffers for the big text-views
         self.setupTextBuffers()
         self.makeFileButtons()
 
+        self.connectSignals()
+
         self.nameGuiElementsForCSS()
         self.style_provider = Gtk.CssProvider()
         self.style_provider.load_from_data(styles)
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
-        # Hex Switch needs a special trigger signal that glade cannot understand
-        self.hexSwitch.connect('notify::active', self.hexSwitchClicked)
-
-        # Key events!
-        self.win.connect('key_press_event', self.onKeyPressEvent)
-        self.win.connect('key_release_event', self.onKeyReleaseEvent)
-
-        self.seperatorLabelEB.connect('button_press_event', self.clickSeperator)
-        self.seperatorLabelEB.connect('enter-notify-event', self.hoverOverSeperator)
-        self.seperatorLabelEB.connect('leave-notify-event', self.hoverOffSeperator)
-
-        self.builder.get_object("new").connect("activate", lambda *args: self.new())
-        self.builder.get_object("open").connect("activate", lambda *args: self.openFile())
-        self.builder.get_object("save").connect("activate", lambda *args: self.saveFile())
-        self.builder.get_object("saveas").connect("activate", lambda *args: self.saveFile(saveAs=True))
-        self.builder.get_object("quit").connect("activate", self.exit)
-
-        self.builder.get_object("step").connect("activate", lambda *args: self.stepButtonClicked())
-        self.builder.get_object("all").connect("activate", lambda *args: self.runAll())
-        self.builder.get_object("stopRunning").connect("activate", lambda *args: self.stopRunning(-1))
-
-        self.builder.get_object("about").connect("activate", lambda *args: self.makeAboutDialogue())
 
         # Window Icon -> what shows up in unity bar/toolbar/etc.
         self.win.set_icon_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "icon.png"]))
@@ -109,10 +104,6 @@ class Simulator(object):
 
         self.new()
 
-        # GUI elements
-        self.codeBuffer.connect("notify::cursor-position", self.updateStatusLabel)
-        self.codeBuffer.connect("changed", self.textChanged)
-        self.lineNumberTV.connect("button-press-event", self.setBreakpoint)
         self.updateStatusLabel()
 
         # return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
@@ -487,6 +478,35 @@ class Simulator(object):
         self.cFlagOut.set_name("cFlagOut")
 
         self.builder.get_object("instructionHelpBox").set_name("instructionHelpBox")
+
+    def connectSignals(self):
+        """ Connects handler signals to GUI elements """
+        # GUI elements
+        self.win.connect("delete-event", self.exit)
+        self.hexSwitch.connect('notify::active', self.hexSwitchClicked)
+
+        # Key events!
+        self.win.connect('key_press_event', self.onKeyPressEvent)
+        self.win.connect('key_release_event', self.onKeyReleaseEvent)
+
+        self.seperatorLabelEB.connect('button_press_event', self.clickSeperator)
+        self.seperatorLabelEB.connect('enter-notify-event', self.hoverOverSeperator)
+        self.seperatorLabelEB.connect('leave-notify-event', self.hoverOffSeperator)
+
+        self.builder.get_object("new").connect("activate", lambda *args: self.new())
+        self.builder.get_object("open").connect("activate", lambda *args: self.openFile())
+        self.builder.get_object("save").connect("activate", lambda *args: self.saveFile())
+        self.builder.get_object("saveas").connect("activate", lambda *args: self.saveFile(saveAs=True))
+        self.builder.get_object("quit").connect("activate", self.exit)
+
+        self.builder.get_object("step").connect("activate", lambda *args: self.stepButtonClicked())
+        self.builder.get_object("all").connect("activate", lambda *args: self.runAll())
+        self.builder.get_object("stopRunning").connect("activate", lambda *args: self.stopRunning(-1))
+
+        self.builder.get_object("about").connect("activate", lambda *args: self.makeAboutDialogue())
+        self.codeBuffer.connect("notify::cursor-position", self.updateStatusLabel)
+        self.codeBuffer.connect("changed", self.textChanged)
+        self.lineNumberTV.connect("button-press-event", self.setBreakpoint)
 
     def assignGuiElementsToVariables(self):
         """ Binds critical GUI elements from the builder object to variable names. """

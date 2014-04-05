@@ -1,4 +1,17 @@
 """
+Emulates the basic components of an Intel8088 including:
+    Memory
+    Registers
+    Stack
+
+It also processes commands from the Intel 8088 instruction set
+via the commandinterpreter class. 
+
+It also includes some "higher level" tracer functions like:
+    Breakpoints
+    Local Variables
+    Receiving Input text
+
     Copyright (C) 2014 Brydon Eastman
 
     This program is free software; you can redistribute it and/or modify

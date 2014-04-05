@@ -1,4 +1,8 @@
 """
+A basic class that implements the readline interface. Useful for working with Tokenizer
+It takes a single line string as an argument and places it in the object. The readline 
+function then just returns that line. 
+
     Copyright (C) 2014 Brydon Eastman
 
     This program is free software; you can redistribute it and/or modify
