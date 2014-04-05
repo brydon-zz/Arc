@@ -60,7 +60,7 @@ class Intel8088(object):
         self.running = False
         self.ran = False
         self.runningAll = False
-        self.getCharFlag = False
+        self.waitingForChar = False
         self.inBuffer = ""
 
         self.addressSpace = [str(0) for i in range(1024)]
@@ -72,25 +72,292 @@ class Intel8088(object):
         self.commandArgs = as88.getCommandArgs()
         self.do = as88.getFunctionTable()
 
+    def loadCode(self, lines):
+
+        self.ran = False
+        self.runningAll = False
+        self.lines = lines
+
+        errorString = ""
+
+        lineCount = 0
+
+        mode = "head"
+        self.restart()
+
+        errorCount = 0
+
+        BSScount = 0
+
+        # This for Loop is gonna go thru the self.lines, set up a nice lookUp
+        # table for jumps
+        # and record program start and end. and set up some memory stuff.
+
+        """ FIRST PASS """
+
+        for line in self.lines:
+            # Looping thru every line
+            # we will go thru, at most, 4 modes
+            # a "head" mode - where constants are defined
+            #      eg _EXIT = 1 etc.
+            # a "text" mode (".SECT .TEXT") where the code is located
+            #      on the first loop thru we just keep track of where this is,
+            #      and set up a jump table
+            # a "data" mode (".SECT .DATA") where variables are defined
+            #      str: .ASCIZ "%s f"
+            # a "bss" mode (".SECT .BSS") where memory chunks are defined
+            #      fdes: .SPACE 2
+            line = line.strip()
+
+            if "!" in line:
+                line = line[:line.find("!")].strip()  # ignore comments
+
+            lineCount += 1
+
+            if mode == "head" and "=" in line:
+                line = line.split('=')
+                line[0] = line[0].strip()
+                line[1] = line[1].strip()
+
+                if self.isLocalVar(line[0]):
+                    errorString += "Error on line " + str(lineCount) + \
+                                   ", cannot define \''" + line[0] + \
+                                   "\' more than once.\n"
+                    errorCount += 1
+                else:
+                    self.setLocalVar(line[0], line[1])
+
+                continue
+
+            if ".SECT" in line.upper():
+
+                # record where the .SECT .TEXT section starts, and ends
+                if mode == ".SECT .TEXT":  # ends, we've gone one too far
+                    self.setCodeBounds(1, lineCount - 1)
+                elif line.upper() == ".SECT .TEXT":  # starts we're 1 too short
+                    self.setCodeBounds(0, lineCount)
+
+                mode = line
+                continue
+
+            if ":" in line:  # Spliting on a colon, for defining vars, or jumps
+                temp = line.split(":")[0]
+                if mode == ".SECT .TEXT":
+                    # a : in .SECT .TEXT means a jump location
+                    # we can define multiple jump locations by digits
+                    # but only one by ascii per each ascii name
+
+                    if temp not in self.lookupTable.keys():
+                        self.lookupTable[temp] = lineCount
+                    else:
+                        if temp.isdigit():
+                            # If we're defining multiple jump locations for
+                            # one digit, keep a list
+                            if type(self.lookupTable[temp]) == self.LIST_TYPE:
+                                self.lookupTable[temp].append(lineCount)
+                            else:
+                                self.lookupTable[temp] = [
+                                                        self.lookupTable[temp],
+                                                        lineCount]
+                        else:
+                            errorString += "Duplicate entry: \"" + temp + \
+                                    "\" on line " + str(lineCount) + \
+                                    " and line " + str(self.lookupTable[temp])\
+                                     + "\n"
+
+                elif mode == ".SECT .DATA":
+                    # info in .SECT .DATA follows the format
+                    # str: .ASCIZ "hello world"
+                    # where .ASCIZ means an ascii string with a zero at the end
+                    # and .ASCII means an ascii string
+
+                    if ".ASCIZ" in line.upper() or ".ASCII" in line.upper():
+                        # If we're dealing with a string
+                        if line.count("\"") < 2:
+                            # each string to be defined should be in quotes
+                            # raise error if quotes are messed
+                            errorString += "Fatal error on line " + \
+                                            str(lineCount) + \
+                                            ". Too many quotes.\n"
+                            return errorString
+                        temp2 = self.replaceEscapedSequences(
+                                                line[line.find("\"") + 1:\
+                                                     line.rfind("\"")])
+                        # otherwise grab the stuff in quotes
+                        self.DATA[temp] = [BSScount, BSScount + len(temp2) + \
+                                           (".ASCIZ" in line.upper()) - 1]
+                        # and set temp equal to a list of hex vals of each char
+                        self.addressSpace[BSScount:BSScount + len(temp2)] = \
+                            temp2 + "0" * (".ASCIZ" in line.upper())
+
+                        BSScount += len(temp2) + (".ASCIZ" in line.upper())
+
+                elif mode == ".SECT .BSS":
+                    # info in .SECT .BSS follows the format
+                    # fdes: .SPACE 2
+                    # Where essentially .BSS just defines memory space
+
+                    temp2 = line.split(".SPACE")[1]
+                    # let's find the size of the mem chunk to def
+                    self.BSS[temp.strip()] = [BSScount, BSScount + \
+                                              int(temp2.strip()) - 1]
+                    # and def it in bss as it's start and end pos
+                    BSScount += int(temp2.strip())
+
+        if mode == ".SECT .TEXT" and self.codeBounds[1] == -1:
+            self.codeBounds[1] = len(self.lines)
+
+        if errorString == "":
+            self.setRegister('PC', self.codeBounds[0])
+            self.running = True
+            errorString = ""
+        else:
+            errorString += "Your code cannot be run, it contains %d errors" % \
+                            errorString.count("\n")
+
+        return errorString
+
+    def stopRunning(self, i=1):
+        self.running = False
+        self.ran = True
+        self.runningAll = False
+
+    def addBreakPoint(self, bp):
+        self.breakPoints.append(bp)
+
+    def removeBreakPoint(self, bp):
+        self.breakPoints.remove(bp)
+
+    def runAll(self):
+        totalResult = ""
+        self.runningAll = True
+        while self.running:
+            if self.getRegister('PC') in self.breakPoints:
+                response = self.step()
+                if response is not None and response != 0:
+                    totalResult += response
+                self.runningAll = False
+                break
+            response = self.step()
+            if response is not None and response != 0:
+                    totalResult += str(response)
+            if self.waitingForChar:
+                break
+
+        return totalResult
+
+    def step(self):
+        """ This executes a single line of code.
+        Parses the command and performs basic error checking
+            (are we done the program?
+            does the command follow proper syntax (i.e. right arguments)?
+            is the command recognised?)
+        Before passing it off to the command interpreter class."""
+        if self.running:
+            if self.getRegister('PC') >= self.codeBounds[1]:
+                self.stopRunning()
+                return self._OVER
+
+            line = self.lines[self.getRegister('PC')].replace("\t", "")
+            # clear out tabs
+
+            if "!" in line:  # exclamations mean comments
+                line = line[:line.find("!")].strip()  # ignore comments
+
+            if ":" in line:  # colons mean labels, we dealt with those already.
+                line = line[line.find(":") + 1:].strip()  # ignore jump points
+
+            if line.count(",") > 1:  # any command can have at most 2 arguments
+                self.stopRunning(-1)
+                return "Too many commas on line " + str(self.getRegister('PC'))
+
+            command = [self.replaceEscapedSequences(x.strip()) for x in \
+                       line.replace(" ", ",").split(",")]
+
+            for x in range(command.count("")):
+                command.remove("")
+
+            if command is None or command == []:
+                self.lastLine = self.getRegister('PC')
+                self.setRegister('PC', self.getRegister('PC') + 1)
+                return  # skip the empty self.lines
+
+            if command[0] not in self.commandArgs.keys():
+                self.stopRunning(-1)
+                return "Fatal error. " + command[0] + " not recognised."
+
+            if len(command) - 1 != self.commandArgs[command[0]]:
+                self.stopRunning(-1)
+                return "Invalid number of arguments on line " + \
+                    str(self.getRegister('PC')) + ". " + command[0] + \
+                    " expects " + str(self.commandArgs[command[0]]) + \
+                    " argument" + "s" * (self.commandArgs[command[0]] > 1) + \
+                    " and " + str(len(command) - 1) + \
+                    (" were " if len(command) - 1 > 1 else " was ") + "given."
+
+            if command[0] in self.do.keys():
+                try:
+                    response = self.do[command[0]](command,
+                                                   self.getRegister('PC'))
+                except:
+                    response = "Fatal error occurred on line " + \
+                                str(self.getRegister('PC'))
+            else:
+                self.stopRunning(-1)
+                return "Fatal error. " + command[0] + " not recognised."
+
+            if self.jumpLocation != -1:
+                self.lastLine = self.getRegister('PC')
+                self.setRegister('PC', self.jumpLocation)
+                self.jumpLocation = -1
+            else:
+                self.lastLine = self.getRegister('PC')
+                self.setRegister('PC', self.getRegister('PC') + 1)
+
+            if self.getRegister('PC') >= self.codeBounds[1]:
+                self.stopRunning()
+                return self._OVER
+
+            return response
+
     def requestsGetChar(self):
-        return self.getCharFlag
+        """ The Machine needs to interface with the
+        gui to get input characters. This function
+        is called by the gui to check if the machine
+        is waiting for a character """
+
+        return self.waitingForChar
 
     def getChar(self):
+        """ This function is activated by the system trap interface for
+            char requests.
+            If there is no character loaded into the input buffer then we
+            Simply ensure our getchar flag is loaded.
+            Otherwise we load the ASCII value of the current char in the
+            input buffer into the AX register and "pop" the char out of the
+            buffer. """
         if self.inBuffer == "":
-            self.getCharFlag = True
+            self.waitingForChar = True
         else:
             self.setRegister('AX', ord(self.inBuffer[0]))
             self.inBuffer = self.inBuffer[1:]
 
     def respondGetChar(self, string):
-        self.getCharFlag = False
-        self.setRegister('AX', ord(string[0]))
-        self.inBuffer = string[1:]
+        """ When we have received a string back from the GUI element to be
+            loaded in with the getChar() function, we merely load the string
+            into the buffer and let the getChar function work. We turn off
+            the waitingForChar flag because we are no longer waiting for a char
+            """
+        self.waitingForChar = False
+        self.inBuffer = string
+        self.getChar()
 
     def getFunctionDescriptions(self, function):
+        """ Returns the docstrings of the instruction set functions. """
         return self.do[function].__doc__
 
     def getFunctions(self):
+        """ Returns a list of the instruction set functions """
         return self.do.keys()
 
     def getEightBitRegisterNames(self):
@@ -100,12 +367,15 @@ class Intel8088(object):
         return ("AH", "AL", "BH", "BL", "CH", "CL", "DH", "DL")
 
     def setJumpLocation(self, l):
+        """ Sets the location to next jump PC to """
         self.jumpLocation = l
 
     def getLookupTable(self):
+        """ Returns the jump table """
         return self.lookupTable
 
     def getStack(self):
+        """ returns the data from the stack """
         return self.stack
 
     def insertInLookupTable(self, label, value):
@@ -309,255 +579,6 @@ class Intel8088(object):
 
         except ValueError:
             return False
-
-    def loadCode(self, lines):
-
-        self.ran = False
-        self.runningAll = False
-        self.lines = lines
-
-        errorString = ""
-
-        lineCount = 0
-
-        mode = "head"
-        self.restart()
-
-        errorCount = 0
-
-        BSScount = 0
-
-        # This for Loop is gonna go thru the self.lines, set up a nice lookUp
-        # table for jumps
-        # and record program start and end. and set up some memory stuff.
-
-        """ FIRST PASS """
-
-        for line in self.lines:
-            # Looping thru every line
-            # we will go thru, at most, 4 modes
-            # a "head" mode - where constants are defined
-            #      eg _EXIT = 1 etc.
-            # a "text" mode (".SECT .TEXT") where the code is located
-            #      on the first loop thru we just keep track of where this is,
-            #      and set up a jump table
-            # a "data" mode (".SECT .DATA") where variables are defined
-            #      str: .ASCIZ "%s f"
-            # a "bss" mode (".SECT .BSS") where memory chunks are defined
-            #      fdes: .SPACE 2
-            line = line.strip()
-
-            if "!" in line:
-                line = line[:line.find("!")].strip()  # ignore comments
-
-            lineCount += 1
-
-            if mode == "head" and "=" in line:
-                line = line.split('=')
-                line[0] = line[0].strip()
-                line[1] = line[1].strip()
-
-                if self.isLocalVar(line[0]):
-                    errorString += "Error on line " + str(lineCount) + \
-                                   ", cannot define \''" + line[0] + \
-                                   "\' more than once.\n"
-                    errorCount += 1
-                else:
-                    self.setLocalVar(line[0], line[1])
-
-                continue
-
-            if ".SECT" in line.upper():
-
-                # record where the .SECT .TEXT section starts, and ends
-                if mode == ".SECT .TEXT":  # ends, we've gone one too far
-                    self.setCodeBounds(1, lineCount - 1)
-                elif line.upper() == ".SECT .TEXT":  # starts we're 1 too short
-                    self.setCodeBounds(0, lineCount)
-
-                mode = line
-                continue
-
-            if ":" in line:  # Spliting on a colon, for defining vars, or jumps
-                temp = line.split(":")[0]
-                if mode == ".SECT .TEXT":
-                    # a : in .SECT .TEXT means a jump location
-                    # we can define multiple jump locations by digits
-                    # but only one by ascii per each ascii name
-
-                    if temp not in self.lookupTable.keys():
-                        self.lookupTable[temp] = lineCount
-                    else:
-                        if temp.isdigit():
-                            # If we're defining multiple jump locations for
-                            # one digit, keep a list
-                            if type(self.lookupTable[temp]) == self.LIST_TYPE:
-                                self.lookupTable[temp].append(lineCount)
-                            else:
-                                self.lookupTable[temp] = [
-                                                        self.lookupTable[temp],
-                                                        lineCount]
-                        else:
-                            errorString += "Duplicate entry: \"" + temp + \
-                                    "\" on line " + str(lineCount) + \
-                                    " and line " + str(self.lookupTable[temp])\
-                                     + "\n"
-
-                elif mode == ".SECT .DATA":
-                    # info in .SECT .DATA follows the format
-                    # str: .ASCIZ "hello world"
-                    # where .ASCIZ means an ascii string with a zero at the end
-                    # and .ASCII means an ascii string
-
-                    if ".ASCIZ" in line.upper() or ".ASCII" in line.upper():
-                        # If we're dealing with a string
-                        if line.count("\"") < 2:
-                            # each string to be defined should be in quotes
-                            # raise error if quotes are messed
-                            errorString += "Fatal error on line " + \
-                                            str(lineCount) + \
-                                            ". Too many quotes.\n"
-                            return errorString
-                        temp2 = self.replaceEscapedSequences(
-                                                line[line.find("\"") + 1:\
-                                                     line.rfind("\"")])
-                        # otherwise grab the stuff in quotes
-                        self.DATA[temp] = [BSScount, BSScount + len(temp2) + \
-                                           (".ASCIZ" in line.upper()) - 1]
-                        # and set temp equal to a list of hex vals of each char
-                        self.addressSpace[BSScount:BSScount + len(temp2)] = \
-                            temp2 + "0" * (".ASCIZ" in line.upper())
-
-                        BSScount += len(temp2) + (".ASCIZ" in line.upper())
-
-                elif mode == ".SECT .BSS":
-                    # info in .SECT .BSS follows the format
-                    # fdes: .SPACE 2
-                    # Where essentially .BSS just defines memory space
-
-                    temp2 = line.split(".SPACE")[1]
-                    # let's find the size of the mem chunk to def
-                    self.BSS[temp.strip()] = [BSScount, BSScount + \
-                                              int(temp2.strip()) - 1]
-                    # and def it in bss as it's start and end pos
-                    BSScount += int(temp2.strip())
-
-        if mode == ".SECT .TEXT" and self.codeBounds[1] == -1:
-            self.codeBounds[1] = len(self.lines)
-
-        if errorString == "":
-            self.setRegister('PC', self.codeBounds[0])
-            self.running = True
-            errorString = ""
-        else:
-            errorString += "Your code cannot be run, it contains %d errors" % \
-                            errorString.count("\n")
-
-        return errorString
-
-    def stopRunning(self, i=1):
-        self.running = False
-        self.ran = True
-        self.runningAll = False
-        print "Machine Stop Running Called " + str(i)
-
-    def addBreakPoint(self, bp):
-        self.breakPoints.append(bp)
-
-    def removeBreakPoint(self, bp):
-        self.breakPoints.remove(bp)
-
-    def runAll(self):
-        totalResult = ""
-        self.runningAll = True
-        while self.running:
-            if self.getRegister('PC') in self.breakPoints:
-                response = self.step()
-                if response is not None:
-                    totalResult += response
-                self.runningAll = False
-                break
-            response = self.step()
-            if response is not None:
-                    totalResult += response
-            if self.getCharFlag:
-                break
-
-        return totalResult
-
-    def step(self):
-        """ This executes a single line of code.
-        Parses the command and performs basic error checking
-            (are we done the program?
-            does the command follow proper syntax (i.e. right arguments)?
-            is the command recognised?)
-        Before passing it off to the command interpreter class."""
-        if self.running:
-            if self.getRegister('PC') >= self.codeBounds[1]:
-                self.stopRunning()
-                return self._OVER
-
-            line = self.lines[self.getRegister('PC')].replace("\t", "")
-            # clear out tabs
-
-            if "!" in line:  # exclamations mean comments
-                line = line[:line.find("!")].strip()  # ignore comments
-
-            if ":" in line:  # colons mean labels, we dealt with those already.
-                line = line[line.find(":") + 1:].strip()  # ignore jump points
-
-            if line.count(",") > 1:  # any command can have at most 2 arguments
-                self.stopRunning(-1)
-                return "Too many commas on line " + str(self.getRegister('PC'))
-
-            command = [self.replaceEscapedSequences(x.strip()) for x in \
-                       line.replace(" ", ",").split(",")]
-
-            for x in range(command.count("")):
-                command.remove("")
-
-            if command is None or command == []:
-                self.lastLine = self.getRegister('PC')
-                self.setRegister('PC', self.getRegister('PC') + 1)
-                return  # skip the empty self.lines
-
-            if command[0] not in self.commandArgs.keys():
-                self.stopRunning(-1)
-                return "Fatal error. " + command[0] + " not recognised."
-
-            if len(command) - 1 != self.commandArgs[command[0]]:
-                self.stopRunning(-1)
-                return "Invalid number of arguments on line " + \
-                    str(self.getRegister('PC')) + ". " + command[0] + \
-                    " expects " + str(self.commandArgs[command[0]]) + \
-                    " argument" + "s" * (self.commandArgs[command[0]] > 1) + \
-                    " and " + str(len(command) - 1) + \
-                    (" were " if len(command) - 1 > 1 else " was ") + "given."
-
-            if command[0] in self.do.keys():
-                try:
-                    response = self.do[command[0]](command,
-                                                   self.getRegister('PC'))
-                except:
-                    response = "Fatal error occurred on line " + \
-                                str(self.getRegister('PC'))
-            else:
-                self.stopRunning(-1)
-                return "Fatal error. " + command[0] + " not recognised."
-
-            if self.jumpLocation != -1:
-                self.lastLine = self.getRegister('PC')
-                self.setRegister('PC', self.jumpLocation)
-                self.jumpLocation = -1
-            else:
-                self.lastLine = self.getRegister('PC')
-                self.setRegister('PC', self.getRegister('PC') + 1)
-
-            if self.getRegister('PC') >= self.codeBounds[1]:
-                self.stopRunning()
-                return self._OVER
-
-            return response
 
     def isRunning(self):
         return self.running

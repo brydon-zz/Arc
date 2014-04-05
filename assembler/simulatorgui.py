@@ -168,7 +168,7 @@ class Simulator(object):
                 self.machine.addBreakPoint(breakPoint)
                 self.linesBuffer.apply_tag(self.textTagBreakpoint, start, end)
 
-    def openFile(self):
+    def openFileDialog(self):
         """Opens up a file dialog to select a file
         then reads that file in to the assembler. """
 
@@ -189,12 +189,13 @@ class Simulator(object):
         if fileName is None:
             return
 
-        self.open(fileName)
+        self.openFile(fileName)
 
-    def open(self, fileName):
+    def openFile(self, fileName):
         """ Opens and reads in the file fileName """
-        print fileName
+
         try:
+            self.new()
             self.fileName = None
 
             f = open(fileName, 'r')
@@ -237,11 +238,11 @@ class Simulator(object):
             tokenStart = self.codeBuffer.get_iter_at_line_offset(lineOffset
                                                            + srow - 1, scol)
 
-            tokenEnd = self.codeBuffer.get_iter_at_line_offset(lineOffset +
-                                                               erow - 1, ecol)
-            # TODO: make this so that it doesn't overshoot
-            endOfLine = self.codeBuffer.get_iter_at_line_offset(lineOffset
-                                                           + srow, 0)
+            if srow == self.codeBuffer.get_line_count():
+                endOfLine = self.codeBuffer.get_end_iter()
+            else:
+                endOfLine = self.codeBuffer.get_iter_at_line_offset(lineOffset
+                                                                    + srow, 0)
 
             tokenRep = repr(token).upper().strip("'")
 
@@ -250,11 +251,14 @@ class Simulator(object):
             elif repr(token) == "'!'":
                 self.commentLine = line
 
-                self.codeBuffer.apply_tag(self.textTagLightGreyText, tokenStart, endOfLine)
+                self.codeBuffer.apply_tag(self.textTagLightGreyText,
+                                          tokenStart, endOfLine)
 
             comment = self.commentLine == line
 
             if tokenize.tok_name[typeOfToken] == "NAME":
+                tokenEnd = self.codeBuffer.get_iter_at_line_offset(lineOffset +
+                                                               erow - 1, ecol)
                 if not comment:
                     self.codeBuffer.remove_all_tags(tokenStart, tokenEnd)
                     if tokenRep in self.functions:
@@ -281,13 +285,15 @@ class Simulator(object):
                         self.codeBuffer.apply_tag(self.textTagRedText,
                                                   tokenStart, tokenEnd)
             elif tokenize.tok_name[typeOfToken] == "NUMBER":
+                tokenEnd = self.codeBuffer.get_iter_at_line_offset(lineOffset +
+                                                               erow - 1, ecol)
                 self.codeBuffer.remove_all_tags(tokenStart, tokenEnd)
                 self.codeBuffer.apply_tag(self.textTagGreenText,
                                           tokenStart, tokenEnd)
 
         try:
             tokenize.tokenize(f.readline, handleSyntaxHighlightingToken)
-        except:
+        except Exception:
             """ Let slide.
             This is called if there is incorrect indentation, etc,
             in the source being read """
@@ -564,7 +570,7 @@ class Simulator(object):
                                       lambda *args: self.new())
 
         self.builder.get_object("open").connect("activate",
-                                      lambda *args: self.openFile())
+                                      lambda *args: self.openFileDialog())
 
         self.builder.get_object("save").connect("activate",
                                       lambda *args: self.saveFile())
@@ -885,7 +891,7 @@ class Simulator(object):
             self.downFile = widget.get_child().props.file
 
         self.clearIcon(widget)
-        self.openFile()
+        self.openFileDialog()
 
     def pressStepButton(self, widget, event):
         if self.downFile == "":
@@ -1122,7 +1128,7 @@ class Simulator(object):
 
         if len(self.keysDown) == 2 and (('O' in self.keysDown) ^ ('o' in self.keysDown)) and (('Control_L' in self.keysDown) ^ ('Control_R' in self.keysDown)):
             self.keysDown = {}
-            self.openFile()
+            self.openFileDialog()
         elif len(self.keysDown) == 2 and (('S' in self.keysDown) ^ ('s' in self.keysDown)) and (('Control_L' in self.keysDown) ^ ('Control_R' in self.keysDown)):
             self.keysDown = {}
             self.saveFile()
@@ -1147,7 +1153,6 @@ class Simulator(object):
             if self.machine.requestsGetChar():
                 self.machine.respondGetChar(self.getChar())
                 if self.machine.isRunningAll():
-                    print "running it all o'er again"
                     self.runAll()
 
             if not self.machine.isRunning():
@@ -1438,7 +1443,7 @@ def main():
 
     if len(sys.argv) > 1:
         if os.path.isfile(sys.argv[1]):
-            A.open(sys.argv[1])
+            A.openFile(sys.argv[1])
 
     Gtk.main()
 
