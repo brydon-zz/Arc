@@ -1,20 +1,20 @@
 """
-The Simulator's GUI 
+The Simulator's GUI
 Uses the GTK3 library. Features include
 
     - Development Environment with Syntax Highlighting
     - Simulates the execution of 8088 Assembly Code
     - Provides Graphical Representation of Registers, Memory, and Stack
     - Helpful Documentation of the Instruction Set.
-    
-The interface loads in the basic structure from an XML file and styles 
+
+The interface loads in the basic structure from an XML file and styles
 it according to a CSS file. It then creates an Intel 8088 Machine.
-You can load in assembly language files and edit them in place then simulate them.
-Stepping through code one line at a time or executing the whole lot.
-You can set breakpoints for ease of debugging.
+You can load in assembly language files and edit them in place then
+simulate them. Stepping through code one line at a time or executing
+the whole lot. You can set breakpoints for ease of debugging.
 
 The simulator passes the command to the Intel 8088 Machine.
-The GUI displays the values of the registers, stack, and memory.   
+The GUI displays the values of the registers, stack, and memory.
 
     Copyright (C) 2014 Brydon Eastman
 
@@ -34,27 +34,41 @@ The GUI displays the values of the registers, stack, and memory.
     email to brydon.eastman@gmail.com.
 """
 
-from gi.repository import Gtk, Gdk, GObject, Pango, GdkPixbuf
+from gi.repository import Gdk, GdkPixbuf, GObject, Gtk, Pango
 
-import intel8088, readliner, entrydialog, sys, os, tokenize, time
+import intel8088
+import readliner
+import entrydialog
+import sys
+import os
+import tokenize
+import time
 
 """"Simulator Class for Intel 8088 Architecture"""
+
+
 class Simulator(object):
     _PROGRAMNAME = "The Best 8088 Simulator"
     _VERSION = "0.5"
-    _DESCRIPTION = "A Program for Writing and Simulating Intel 8088 Assembly Code"
+    _DESCRIPTION = "A Program for Writing and Simulating\
+ Intel 8088 Assembly Code"
     _WEBSITE = "http://www.beastman.ca/"
     _LICENSE = Gtk.License.GPL_2_0
     _PATHDELIM = os.path.sep
     _CSSFILENAME = "default.css"
     _INTERFACEXMLFILENAME = "defaultInterface.xml"
+    _DOUBLECLICKTIME = 0.2
+    # the time, in seconds, between clicks that determines a double click
 
     def __init__(self):
-        self._PATH = self._PATHDELIM.join(os.path.dirname(os.path.realpath(__file__)).split(self._PATHDELIM)[:-1])
+        localDir = os.path.dirname(os.path.realpath(__file__))
+        self._PATH = self._PATHDELIM.join(localDir.split(self._PATHDELIM)[:-1])
         self._KEYTIMEOUT = 4  # TODO: maybe replace this with focus lost?
 
         """ Begin GUI """
-        cssFile = self._PATHDELIM.join([self._PATHDELIM + "styles", self._CSSFILENAME])
+        cssFile = self._PATHDELIM.join([self._PATHDELIM + "styles",
+                                        self._CSSFILENAME])
+
         styles = open(self._PATH + cssFile, 'r').read()
 
         """Handlers for the actions in the interface."""
@@ -63,7 +77,8 @@ class Simulator(object):
         self.breakpointDClickTime = 0
         # Make stuff from the GLADE file and setup events
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "xml", self._INTERFACEXMLFILENAME]))
+        xmlPath = [self._PATHDELIM + "xml", self._INTERFACEXMLFILENAME]
+        self.builder.add_from_file(self._PATH + self._PATHDELIM.join(xmlPath))
 
         self.win = self.builder.get_object("window")
         self.win.set_name('As88Window')
@@ -81,10 +96,14 @@ class Simulator(object):
         self.nameGuiElementsForCSS()
         self.style_provider = Gtk.CssProvider()
         self.style_provider.load_from_data(styles)
-        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(),
+                                    self.style_provider,
+                                    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         # Window Icon -> what shows up in unity bar/toolbar/etc.
-        self.win.set_icon_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "icon.png"]))
+        iconPath = [self._PATHDELIM + "images", "icon.png"]
+        self.win.set_icon_from_file(self._PATH +
+                                    self._PATHDELIM.join(iconPath))
 
         self.setUpTextTags()
 
@@ -106,8 +125,8 @@ class Simulator(object):
 
         self.updateStatusLabel()
 
-        # return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
-        self.ESCAPE_CHARS = ['\b', '\n', '\v', '\t', '\f', "'", '"', '\a', '\r']
+        self.ESCAPE_CHARS = ['\b', '\n', '\v', '\t',
+                             '\f', "'", '"', '\a', '\r']
 
         self.displayInHex = True
 
@@ -126,29 +145,39 @@ class Simulator(object):
         if self.breakpointDClickTime == 0:
             self.breakpointDClickTime = time.time()
         else:
-            if time.time() - self.breakpointDClickTime < 0.2:
-                self.breakpointDClickTime = 0
-                breakPoint = self.lineNumberTV.get_iter_at_location(event.x, event.y).get_line()
-                start = self.linesBuffer.get_iter_at_line(breakPoint)
-
-                if breakPoint + 1 == self.linesBuffer.get_line_count():
-                    end = self.linesBuffer.get_end_iter()
-                else:
-                    end = self.linesBuffer.get_iter_at_line_offset(breakPoint + 1, 0)
-
-                if self.machine.isBreakPoint(breakPoint):
-                    self.machine.removeBreakPoint(breakPoint)
-                    self.linesBuffer.remove_tag(self.textTagBreakpoint, start, end)
-                else:
-                    self.machine.addBreakPoint(breakPoint)
-                    self.linesBuffer.apply_tag(self.textTagBreakpoint, start, end)
-            else:
+            if time.time() - self.breakpointDClickTime > self._DOUBLECLICKTIME:
                 self.breakpointDClickTime = time.time()
+                return
+
+            self.breakpointDClickTime = 0
+            breakPoint = self.lineNumberTV.get_iter_at_location(event.x,
+                                                            event.y).get_line()
+
+            start = self.linesBuffer.get_iter_at_line(breakPoint)
+
+            if breakPoint + 1 == self.linesBuffer.get_line_count():
+                end = self.linesBuffer.get_end_iter()
+            else:
+                end = self.linesBuffer.get_iter_at_line_offset(breakPoint + 1,
+                                                               0)
+
+            if self.machine.isBreakPoint(breakPoint):
+                self.machine.removeBreakPoint(breakPoint)
+                self.linesBuffer.remove_tag(self.textTagBreakpoint, start, end)
+            else:
+                self.machine.addBreakPoint(breakPoint)
+                self.linesBuffer.apply_tag(self.textTagBreakpoint, start, end)
 
     def openFile(self):
-        """Opens up a file dialog to select a file then reads that file in to the assembler. """
+        """Opens up a file dialog to select a file
+        then reads that file in to the assembler. """
 
-        fileChooser = Gtk.FileChooserDialog(title="Choose A File", parent=self.win, buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        fileChooser = Gtk.FileChooserDialog(title="Choose A File",
+                                            parent=self.win,
+                                            buttons=(Gtk.STOCK_CANCEL,
+                                                     Gtk.ResponseType.CANCEL,
+                                                     Gtk.STOCK_OPEN,
+                                                     Gtk.ResponseType.OK))
         response = fileChooser.run()
 
         fileName = None
@@ -157,7 +186,7 @@ class Simulator(object):
 
         fileChooser.destroy()
 
-        if fileName == None:
+        if fileName is None:
             return
 
         self.open(fileName)
@@ -183,10 +212,10 @@ class Simulator(object):
             self.outBuffer.set_text("")
             self.fileName = fileName
             self.updateWindowTitle()
-            # self.win.set_title(self._PROGRAMNAME + " - " + "Untitled" if self.fileName == None else self.fileName)
 
         except IOError:
-            self.outPut("There was a fatal issue opening " + fileName + ". Are you sure it's a file?")
+            self.outPut("There was a fatal issue opening " + fileName
+                        + ". Are you sure it's a file?")
 
     def clickSeperator(self, a, b):
         """When the separator label is clicked, expand the viewport."""
@@ -201,49 +230,67 @@ class Simulator(object):
         """Highlight the syntax of the text in the codeBuffer."""
         self.commentLine = -1
 
-        def handleSyntaxHighlightingToken(typeOfToken, token, (srow, scol), (erow, ecol), line):
+        def handleSyntaxHighlightingToken(typeOfToken, token, (srow, scol),
+                                          (erow, ecol), line):
             """Get's called by tokenizer to handle each token."""
 
-            # print "%d,%d-%d,%d:\t%s\t%s" % \
-            #    (srow, scol, erow, ecol, tokenize.tok_name[typeOfToken], repr(token))
+            tokenStart = self.codeBuffer.get_iter_at_line_offset(lineOffset
+                                                           + srow - 1, scol)
+
+            tokenEnd = self.codeBuffer.get_iter_at_line_offset(lineOffset +
+                                                               erow - 1, ecol)
+            # TODO: make this so that it doesn't overshoot
+            endOfLine = self.codeBuffer.get_iter_at_line_offset(lineOffset
+                                                           + srow, 0)
+
+            tokenRep = repr(token).upper().strip("'")
 
             if tokenize.tok_name[typeOfToken] == "ENDMARKER":
                 self.updateLineCounter()
             elif repr(token) == "'!'":
                 self.commentLine = line
-                # self.codeBuffer.remove_all_tags(self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
-                self.codeBuffer.apply_tag(self.textTagLightGreyText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + srow, 0))
+
+                self.codeBuffer.apply_tag(self.textTagLightGreyText, tokenStart, endOfLine)
 
             comment = self.commentLine == line
 
-            # print repr(token), tokenize.tok_name[typeOfToken]
             if tokenize.tok_name[typeOfToken] == "NAME":
                 if not comment:
-                    self.codeBuffer.remove_all_tags(self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
-                    if repr(token).upper().strip("'") in self.functions:
-                        self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
-                    elif repr(token).upper().strip("'") in self.machine.getRegisterNames():
-                        self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
-                        self.codeBuffer.apply_tag(self.textTagBlueText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
-                    elif repr(token).upper().strip("'") in self.machine.getEightBitRegisterNames():
-                        self.codeBuffer.apply_tag(self.textTagBlueText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
-                    elif repr(token).upper().strip("'") in ["SECT", "DATA", "BSS", "TEXT"]:
-                        self.codeBuffer.apply_tag(self.textTagBold, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
-                        self.codeBuffer.apply_tag(self.textTagGreyText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
+                    self.codeBuffer.remove_all_tags(tokenStart, tokenEnd)
+                    if tokenRep in self.functions:
+                        self.codeBuffer.apply_tag(self.textTagBold,
+                                                  tokenStart, tokenEnd)
+
+                    elif tokenRep in self.machine.getRegisterNames():
+                        self.codeBuffer.apply_tag(self.textTagBold,
+                                                  tokenStart, tokenEnd)
+                        self.codeBuffer.apply_tag(self.textTagBlueText,
+                                                  tokenStart, tokenEnd)
+
+                    elif tokenRep in self.machine.getEightBitRegisterNames():
+                        self.codeBuffer.apply_tag(self.textTagBlueText,
+                                                  tokenStart, tokenEnd)
+
+                    elif tokenRep in ["SECT", "DATA", "BSS", "TEXT"]:
+                        self.codeBuffer.apply_tag(self.textTagBold,
+                                                  tokenStart, tokenEnd)
+                        self.codeBuffer.apply_tag(self.textTagGreyText,
+                                                  tokenStart, tokenEnd)
+
                     else:
-                        self.codeBuffer.apply_tag(self.textTagRedText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
+                        self.codeBuffer.apply_tag(self.textTagRedText,
+                                                  tokenStart, tokenEnd)
             elif tokenize.tok_name[typeOfToken] == "NUMBER":
-                self.codeBuffer.remove_all_tags(self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
-                self.codeBuffer.apply_tag(self.textTagGreenText, self.codeBuffer.get_iter_at_line_offset(lineOffset + srow - 1, scol), self.codeBuffer.get_iter_at_line_offset(lineOffset + erow - 1, ecol))
-            else:
-                1
-                # print "%d,%d-%d,%d:\t%s\t%s" % \
-                #    (srow, scol, erow, ecol, tokenize.tok_name[typeOfToken], repr(token))
+                self.codeBuffer.remove_all_tags(tokenStart, tokenEnd)
+                self.codeBuffer.apply_tag(self.textTagGreenText,
+                                          tokenStart, tokenEnd)
 
         try:
             tokenize.tokenize(f.readline, handleSyntaxHighlightingToken)
         except:
-            """ Let slide, thisis called if there is incorrect indentation, etc, in the source being read """
+            """ Let slide.
+            This is called if there is incorrect indentation, etc,
+            in the source being read """
 
     def hoverOverSeperator(self, a, b):
         """Change the style of the separator label when hovered on."""
@@ -254,12 +301,18 @@ class Simulator(object):
         self.seperatorLabel.set_name("seperatorLabel" + str(self.shrunk))
 
     def updateLineCounter(self):
-        """Updates the line number label on the left of the code block. get's called whenever the lines change."""
-        self.linesBuffer.set_text("\n".join([" " + str(x) for x in range(self.codeBuffer.get_line_count())]))
+        """Updates the line number label on the left of the code block.
+        get's called whenever the lines change."""
+        lines = [" " + str(x) for x in range(self.codeBuffer.get_line_count())]
+        self.linesBuffer.set_text("\n".join(lines))
 
     def updateRegisters(self):
-        """ Simply put, updates the register, flags, and memory gui elements with their respective values. """
-        if self.machine.isRunningAll(): return  # if the user's clicked the runAll button, then theres no point updating every iter. it's inefficient
+        """ Simply put, updates the register, flags, and memory gui elements
+        with their respective values. """
+        if self.machine.isRunningAll():
+            return
+        # if the user's clicked the runAll button, then theres no
+        # point updating every iter. it's inefficient
 
         self.oFlagOutMachine.set_text(str(int(self.machine.getFlag('O'))))
         self.dFlagOutMachine.set_text(str(int(self.machine.getFlag('D'))))
@@ -308,12 +361,18 @@ class Simulator(object):
             self.regDI.set_text(str(self.machine.getRegister('DI')))
             self.regSI.set_text(str(self.machine.getRegister('SI')))
             self.regPC.set_text(str(self.machine.getRegister('PC')))
-            self.memory.get_buffer().set_text("".join([self.escapeSequences(x) for x in self.machine.getFromMemoryAddress(0, 288 - self.backSlashCount)]))
+
+            memToDisplay = self.machine.getFromMemoryAddress(0,
+                                                     288 - self.backSlashCount)
+
+            escapedMem = [self.escapeSequences(x) for x in memToDisplay]
+            self.memory.get_buffer().set_text("".join(escapedMem))
             self.colourMemory()
 
     def makeHelpBox(self):
-        """Called at construction, creates the help box including a TreeView to display assembly instructions
-        and a text view to display the selected instructions documentation."""
+        """Called at construction, creates the help box including a TreeView to
+        display assembly instructions and a text view to display the selected
+        instructions documentation."""
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
 
@@ -333,8 +392,10 @@ class Simulator(object):
         def onHelpTreeSelectionChanged(selection):
             """Called whenever the selected item in the TreeView."""
             model, treeiter = selection.get_selected()
-            if treeiter != None:
-                rawHelpText = str(self.machine.getFunctionDescriptions(model[treeiter][0])).split("\n")
+            if treeiter is not None:
+                doc = self.machine.getFunctionDescriptions(model[treeiter][0])
+                rawHelpText = str(doc).split("\n")
+
                 instructionName = rawHelpText[0].split(":")[1]
                 instructionTitle = rawHelpText[1].split(":")[1]
                 instructionDescription = rawHelpText[3].split(":")[1]
@@ -404,16 +465,18 @@ class Simulator(object):
                     else:
                         self.argumentsFrame2.set_visible(False)
 
-
                 flags = rawHelpText[4].split(":")[1].split(",")
 
-                flagsOut = (self.oFlagOut, self.dFlagOut, self.iFlagOut, self.sFlagOut, self.zFlagOut, self.aFlagOut, self.pFlagOut, self.cFlagOut)
+                flagsOut = (self.oFlagOut, self.dFlagOut, self.iFlagOut,
+                            self.sFlagOut, self.zFlagOut, self.aFlagOut,
+                            self.pFlagOut, self.cFlagOut)
                 for index, flag in enumerate(flags):
                     flagsOut[index].set_text(flag)
 
                 self.instructionName.set_text(instructionName)
                 self.instructionTitle.set_text(instructionTitle)
-                self.instructionDescription.get_buffer().set_text(instructionDescription)
+                self.instructionDescription.get_buffer().set_text(
+                                                        instructionDescription)
 
         tree.get_selection().connect("changed", onHelpTreeSelectionChanged)
         tree.get_selection().select_iter(tree.get_model().get_iter_first())
@@ -447,7 +510,7 @@ class Simulator(object):
         self.regDI.set_name("regDI")
         self.regPC.set_name("regPC")
         self.builder.get_object("registersLabel").set_name("registersLabel")
-        self.builder.get_object("registersEndLabel").set_name("registersEndLabel")
+        self.builder.get_object("registersEndLabel").set_name("registersEnd")
 
         self.memory.set_name("memory")
         self.notebook.set_name("notebook")
@@ -477,7 +540,8 @@ class Simulator(object):
         self.pFlagOut.set_name("pFlagOut")
         self.cFlagOut.set_name("cFlagOut")
 
-        self.builder.get_object("instructionHelpBox").set_name("instructionHelpBox")
+        self.builder.get_object("instructionHelpBox").set_name(
+                                                        "instructionHelpBox")
 
     def connectSignals(self):
         """ Connects handler signals to GUI elements """
@@ -489,27 +553,48 @@ class Simulator(object):
         self.win.connect('key_press_event', self.onKeyPressEvent)
         self.win.connect('key_release_event', self.onKeyReleaseEvent)
 
-        self.seperatorLabelEB.connect('button_press_event', self.clickSeperator)
-        self.seperatorLabelEB.connect('enter-notify-event', self.hoverOverSeperator)
-        self.seperatorLabelEB.connect('leave-notify-event', self.hoverOffSeperator)
+        self.seperatorLabelEB.connect('button_press_event',
+                                      self.clickSeperator)
+        self.seperatorLabelEB.connect('enter-notify-event',
+                                      self.hoverOverSeperator)
+        self.seperatorLabelEB.connect('leave-notify-event',
+                                      self.hoverOffSeperator)
 
-        self.builder.get_object("new").connect("activate", lambda *args: self.new())
-        self.builder.get_object("open").connect("activate", lambda *args: self.openFile())
-        self.builder.get_object("save").connect("activate", lambda *args: self.saveFile())
-        self.builder.get_object("saveas").connect("activate", lambda *args: self.saveFile(saveAs=True))
+        self.builder.get_object("new").connect("activate",
+                                      lambda *args: self.new())
+
+        self.builder.get_object("open").connect("activate",
+                                      lambda *args: self.openFile())
+
+        self.builder.get_object("save").connect("activate",
+                                      lambda *args: self.saveFile())
+
+        self.builder.get_object("saveas").connect("activate",
+                                      lambda *args: self.saveFile(saveAs=True))
+
         self.builder.get_object("quit").connect("activate", self.exit)
 
-        self.builder.get_object("step").connect("activate", lambda *args: self.stepButtonClicked())
-        self.builder.get_object("all").connect("activate", lambda *args: self.runAll())
-        self.builder.get_object("stopRunning").connect("activate", lambda *args: self.stopRunning(-1))
+        self.builder.get_object("step").connect("activate",
+                                      lambda *args: self.stepButtonClicked())
 
-        self.builder.get_object("about").connect("activate", lambda *args: self.makeAboutDialogue())
-        self.codeBuffer.connect("notify::cursor-position", self.updateStatusLabel)
+        self.builder.get_object("all").connect("activate",
+                                      lambda *args: self.runAll())
+
+        self.builder.get_object("stopRunning").connect("activate",
+                                      lambda *args: self.stopRunning(-1))
+
+        self.builder.get_object("about").connect("activate",
+                                      lambda *args: self.makeAboutDialogue())
+
+        self.codeBuffer.connect("notify::cursor-position",
+                                      lambda *args: self.updateStatusLabel())
+
         self.codeBuffer.connect("changed", self.textChanged)
         self.lineNumberTV.connect("button-press-event", self.setBreakpoint)
 
     def assignGuiElementsToVariables(self):
-        """ Binds critical GUI elements from the builder object to variable names. """
+        """ Binds critical GUI elements from the builder object
+            to variable names. """
         self.outText = self.builder.get_object("outText")
         self.code = self.builder.get_object("code")
         self.stack = self.builder.get_object("stack")
@@ -593,12 +678,15 @@ class Simulator(object):
 
         self.noArgsLabel = self.builder.get_object("noArgsLabel")
 
-        self.instructionDescription = self.builder.get_object("instructionDescription")
+        self.instructionDescription = self.builder.get_object(
+                                                    "instructionDescription")
         self.instructionName = self.builder.get_object("instructionName")
         self.instructionTitle = self.builder.get_object("instructionTitle")
 
     def setUpTextTags(self):
-        """ Constructs the various text tags used to style text within textviews. """
+        """ Constructs the various text tags used
+            to style text within textviews. """
+
         self.textTagBold = Gtk.TextTag()
         self.textTagBold.set_property("weight", Pango.Weight.BOLD)
         self.textTagGreenText = Gtk.TextTag()
@@ -641,22 +729,29 @@ class Simulator(object):
         self.memoryBuffer.get_tag_table().add(self.textTagGreen)
         self.memoryBuffer.get_tag_table().add(self.textTagBlue)
         self.memoryBuffer.get_tag_table().add(self.textTagPurple)
-        self.memoryColours = [self.textTagRed, self.textTagOrange, self.textTagMagenta, self.textTagGreen, self.textTagBlue, self.textTagPurple, self.textTagGrey]
-
+        self.memoryColours = [self.textTagRed, self.textTagOrange,
+                              self.textTagMagenta, self.textTagGreen,
+                              self.textTagBlue, self.textTagPurple,
+                              self.textTagGrey]
 
         self.textTagBreakpoint = Gtk.TextTag()
         self.textTagBreakpoint.set_property("background", "red")
         self.linesBuffer.get_tag_table().add(self.textTagBreakpoint)
 
     def updateStatusLabel(self, *args):
-        """ Updates the status label at the bottom of the screen, including current line number,
-        status of the simulation, etc. """
-        self.statusLabel.set_text(" Line: " + str(self.codeBuffer.get_iter_at_offset(self.codeBuffer.props.cursor_position).get_line()) + "\t" + self.machine.isRunning() * "Running")
+        """ Updates the status label at the bottom of the screen,
+            including current line number, status of the simulation, etc. """
+        lineNum = self.codeBuffer.get_iter_at_offset(
+                            self.codeBuffer.props.cursor_position).get_line()
+
+        self.statusLabel.set_text(" Line: " + str(lineNum) +
+                                  "\t" + self.machine.isRunning() * "Running")
 
     def updateStack(self):
         """ Updates the stack gui element """
 
-        if self.machine.isRunningAll(): return
+        if self.machine.isRunningAll():
+            return
         if self.displayInHex:
             self.stackBuffer.set_text("\n".join(["0"*(4 - len(hex(int(x)).split("x")[1])) + hex(int(x)).split("x")[1] for x in self.machine.getStack()]))
         else:
@@ -703,7 +798,8 @@ class Simulator(object):
         New, Open, Save, Run All, Step Once, Stop Stimulation """
 
         new = Gtk.Image()
-        new.set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "newFileIcon.png"]))
+        newPath = [self._PATHDELIM + "images", "newFileIcon.png"]
+        new.set_from_file(self._PATH + self._PATHDELIM.join(newPath))
 
         newEB = Gtk.EventBox()
         newEB.add(new)
@@ -712,7 +808,8 @@ class Simulator(object):
         self.buttonBox.pack_start(newEB, False, False, 1)
 
         openImage = Gtk.Image()
-        openImage.set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "openIcon.png"]))
+        openPath = [self._PATHDELIM + "images", "openIcon.png"]
+        openImage.set_from_file(self._PATH + self._PATHDELIM.join(openPath))
 
         openEB = Gtk.EventBox()
         openEB.add(openImage)
@@ -721,7 +818,8 @@ class Simulator(object):
         self.buttonBox.pack_start(openEB, False, False, 1)
 
         save = Gtk.Image()
-        save.set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "saveIcon.png"]))
+        savePath = [self._PATHDELIM + "images", "saveIcon.png"]
+        save.set_from_file(self._PATH + self._PATHDELIM.join(savePath))
 
         saveEB = Gtk.EventBox()
         saveEB.add(save)
@@ -730,7 +828,8 @@ class Simulator(object):
         self.buttonBox.pack_start(saveEB, False, False, 1)
 
         allIcon = Gtk.Image()
-        allIcon.set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "allIcon.png"]))
+        allPath = [self._PATHDELIM + "images", "allIcon.png"]
+        allIcon.set_from_file(self._PATH + self._PATHDELIM.join(allPath))
 
         allEB = Gtk.EventBox()
         allEB.add(allIcon)
@@ -739,7 +838,8 @@ class Simulator(object):
         self.buttonBox.pack_start(allEB, False, False, 1)
 
         step = Gtk.Image()
-        step.set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "stepIcon.png"]))
+        stepPath = [self._PATHDELIM + "images", "stepIcon.png"]
+        step.set_from_file(self._PATH + self._PATHDELIM.join(stepPath))
 
         stepEB = Gtk.EventBox()
         stepEB.add(step)
@@ -748,7 +848,8 @@ class Simulator(object):
         self.buttonBox.pack_start(stepEB, False, False, 1)
 
         stop = Gtk.Image()
-        stop.set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "stopIcon.png"]))
+        stopPath = [self._PATHDELIM + "images", "stopIcon.png"]
+        stop.set_from_file(self._PATH + self._PATHDELIM.join(stopPath))
 
         stopEB = Gtk.EventBox()
         stopEB.add(stop)
@@ -767,49 +868,70 @@ class Simulator(object):
         allEB.connect('button_press_event', self.pressAllButton)
         stopEB.connect('button_press_event', self.pressStopButton)
 
-    def pressNewButton(self, widget, event):
-        if self.downFile == "": self.downFile = widget.get_child().props.file
+    def clearIcon(self, widget):
+        emptyPath = [self._PATHDELIM + "images", "empty.png"]
+        widget.get_child().set_from_file(
+                                self._PATH + self._PATHDELIM.join(emptyPath))
 
-        widget.get_child().set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "empty.png"]))
+    def pressNewButton(self, widget, event):
+        if self.downFile == "":
+            self.downFile = widget.get_child().props.file
+
+        self.clearIcon(widget)
         self.new()
 
     def pressOpenButton(self, widget, event):
-        if self.downFile == "": self.downFile = widget.get_child().props.file
+        if self.downFile == "":
+            self.downFile = widget.get_child().props.file
 
-        widget.get_child().set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "empty.png"]))
+        self.clearIcon(widget)
         self.openFile()
 
     def pressStepButton(self, widget, event):
-        if self.downFile == "": self.downFile = widget.get_child().props.file
+        if self.downFile == "":
+            self.downFile = widget.get_child().props.file
 
-        widget.get_child().set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "empty.png"]))
+        self.clearIcon(widget)
         self.stepButtonClicked()
 
     def pressAllButton(self, widget, event):
-        if self.downFile == "": self.downFile = widget.get_child().props.file
+        if self.downFile == "":
+            self.downFile = widget.get_child().props.file
 
-        widget.get_child().set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "empty.png"]))
+        self.clearIcon(widget)
         self.runAll()
 
     def pressSaveButton(self, widget, event):
-        if self.downFile == "": self.downFile = widget.get_child().props.file
+        if self.downFile == "":
+            self.downFile = widget.get_child().props.file
 
-        widget.get_child().set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "empty.png"]))
+        self.clearIcon(widget)
         self.saveFile()
 
     def pressStopButton(self, widget, event):
-        if self.downFile == "": self.downFile = widget.get_child().props.file
+        if self.downFile == "":
+            self.downFile = widget.get_child().props.file
 
-        widget.get_child().set_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "empty.png"]))
+        self.clearIcon(widget)
 
-        if self.machine.isRunning(): self.stopRunning(1)
+        if self.machine.isRunning():
+            self.stopRunning(1)
         self.updateStatusLabel()
 
     def saveFile(self, saveAs=False):
-        """ Saves the file.  If the file hans't been previously saved or if saveAs == True then a dialog propmts the user for a location
-        else it'll save in the same place it has been historically saved. """
-        if self.fileName == None or saveAs:
-            fileChooser = Gtk.FileChooserDialog("Save your file", self.win, Gtk.FileChooserAction.SAVE, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.ACCEPT))
+        """ Saves the fileToSave.  If the fileToSave hans't been previously
+        saved or if saveAs == True then a dialog propmts the user for a
+        location else it'll save in the same place it has been historically
+        saved. """
+
+        if self.fileName is None or saveAs:
+            fileChooser = Gtk.FileChooserDialog("Save your fileToSave",
+                                                self.win,
+                                                Gtk.FileChooserAction.SAVE,
+                                                (Gtk.STOCK_CANCEL,
+                                                 Gtk.ResponseType.CANCEL,
+                                                 Gtk.STOCK_SAVE,
+                                                 Gtk.ResponseType.ACCEPT))
             response = fileChooser.run()
 
             fileName = None
@@ -818,12 +940,17 @@ class Simulator(object):
 
             fileChooser.destroy()
             self.fileName = fileName
-            if fileName != None: self.saveFile()
+            if fileName is not None:
+                self.saveFile()
         else:
             try:
-                file = open(self.fileName, "w")
-                file.write(self.codeBuffer.get_text(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter(), False))
-                file.close()
+                codeStart = self.codeBuffer.get_start_iter()
+                codeEnd = self.codeBuffer.get_end_iter()
+
+                codeText = self.codeBuffer.get_text(codeStart, codeEnd, False)
+                fileToSave = open(self.fileName, "w")
+                fileToSave.write(codeText)
+                fileToSave.close()
 
                 self.codeBuffer.set_modified(False)
                 self.updateWindowTitle()
@@ -841,7 +968,8 @@ class Simulator(object):
 
         self.outBuffer.set_text("")
         self.codeBuffer.set_modified(False)
-        self.codeBuffer.remove_all_tags(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter())
+        self.codeBuffer.remove_all_tags(self.codeBuffer.get_start_iter(),
+                                        self.codeBuffer.get_end_iter())
         self.codeBuffer.set_text("")
 
         self.machine.restart()
@@ -851,17 +979,30 @@ class Simulator(object):
         # self.sysCodes = as88.getSysCodes()
 
     def runAll(self):
-        """ If the simulation isn't running, then it is started and run in full with the GUI only being updated afterwards.
-            If the simulation is running, then it runs until completion from it's current state, with GUI only being updated after.
-            If the simulation has already run, then it prompts the user if he wishes to restart, and does so. """
-        if not self.machine.hasRun():  # If we aren't waiting on a restart prompt
+        """ If the simulation isn't running, then it is started and run in full
+            with the GUI only being updated afterwards.
+
+            If the simulation is running, then it runs until completion from
+            it's current state, with GUI only being updated after.
+
+            If the simulation has already run, then it prompts the user if he
+            wishes to restart, and does so. """
+
+        if not self.machine.hasRun():  # If we aren't waiting on a restart
             if not self.machine.isRunning():  # if We're not running, start
                 self.startRunning()
             else:
-                startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 0)  # If we are running, we got a arrow to get ridda
+                # If we are running, we got an arrow to get rid of
+                startOfArrow = self.codeBuffer.get_iter_at_line_offset(
+                                               self.machine.getLastLine(), 0)
+
                 if not startOfArrow.ends_line():
-                    endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 1)
-                    if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
+                    endOfArrow = self.codeBuffer.get_iter_at_line_offset(
+                                                self.machine.getLastLine(), 1)
+
+                    arrowText = self.codeBuffer.get_text(startOfArrow,
+                                                         endOfArrow, False)
+                    if arrowText == ">":
                         self.codeBuffer.delete(startOfArrow, endOfArrow)
 
             self.outPutFromMachine(self.machine.runAll())
@@ -869,12 +1010,16 @@ class Simulator(object):
             self.updateRegisters()
             self.updateStack()
         else:
-            if self.restartPrompt(): self.runAll()
+            if self.restartPrompt():
+                self.runAll()
 
     def restartPrompt(self):
-        """ Presents a dialog asking the user if they wish to restart the simulation """
+        """ Presents a dialog asking the user if they wish to restart the
+            simulation """
         dialog = Gtk.MessageDialog(self.win, 0, Gtk.MessageType.QUESTION,
-            Gtk.ButtonsType.YES_NO, "Do You Wish to Restart?", title="Restart the simulation?")
+                                   Gtk.ButtonsType.YES_NO,
+                                   "Do You Wish to Restart?",
+                                   title="Restart the simulation?")
 
         response = dialog.run()
 
@@ -890,9 +1035,10 @@ class Simulator(object):
             return False
 
     def startRunning(self):
-        """Loads in the code to run, intialises all local variables and labels as set up in the code.
-        First pass for forward references, and setting up local vars, etc.
-        The self.running flag is set so the user can step thru accordingly. """
+        """Loads in the code to run, intialises all local variables and labels
+        as set up in the code. First pass for forward references, and setting
+        up local vars, etc. The self.running flag is set so the user can step
+        thru accordingly. """
 
         self.clearGui()
 
@@ -900,7 +1046,9 @@ class Simulator(object):
         self.updateStack()
         self.code.set_editable(False)
 
-        self.lines = self.codeBuffer.get_text(self.codeBuffer.get_start_iter(), self.codeBuffer.get_end_iter(), False).split("\n")
+        self.lines = self.codeBuffer.get_text(self.codeBuffer.get_start_iter(),
+                                              self.codeBuffer.get_end_iter(),
+                                              False).split("\n")
 
         errorMessage = self.machine.loadCode(self.lines)
 
@@ -908,26 +1056,32 @@ class Simulator(object):
 
     def stepButtonClicked(self):
         """ Defines what happens if the step button is clicked.
-        This is fired if the user interacts with the GUI to step in anyway (i.e. key combos, menu items, buttons, etc.)
+        This is fired if the user interacts with the GUI to step in anyway
+        (i.e. key combos, menu items, buttons, etc.)
         This calls the step() function to execute a line of code
         and performs all graphical duties before and after executing the code.
-        
-        If the code has already been run to completion this prompts the user asking if they wish to restart (deprecate?).
+        If the code has already been run to completion this prompts the user
+        asking if they wish to restart.
         """
         if self.machine.isRunning():
             # Scroll to view the line
-            self.code.scroll_to_iter(self.code.get_buffer().get_iter_at_line(self.machine.getRegister('PC')), 0.25, True, .5, .5)
-            self.codeBuffer.place_cursor(self.code.get_buffer().get_iter_at_line(self.machine.getRegister('PC')))
+            currentLine = self.code.get_buffer().get_iter_at_line(
+                                                self.machine.getRegister('PC'))
+
+            self.code.scroll_to_iter(currentLine, 0.25, True, .5, .5)
+            self.codeBuffer.place_cursor(currentLine)
 
             # insert a >
-            currentLineIter = self.codeBuffer.get_iter_at_line(self.machine.getRegister('PC'))
-            self.codeBuffer.insert(currentLineIter, ">")
+            self.codeBuffer.insert(currentLine, ">")
 
-            # remove the > from the previous line, -1 means we're at the first line
+            # remove the > from the previous line, -1 means first line
             if self.machine.lastLine != -1:
-                startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 0)
+                startOfArrow = self.codeBuffer.get_iter_at_line_offset(
+                                                self.machine.getLastLine(), 0)
                 if not startOfArrow.ends_line():
-                    endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 1)
+                    endOfArrow = self.codeBuffer.get_iter_at_line_offset(
+                                                self.machine.getLastLine(), 1)
+
                     self.codeBuffer.delete(startOfArrow, endOfArrow)
 
             self.outPutFromMachine(self.machine.step())
@@ -936,15 +1090,16 @@ class Simulator(object):
 
         elif self.machine.hasRun():
             """ Prompt the user to restart """
-            if self.restartPrompt(): self.stepButtonClicked()
+            if self.restartPrompt():
+                self.stepButtonClicked()
 
         else:
             self.startRunning()
             self.stepButtonClicked()
 
     def onKeyPressEvent(self, widget, event):
-        """ Handles Key Down events, puts the corresponding keyval into a list self.keysDown.
-        Also checks for key combinations. """
+        """ Handles Key Down events, puts the corresponding keyval into a list
+        self.keysDown. Also checks for key combinations. """
 
         keyval = event.keyval
 
@@ -980,11 +1135,13 @@ class Simulator(object):
 
     def outPutFromMachine(self, string):
         """ Outputs the result of a machine query.
-        Different then regular output since we have to do a few simple checks before we print."""
+        Different then regular output since we have to do a few simple checks
+        before we print."""
+
         if string == self.machine._OVER:
             self.stopRunning()
         else:
-            if string != None:
+            if string is not None:
                 self.outPut(string)
 
             if self.machine.requestsGetChar():
@@ -994,13 +1151,16 @@ class Simulator(object):
                     self.runAll()
 
             if not self.machine.isRunning():
-                # The machine shut down without signalling, an error must've occurred
+                # The machine shut down without signalling
+                # an error must've occurred
                 self.stopRunning(-1)
 
     def outPut(self, string):
-        """ Outputs the message "string" to the designated textview in the GUI """
-        self.outText.get_buffer().insert(self.outText.get_buffer().get_end_iter(), string)
-        self.outText.scroll_to_iter(self.outText.get_buffer().get_end_iter(), 0.1, True, .5, .5)
+        """ Outputs the message "string" to the designated textview
+            in the GUI """
+        outEnd = self.outBuffer.get_end_iter()
+        self.outText.get_buffer().insert(outEnd, string)
+        self.outText.scroll_to_iter(outEnd, 0.1, True, .5, .5)
 
     def clearGui(self):
         """ Empties the text components of all relevant GUI elements"""
@@ -1025,25 +1185,36 @@ class Simulator(object):
         self.zFlagOutMachine.set_text("")
 
     def updateWindowTitle(self):
-        self.win.set_title(self._PROGRAMNAME + " - " + ("*"*self.codeBuffer.get_modified()) + ("Untitled" if self.fileName == None else self.fileName.split(self._PATHDELIM)[-1]))
+        modStar = "*" * self.codeBuffer.get_modified()
+        if self.fileName is None:
+            fileName = "Untitled"
+        else:
+            fileName = self.fileName.split(self._PATHDELIM)[-1]
+
+        self.win.set_title(self._PROGRAMNAME + " - " + modStar + fileName)
 
     def textChanged(self, widget):
         """ This function gets called everytime the 'code' text changes.
         Syntax Highglighting is applied on the changed line appropriately. """
         if not self.machine.isRunning():
             self.updateWindowTitle()
-            lineNumber = self.codeBuffer.get_iter_at_offset(self.codeBuffer.props.cursor_position).get_line()
+            lineNumber = self.codeBuffer.get_iter_at_offset(
+                            self.codeBuffer.props.cursor_position).get_line()
 
-            startOfLineIter = self.codeBuffer.get_iter_at_line_offset(lineNumber, 0)
+            startOfLineIter = self.codeBuffer.get_iter_at_line_offset(
+                                                                lineNumber, 0)
 
             if lineNumber + 1 >= self.codeBuffer.get_line_count():
                 endOfLineIter = self.codeBuffer.get_end_iter()
             else:
-                endOfLineIter = self.codeBuffer.get_iter_at_line_offset(lineNumber + 1, 0)
+                endOfLineIter = self.codeBuffer.get_iter_at_line_offset(
+                                                            lineNumber + 1, 0)
 
-            lineText = self.codeBuffer.get_text(startOfLineIter, endOfLineIter, False)
+            lineText = self.codeBuffer.get_text(startOfLineIter, endOfLineIter,
+                                                False)
 
-            self.syntaxHighlight(readliner.ReadLiner(lineText), lineOffset=lineNumber)
+            self.syntaxHighlight(readliner.ReadLiner(lineText),
+                                 lineOffset=lineNumber)
 
     def makeAboutDialogue(self):
         """ Makes an About Dialog displaying basic info about the program
@@ -1056,7 +1227,10 @@ class Simulator(object):
         about.set_comments(self._DESCRIPTION)
         about.set_website(self._WEBSITE)
         about.set_license_type(self._LICENSE)
-        about.set_logo(GdkPixbuf.Pixbuf.new_from_file(self._PATH + self._PATHDELIM.join([self._PATHDELIM + "images", "logo.png"])))
+        logoPath = self._PATH + self._PATHDELIM.join([self._PATHDELIM +
+                                                      "images", "logo.png"])
+
+        about.set_logo(GdkPixbuf.Pixbuf.new_from_file(logoPath))
         about.run()
         about.destroy()
 
@@ -1072,9 +1246,13 @@ class Simulator(object):
         if ret[0].has_tag(data):
             offset = ret[0].get_offset()
             for element in self.machine.effectiveBSSandDATALocation:
-                if self.machine.effectiveBSSandDATALocation[element][0] <= offset <= self.machine.effectiveBSSandDATALocation[element][1]:
-                    if element in self.machine.getBSSKeys(): tooltip.set_text("%s (from %s to %s)" % (element, self.machine.intToHex(self.machine.BSS[element][0]) if self.displayInHex else str(self.machine.BSS[element][0]), self.machine.intToHex(self.machine.BSS[element][1]) if self.displayInHex else str(self.machine.BSS[element][1])))
-                    else: tooltip.set_text("%s (from %s to %s)" % (element, self.machine.intToHex(self.machine.DATA[element][0]) if self.displayInHex else str(self.machine.DATA[element][0]), self.machine.intToHex(self.machine.DATA[element][1]) if self.displayInHex else str(self.machine.DATA[element][1])))
+                memStart = self.machine.effectiveBSSandDATALocation[element][0]
+                memEnd = self.machine.effectiveBSSandDATALocation[element][1]
+                if memStart <= offset <= memEnd:
+                    if element in self.machine.getBSSKeys():
+                        tooltip.set_text("%s (from %s to %s)" % (element, self.machine.intToHex(self.machine.BSS[element][0]) if self.displayInHex else str(self.machine.BSS[element][0]), self.machine.intToHex(self.machine.BSS[element][1]) if self.displayInHex else str(self.machine.BSS[element][1])))
+                    else:
+                        tooltip.set_text("%s (from %s to %s)" % (element, self.machine.intToHex(self.machine.DATA[element][0]) if self.displayInHex else str(self.machine.DATA[element][0]), self.machine.intToHex(self.machine.DATA[element][1]) if self.displayInHex else str(self.machine.DATA[element][1])))
                     break
         else:
             return False
@@ -1082,29 +1260,25 @@ class Simulator(object):
         return True
 
     def onKeyReleaseEvent(self, widget, event):
-        """ Handles Key Up events, removes the corresponding keyval from the list self.keysDown. """
+        """ Handles Key Up events, removes the corresponding keyval from the
+        list self.keysDown. """
         keyname = Gdk.keyval_name(event.keyval)
 
-        if keyname in self.keysDown.keys(): self.keysDown.pop(keyname)
+        if keyname in self.keysDown.keys():
+            self.keysDown.pop(keyname)
 
     def hexSwitchClicked(self, button=None, data=None):
         """ Gets called when the hex switch is toggled,
-        this switch changes it so the registers, stack, and memory all display in either hex or ascii """
+        this switch changes it so the registers, stack, and memory all display
+        in either hex or ascii """
         self.displayInHex = not self.displayInHex
         self.updateRegisters()
         self.updateStack()
 
-    def replaceEscapedSequences(self, string):
-        """ Replaces all escaped sequences with their unescaped counterparts """
-        return string.replace("\\n", "\n").replace("\\'", "'").replace('\\"', '"').replace("\\a", "\a").replace("\\b", "\b").replace("\\f", "\f").replace("\\r", "\r").replace("\\t", "\t").replace("\\v", "\v")
-
-    def escapeSequences(self, string):
-        """ Escapes all things that may need escaped. """
-        return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
-
     def stopRunning(self, i=1):
-        """ Ends the current simulation, if i=1 then succesfully, otherwise there was an issue """
-        print "Gui stop running"
+        """ Ends the current simulation, if i=1 then succesfully, otherwise
+        there was an issue """
+
         if self.machine.isRunning():
             # Stop the machine if it isn't already stopped.
             # Normally the machine stops first, but sometimes the gui
@@ -1114,23 +1288,32 @@ class Simulator(object):
 
         self.code.set_editable(True)
 
-        startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getRegister('PC'), 0)
+        curLine = self.machine.getRegister('PC')
+        lastLine = self.machine.getLastLine()
+
+        startOfArrow = self.codeBuffer.get_iter_at_line_offset(curLine, 0)
         if not startOfArrow.ends_line():
-            endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getRegister('PC'), 1)
+            endOfArrow = self.codeBuffer.get_iter_at_line_offset(curLine, 1)
 
             if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
                 self.codeBuffer.delete(startOfArrow, endOfArrow)
             else:
-                startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 0)
+                startOfArrow = self.codeBuffer.get_iter_at_line_offset(lastLine
+                                                                       , 0)
                 if not startOfArrow.ends_line():
-                    endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 1)
-                    if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
+                    endOfArrow = self.codeBuffer.get_iter_at_line_offset(lastLine
+                                                                         , 1)
+                    if self.codeBuffer.get_text(startOfArrow, endOfArrow,
+                                                False) == ">":
                         self.codeBuffer.delete(startOfArrow, endOfArrow)
         else:
-            startOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 0)
+            startOfArrow = self.codeBuffer.get_iter_at_line_offset(lastLine, 0)
             if not startOfArrow.ends_line():
-                endOfArrow = self.codeBuffer.get_iter_at_line_offset(self.machine.getLastLine(), 1)
-                if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
+                endOfArrow = self.codeBuffer.get_iter_at_line_offset(lastLine,
+                                                                    1)
+                if self.codeBuffer.get_text(startOfArrow, endOfArrow,
+                                            False) == ">":
+
                     self.codeBuffer.delete(startOfArrow, endOfArrow)
 
         if i == 1:
@@ -1141,11 +1324,19 @@ class Simulator(object):
 
     def getChar(self):
         # TODO: make this a dialog
-        """ Get's chars from the entry element. Interfaces with as88 system trap """
-        entry = entrydialog.EntryDialog(title="Waiting for input", label="Waiting for input", buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK), modal=True, parent=self.win)
+        """ Get's chars from the entry element.
+            Interfaces with as88 system trap """
+
+        entry = entrydialog.EntryDialog(title="Waiting for input",
+                                        label="Waiting for input",
+                                        buttons=(Gtk.STOCK_CANCEL,
+                                                 Gtk.ResponseType.CANCEL,
+                                                 Gtk.STOCK_OK,
+                                                 Gtk.ResponseType.OK),
+                                        modal=True, parent=self.win)
         result = entry.run()
 
-        if result == None:
+        if result is None:
             result = ""
 
         entry.destroy()
@@ -1154,47 +1345,64 @@ class Simulator(object):
 
     def colourMemory(self):
         """ Colour codes the items in the memory for easy identification """
-        # TODO: Optimize this so that it doesn't highlight things way off in memory that aren't displayed?
         backSlashOffsetBeforeTag = 0
         backSlashOffsetAfterTag = 0
         self.backSlashCount = 0
         sortedBSSandDATAList = []
 
-        for index, name in enumerate(self.machine.getDATAKeys() + self.machine.getBSSKeys()):
+        for index, name in enumerate(self.machine.getDATAKeys() +
+                                     self.machine.getBSSKeys()):
 
-            if name in self.machine.getDATAKeys(): location = self.machine.getFromDATA(name)
-            else: location = self.machine.getFromBSS(name)
+            if name in self.machine.getDATAKeys():
+                location = self.machine.getFromDATA(name)
+            else:
+                location = self.machine.getFromBSS(name)
 
             if len(sortedBSSandDATAList) == 0:
                 sortedBSSandDATAList.append([location[0], location[1], name])
             else:
                 for index, element in enumerate(sortedBSSandDATAList):
                     if location[0] < element[1]:
-                        sortedBSSandDATAList.insert(index, [location[0], location[1], name])
+                        sortedBSSandDATAList.insert(index, [location[0],
+                                                            location[1], name])
                         break
                 else:
-                    sortedBSSandDATAList.append([location[0], location[1], name])
+                    sortedBSSandDATAList.append([location[0], location[1],
+                                                 name])
 
         for index, location in enumerate(sortedBSSandDATAList):
             backSlashOffsetBeforeTag = backSlashOffsetAfterTag
-            for x in self.machine.getFromMemoryAddress(location[0], location[1]):
+            for x in self.machine.getFromMemoryAddress(location[0],
+                                                       location[1]):
                 if x in self.ESCAPE_CHARS:
                     backSlashOffsetAfterTag += 1
                     self.backSlashCount += 1
-            before = location[0] * (self.displayInHex + 1) + backSlashOffsetBeforeTag * (not self.displayInHex)
-            after = (location[1] + 1) * (self.displayInHex + 1) + backSlashOffsetAfterTag * (not self.displayInHex)
+            before = location[0] * (self.displayInHex + 1) + \
+                     backSlashOffsetBeforeTag * (not self.displayInHex)
+            after = (location[1] + 1) * (self.displayInHex + 1) + \
+                    backSlashOffsetAfterTag * (not self.displayInHex)
 
-            self.machine.effectiveBSSandDATALocation[location[2]] = [before, after]
+            self.machine.effectiveBSSandDATALocation[location[2]] = [before,
+                                                                     after]
 
-            self.memoryBuffer.apply_tag(self.memoryColours[index % len(self.memoryColours)], self.memoryBuffer.get_iter_at_offset(before), self.memoryBuffer.get_iter_at_offset(after))
+            self.memoryBuffer.apply_tag(
+                        self.memoryColours[index % len(self.memoryColours)],
+                        self.memoryBuffer.get_iter_at_offset(before),
+                        self.memoryBuffer.get_iter_at_offset(after))
 
     def exit(self, *args):
-        """ Determines whether or not to exit, if there is an unsaved file or active simulation it prompts the user.
-        Then decides whether to exit the program or not based on the users response. """
+        """ Determines whether or not to exit, if there is an unsaved file or
+        active simulation it prompts the user. Then decides whether to exit
+        the program or not based on the users response. """
+
         if self.machine.isRunning():
             dialog = Gtk.MessageDialog(self.win, 0, Gtk.MessageType.QUESTION,
-            Gtk.ButtonsType.YES_NO, "Do you want to quit?", title="Are you sure?")
-            dialog.format_secondary_text("There is a simulation currently in progress.")
+                                       Gtk.ButtonsType.YES_NO,
+                                       "Do you want to quit?",
+                                       title="Are you sure?")
+
+            dialog.format_secondary_text("There is a simulation \
+                                        currently in progress.")
 
             response = dialog.run()
 
@@ -1205,11 +1413,13 @@ class Simulator(object):
             dialog.destroy()
         if self.codeBuffer.get_modified():
             dialog = Gtk.MessageDialog(self.win, 0, Gtk.MessageType.QUESTION,
-            Gtk.ButtonsType.YES_NO, "Do you want to quit?", title="Are you sure?")
+                                       Gtk.ButtonsType.YES_NO,
+                                       "Do you want to quit?",
+                                       title="Are you sure?")
+
             dialog.format_secondary_text("There are unsaved changes.")
 
             response = dialog.run()
-
 
             if response == Gtk.ResponseType.NO:
                 dialog.destroy()
@@ -1218,6 +1428,7 @@ class Simulator(object):
             dialog.destroy()
 
         Gtk.main_quit(args)
+
 
 def main():
     """ The entry point. """

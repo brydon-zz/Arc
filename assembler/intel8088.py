@@ -5,7 +5,7 @@ Emulates the basic components of an Intel8088 including:
     Stack
 
 It also processes commands from the Intel 8088 instruction set
-via the commandinterpreter class. 
+via the commandinterpreter class.
 
 It also includes some "higher level" tracer functions like:
     Breakpoints
@@ -32,6 +32,7 @@ It also includes some "higher level" tracer functions like:
 
 import commandinterpreter
 
+
 class Intel8088(object):
     _OVER = 0
 
@@ -39,10 +40,13 @@ class Intel8088(object):
         self.restart()
 
     def restart(self):
-        self.registers = {"AX":0, "BX":0, "CX":0, "DX":0, "SP":32760, "BP":32760, "SI":0, "DI":0, "PC":0}
+        self.registers = {"AX": 0, "BX": 0, "CX": 0, "DX": 0, "SP": 32760,
+                          "BP": 32760, "SI": 0, "DI": 0, "PC": 0}
 
-        """Z: zero flag, S: sign flag, O: overflow flag, C: carry flag, A: auxillary flag, P: parity flag, D: direction flag, I: interrupt flag"""
-        self.flags = {"Z":False, "S":False, "O":False, "C":False, "A":False, "P":False, "D":False, "I":False}
+        """Z: zero flag, S: sign flag, O: overflow flag, C: carry flag,
+        A: auxillary flag, P: parity flag, D: direction flag, I: interrupt"""
+        self.flags = {"Z": False, "S": False, "O": False, "C": False,
+                      "A": False, "P": False, "D": False, "I": False}
 
         self.lookupTable = {}
         self.localVars = {}
@@ -59,9 +63,7 @@ class Intel8088(object):
         self.getCharFlag = False
         self.inBuffer = ""
 
-        self.addressSpace = []
-        for i in range(1024):
-            self.addressSpace.append(str(0))
+        self.addressSpace = [str(0) for i in range(1024)]
 
         self.jumpLocation = -1
 
@@ -92,7 +94,7 @@ class Intel8088(object):
         return self.do.keys()
 
     def getEightBitRegisterNames(self):
-        """ Returns a tuple of the names of the eight bit registers. 
+        """ Returns a tuple of the names of the eight bit registers.
             ("AH", "AL", "BH", "BL", "CH", "CL", "DH", "DL") """
 
         return ("AH", "AL", "BH", "BL", "CH", "CL", "DH", "DL")
@@ -113,7 +115,7 @@ class Intel8088(object):
         return label in self.lookupTable
 
     def getRegisterNames(self):
-        """ Returns a tuple of the names of the sixteen bit registers. 
+        """ Returns a tuple of the names of the sixteen bit registers.
             ("AX", "BX", "CX", "DX", "BP", "SP", "DI", "SI", "PC") """
         return ("AX", "BX", "CX", "DX", "BP", "SP", "DI", "SI", "PC")
 
@@ -134,7 +136,7 @@ class Intel8088(object):
             raise TypeError
 
     def setEightBitRegister(self, reg, to):
-        """ Sets the eight bit register 'reg' to the value 'to' while 
+        """ Sets the eight bit register 'reg' to the value 'to' while
         preserving the state of the other associated register.
         If 'reg' isn't a valid eight bit register a TypeError is raised.
         I.E. setting AH will not influence AL. """
@@ -189,7 +191,8 @@ class Intel8088(object):
             return 0
 
     def intToHex(self, i):
-        """ Converts integers to 0-padded hex. Does twos complement for negative numbers.
+        """ Converts integers to 0-padded hex. Does twos complement for
+        negative numbers.
         i.e. 17 is returned as 11, 15 is returned as 0F """
         while i > 2 ** 16:
             i -= 2 ** 16
@@ -200,18 +203,26 @@ class Intel8088(object):
             print "FATAL ERROR"
 
         hexString = str(hex(i).split("x")[1]).upper()
-        return "0"*(2 - len(hexString)) + hexString
+        return "0" * (2 - len(hexString)) + hexString
+
     def replaceEscapedSequences(self, string):
-        """ Replaces all escaped sequences with their unescaped counterparts """
-        return string.replace("\\n", "\n").replace("\\'", "'").replace('\\"', '"').replace("\\a", "\a").replace("\\b", "\b").replace("\\f", "\f").replace("\\r", "\r").replace("\\t", "\t").replace("\\v", "\v")
+        """ Replaces all escaped sequences with their counterparts """
+        return string.replace("\\n", "\n").replace("\\'", "'")\
+            .replace('\\"', '"').replace("\\a", "\a").replace("\\b", "\b")\
+            .replace("\\f", "\f").replace("\\r", "\r").replace("\\t", "\t")\
+            .replace("\\v", "\v")
 
     def escapeSequences(self, string):
         """ Escapes all things that may need escaped. """
-        return string.replace("\n", "\\n").replace("\'", "\\'").replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b").replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t").replace("\v", "\\v")
+        return string.replace("\n", "\\n").replace("\'", "\\'").\
+            replace('\"', '\\"').replace("\a", "\\a").replace("\b", "\\b")\
+            .replace("\f", "\\f").replace("\r", "\\r").replace("\t", "\\t")\
+            .replace("\v", "\\v")
 
     def getFromMemoryAddress(self, addr, toAddr=-1):
         """ Returns the value located at address 'addr'.
-        If the optional toAddr is supplied then it returns a sub-list including the range. """
+        If the optional toAddr is supplied then it returns a sub-list
+        including the range. """
         if toAddr == -1:
             return self.addressSpace[addr]
         else:
@@ -269,13 +280,13 @@ class Intel8088(object):
         return key in self.DATA
 
     def getFromBSS(self, key, index=None):
-        if index == None:
+        if index is None:
             return self.BSS[key]
         else:
             return self.BSS[key][index]
 
     def getFromDATA(self, key, index=None):
-        if index == None:
+        if index is None:
             return self.DATA[key]
         else:
             return self.DATA[key][index]
@@ -316,7 +327,8 @@ class Intel8088(object):
 
         BSScount = 0
 
-        # This for Loop is gonna go thru the self.lines, set up a nice lookUp table for jumps
+        # This for Loop is gonna go thru the self.lines, set up a nice lookUp
+        # table for jumps
         # and record program start and end. and set up some memory stuff.
 
         """ FIRST PASS """
@@ -327,7 +339,8 @@ class Intel8088(object):
             # a "head" mode - where constants are defined
             #      eg _EXIT = 1 etc.
             # a "text" mode (".SECT .TEXT") where the code is located
-            #      on the first loop thru we just keep track of where this is, and set up a jump table
+            #      on the first loop thru we just keep track of where this is,
+            #      and set up a jump table
             # a "data" mode (".SECT .DATA") where variables are defined
             #      str: .ASCIZ "%s f"
             # a "bss" mode (".SECT .BSS") where memory chunks are defined
@@ -343,24 +356,29 @@ class Intel8088(object):
                 line = line.split('=')
                 line[0] = line[0].strip()
                 line[1] = line[1].strip()
+
                 if self.isLocalVar(line[0]):
-                    errorString += "Error on line " + str(lineCount) + ", cannot define \''" + line[0] + "\' more than once.\n"
+                    errorString += "Error on line " + str(lineCount) + \
+                                   ", cannot define \''" + line[0] + \
+                                   "\' more than once.\n"
                     errorCount += 1
-                else: self.setLocalVar(line[0], line[1])
+                else:
+                    self.setLocalVar(line[0], line[1])
+
                 continue
 
             if ".SECT" in line.upper():
 
                 # record where the .SECT .TEXT section starts, and ends
-                if mode == ".SECT .TEXT":  # ends, we've gone one too far, but we count from zero
+                if mode == ".SECT .TEXT":  # ends, we've gone one too far
                     self.setCodeBounds(1, lineCount - 1)
-                elif line.upper() == ".SECT .TEXT":  # starts, we're one too short, and we count from zero
+                elif line.upper() == ".SECT .TEXT":  # starts we're 1 too short
                     self.setCodeBounds(0, lineCount)
 
                 mode = line
                 continue
 
-            if ":" in line:  # Spliting on a colon, for defining vars, or jump locations, etc.
+            if ":" in line:  # Spliting on a colon, for defining vars, or jumps
                 temp = line.split(":")[0]
                 if mode == ".SECT .TEXT":
                     # a : in .SECT .TEXT means a jump location
@@ -370,26 +388,46 @@ class Intel8088(object):
                     if temp not in self.lookupTable.keys():
                         self.lookupTable[temp] = lineCount
                     else:
-                        if temp.isdigit():  # If we're defining multiple jump locations for one digit, keep a list
+                        if temp.isdigit():
+                            # If we're defining multiple jump locations for
+                            # one digit, keep a list
                             if type(self.lookupTable[temp]) == self.LIST_TYPE:
                                 self.lookupTable[temp].append(lineCount)
                             else:
-                                self.lookupTable[temp] = [self.lookupTable[temp], lineCount]
+                                self.lookupTable[temp] = [
+                                                        self.lookupTable[temp],
+                                                        lineCount]
                         else:
-                            errorString += "Duplicate entry: \"" + temp + "\" on line " + str(lineCount) + " and line " + str(self.lookupTable[temp]) + "\n"
+                            errorString += "Duplicate entry: \"" + temp + \
+                                    "\" on line " + str(lineCount) + \
+                                    " and line " + str(self.lookupTable[temp])\
+                                     + "\n"
+
                 elif mode == ".SECT .DATA":
                     # info in .SECT .DATA follows the format
                     # str: .ASCIZ "hello world"
                     # where .ASCIZ means an ascii string with a zero at the end
                     # and .ASCII means an ascii string
 
-                    if ".ASCIZ" in line.upper() or ".ASCII" in line.upper():  # If we're dealing with a string
-                        if line.count("\"") < 2:  # each string to be defined should be in quotes, raise error if quotes are messed
-                            errorString += "Fatal error on line " + str(lineCount) + ". Too many quotes.\n"
+                    if ".ASCIZ" in line.upper() or ".ASCII" in line.upper():
+                        # If we're dealing with a string
+                        if line.count("\"") < 2:
+                            # each string to be defined should be in quotes
+                            # raise error if quotes are messed
+                            errorString += "Fatal error on line " + \
+                                            str(lineCount) + \
+                                            ". Too many quotes.\n"
                             return errorString
-                        temp2 = self.replaceEscapedSequences(line[line.find("\"") + 1:line.rfind("\"")])  # otherwise grab the stuff in quotes
-                        self.DATA[temp] = [BSScount, BSScount + len(temp2) + (".ASCIZ" in line.upper()) - 1]  # and set temp equal to a list of hex vals of each char
-                        self.addressSpace[BSScount:BSScount + len(temp2)] = temp2 + "0"*(".ASCIZ" in line.upper())
+                        temp2 = self.replaceEscapedSequences(
+                                                line[line.find("\"") + 1:\
+                                                     line.rfind("\"")])
+                        # otherwise grab the stuff in quotes
+                        self.DATA[temp] = [BSScount, BSScount + len(temp2) + \
+                                           (".ASCIZ" in line.upper()) - 1]
+                        # and set temp equal to a list of hex vals of each char
+                        self.addressSpace[BSScount:BSScount + len(temp2)] = \
+                            temp2 + "0" * (".ASCIZ" in line.upper())
+
                         BSScount += len(temp2) + (".ASCIZ" in line.upper())
 
                 elif mode == ".SECT .BSS":
@@ -397,8 +435,11 @@ class Intel8088(object):
                     # fdes: .SPACE 2
                     # Where essentially .BSS just defines memory space
 
-                    temp2 = line.split(".SPACE")[1]  # let's find the size of the mem chunk to def
-                    self.BSS[temp.strip()] = [BSScount, BSScount + int(temp2.strip()) - 1]  # and def it in bss as it's start and end pos
+                    temp2 = line.split(".SPACE")[1]
+                    # let's find the size of the mem chunk to def
+                    self.BSS[temp.strip()] = [BSScount, BSScount + \
+                                              int(temp2.strip()) - 1]
+                    # and def it in bss as it's start and end pos
                     BSScount += int(temp2.strip())
 
         if mode == ".SECT .TEXT" and self.codeBounds[1] == -1:
@@ -409,7 +450,8 @@ class Intel8088(object):
             self.running = True
             errorString = ""
         else:
-            errorString += "Your code cannot be run, it contains %d errors" % errorString.count("\n")
+            errorString += "Your code cannot be run, it contains %d errors" % \
+                            errorString.count("\n")
 
         return errorString
 
@@ -431,12 +473,12 @@ class Intel8088(object):
         while self.running:
             if self.getRegister('PC') in self.breakPoints:
                 response = self.step()
-                if response != None:
+                if response is not None:
                     totalResult += response
                 self.runningAll = False
                 break
             response = self.step()
-            if response != None:
+            if response is not None:
                     totalResult += response
             if self.getCharFlag:
                 break
@@ -444,9 +486,9 @@ class Intel8088(object):
         return totalResult
 
     def step(self):
-        """ This executes a single line of code. 
-        Parses the command and performs basic error checking 
-            (are we done the program? 
+        """ This executes a single line of code.
+        Parses the command and performs basic error checking
+            (are we done the program?
             does the command follow proper syntax (i.e. right arguments)?
             is the command recognised?)
         Before passing it off to the command interpreter class."""
@@ -455,7 +497,8 @@ class Intel8088(object):
                 self.stopRunning()
                 return self._OVER
 
-            line = self.lines[self.getRegister('PC')].replace("\t", "")  # clear out tabs
+            line = self.lines[self.getRegister('PC')].replace("\t", "")
+            # clear out tabs
 
             if "!" in line:  # exclamations mean comments
                 line = line[:line.find("!")].strip()  # ignore comments
@@ -463,16 +506,17 @@ class Intel8088(object):
             if ":" in line:  # colons mean labels, we dealt with those already.
                 line = line[line.find(":") + 1:].strip()  # ignore jump points
 
-            if line.count(",") > 1:  # any command can have at most 2 arguments.
+            if line.count(",") > 1:  # any command can have at most 2 arguments
                 self.stopRunning(-1)
-                return "Too many commas on line " + str(self.getRegister('PC')) + "?"
+                return "Too many commas on line " + str(self.getRegister('PC'))
 
-            command = [self.replaceEscapedSequences(x.strip()) for x in line.replace(" ", ",").split(",")]
+            command = [self.replaceEscapedSequences(x.strip()) for x in \
+                       line.replace(" ", ",").split(",")]
 
             for x in range(command.count("")):
                 command.remove("")
 
-            if command == None or command == []:
+            if command is None or command == []:
                 self.lastLine = self.getRegister('PC')
                 self.setRegister('PC', self.getRegister('PC') + 1)
                 return  # skip the empty self.lines
@@ -483,13 +527,20 @@ class Intel8088(object):
 
             if len(command) - 1 != self.commandArgs[command[0]]:
                 self.stopRunning(-1)
-                return "Invalid number of arguments on line " + str(self.getRegister('PC')) + ". " + command[0] + " expects " + str(self.commandArgs[command[0]]) + " argument" + "s"*(self.commandArgs[command[0]] > 1) + " and " + str(len(command) - 1) + (" were " if len(command) - 1 > 1 else " was ") + "given."
+                return "Invalid number of arguments on line " + \
+                    str(self.getRegister('PC')) + ". " + command[0] + \
+                    " expects " + str(self.commandArgs[command[0]]) + \
+                    " argument" + "s" * (self.commandArgs[command[0]] > 1) + \
+                    " and " + str(len(command) - 1) + \
+                    (" were " if len(command) - 1 > 1 else " was ") + "given."
 
             if command[0] in self.do.keys():
                 try:
-                    response = self.do[command[0]](command, self.getRegister('PC'))
+                    response = self.do[command[0]](command,
+                                                   self.getRegister('PC'))
                 except:
-                    response = "Fatal error occurred on line " + str(self.getRegister('PC'))
+                    response = "Fatal error occurred on line " + \
+                                str(self.getRegister('PC'))
             else:
                 self.stopRunning(-1)
                 return "Fatal error. " + command[0] + " not recognised."

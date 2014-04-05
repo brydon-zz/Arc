@@ -1,7 +1,8 @@
 """
-A basic class that implements the readline interface. Useful for working with Tokenizer
-It takes a single line string as an argument and places it in the object. The readline 
-function then just returns that line. 
+A basic class that implements the readline interface.
+Useful for working with Tokenizer.
+It takes a single line string as an argument and places it in the object.
+The readline function then just returns that line.
 
     Copyright (C) 2014 Brydon Eastman
 
@@ -21,10 +22,11 @@ function then just returns that line.
     email to brydon.eastman@gmail.com.
 """
 
+
 class ReadLiner(object):
-    """ ReadLiner(string) creates an object compatible with the readline interface.
-    Such that the first call to ReadLiner.readline() returns string and any subsequent
-    calls return an empty string.
+    """ ReadLiner(string) creates an object compatible with the readline
+    interface. Such that the first call to ReadLiner.readline() returns string
+    and any subsequent calls return an empty string.
     """
 
     def __init__(self, string):
@@ -32,8 +34,11 @@ class ReadLiner(object):
         self.EOF = False
 
     def readline(self, size=-1):
-        if self.EOF: return ""
+        if self.EOF:
+            return ""
+
         self.EOF = True
+
         if size == -1:
             return self.string
         else:

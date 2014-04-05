@@ -1,10 +1,10 @@
 """
 A simple lightweight EntryDialog class.
 It creates a Dialog box that contains at least one Entry Box.
-If you use the label="text" kwarg you can set a Label to appear in the Dialog as well.
+If you use the label="text" kwarg you can set a Label to appear in the Dialog.
 Using the buttons kwarg you can set the buttons that appear in the Dialog.
-On run() the EntryDialog will return the value of the entry box if the user presses enter within
-the dialog box, or if they click on an OK button.
+On run() the EntryDialog will return the value of the entry box if the user
+presses enter within the dialog box, or if they click on an OK button.
 
     Copyright (C) 2014 Brydon Eastman
 
@@ -23,7 +23,10 @@ the dialog box, or if they click on an OK button.
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA. Or by
     email to brydon.eastman@gmail.com.
 """
+
 from gi.repository import Gtk
+
+
 class EntryDialog(Gtk.Dialog):
     def __init__(self, *args, **kwargs):
         if 'default' in kwargs:
@@ -41,7 +44,8 @@ class EntryDialog(Gtk.Dialog):
         super(EntryDialog, self).__init__(*args, **kwargs)
 
         self.entry = Gtk.Entry(text=default)
-        self.entry.connect("activate", lambda entry, dialog, response: dialog.response(response), self, Gtk.ResponseType.OK)
+        self.entry.connect("activate", lambda entry, dialog, resp:
+                           dialog.response(resp), self, Gtk.ResponseType.OK)
         self.vbox.pack_end(self.entry, True, True, 0)
 
         if labelText != "":
@@ -59,6 +63,8 @@ class EntryDialog(Gtk.Dialog):
             return None
 
 if __name__ == "__main__":
-    a = EntryDialog(title="Waiting for input", label="Waiting for input", buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK), modal=True)
+    a = EntryDialog(title="Waiting for input", label="Waiting for input",
+                    buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                             Gtk.STOCK_OK, Gtk.ResponseType.OK), modal=True)
     result = a.run()
     print result
