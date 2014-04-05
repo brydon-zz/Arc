@@ -1614,7 +1614,7 @@ the Direction flag is set (1).
         self.machine.setMemoryAddress(di + 1,
                                 chr(self.machine.getEightBitRegister("AL")))
 
-        newDiVal = di - 2 if self.machine.flags('D') else di + 2
+        newDiVal = di - 2 if self.machine.getFlag('D') else di + 2
         self.machine.setRegister('DI', newDiVal)
 
     def SUB(self, command, i, inPlace=False):
