@@ -14,6 +14,13 @@ has a graphical representation of the registers and memory space of the
 Intel 8088 to assist the user in understanding the assembly code their
 writing.
 
+##Features
+
+- Development Environment with Syntax Highlighting
+- Simulates the execution of 8088 Assembly Code 
+- Provides Graphical Representation of Registers, Memory, and Stack
+- Helpful Documentation of the Instruction Set
+
 This program is written in Python and released under the GPL 2.0 License.
 For more information please view the LICENSE file or visit:
 http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
