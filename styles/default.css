@@ -67,7 +67,7 @@ GtkAboutDialog, GtkAboutDialog * {
     border-right:0;
 }
 
-#As88Window #seperatorLabelTrue {
+#As88Window #separatorLabelTrue {
     background-color:#522;
     border-right:1px solid #000;
     border-left:1px solid #000;
@@ -75,7 +75,7 @@ GtkAboutDialog, GtkAboutDialog * {
     border-bottom:0;
 }
 
-#As88Window #seperatorLabelFalse {
+#As88Window #separatorLabelFalse {
     background-color:#225;
     border-right:1px solid #000;
     border-left:1px solid #000;
@@ -83,19 +83,21 @@ GtkAboutDialog, GtkAboutDialog * {
     border-bottom:0;
 }
 
-#As88Window #seperatorLabelOverTrue {
+#As88Window #separatorLabelOverTrue {
     background-color:#666;
     border-right:1px solid #000;
     border-left:1px solid #000;
+    color:#225;
     border-top:0;
     border-bottom:0;
 }
 
-#As88Window #seperatorLabelOverFalse {
+#As88Window #separatorLabelOverFalse {
     background-color:#666;
     border-right:1px solid #000;
     border-left:1px solid #000;
     border-top:0;
+    color:#522;
     border-bottom:0;
 }
 

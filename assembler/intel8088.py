@@ -549,6 +549,12 @@ class Intel8088(object):
     def inDATAKeys(self, key):
         return key in self.DATA
 
+    def getFromBSSorDATA(self, key, index=None):
+        if key in self.BSS.keys():
+            return self.getFromBSS(key, index)
+        elif key in self.DATA.keys():
+            return self.getFromDATA(key, index)
+
     def getFromBSS(self, key, index=None):
         if index is None:
             return self.BSS[key]

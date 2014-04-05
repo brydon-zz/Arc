@@ -63,7 +63,6 @@ class Simulator(object):
     def __init__(self):
         localDir = os.path.dirname(os.path.realpath(__file__))
         self._PATH = self._PATHDELIM.join(localDir.split(self._PATHDELIM)[:-1])
-        self._KEYTIMEOUT = 4  # TODO: maybe replace this with focus lost?
 
         """ Begin GUI """
         cssFile = self._PATHDELIM.join([self._PATHDELIM + "styles",
@@ -74,6 +73,7 @@ class Simulator(object):
         """Handlers for the actions in the interface."""
 
         self.fileName = None
+        self.shrunk = False
         self.breakpointDClickTime = 0
         # Make stuff from the GLADE file and setup events
         self.builder = Gtk.Builder()
@@ -131,15 +131,14 @@ class Simulator(object):
         self.displayInHex = True
 
         self.LIST_TYPE = type([1, 1])
-        self.keysDown = {}
-        self.shrunk = True
 
         # Two Final GUI elements
         self.win.show_all()
 
         # This GUI element needs the as88 defined
         self.makeHelpBox()
-        self.notebook.set_visible(False)
+
+        self.clickSeperator(None, None)
 
     def setBreakpoint(self, widget, event):
         if self.breakpointDClickTime == 0:
@@ -222,9 +221,13 @@ class Simulator(object):
         """When the separator label is clicked, expand the viewport."""
         if self.shrunk:
             self.notebook.set_visible(True)
+            self.separatorLabel.set_angle(90)
+            self.separatorLabel.set_text("^ hide ^")
             self.shrunk = False
         else:
             self.notebook.set_visible(False)
+            self.separatorLabel.set_angle(270)
+            self.separatorLabel.set_text("^ show ^")
             self.shrunk = True
 
     def syntaxHighlight(self, f, lineOffset=0):
@@ -300,11 +303,11 @@ class Simulator(object):
 
     def hoverOverSeperator(self, a, b):
         """Change the style of the separator label when hovered on."""
-        self.seperatorLabel.set_name("seperatorLabelOver" + str(self.shrunk))
+        self.separatorLabel.set_name("separatorLabelOver" + str(self.shrunk))
 
     def hoverOffSeperator(self, a, b):
         """Change the style of the separator label when hovered off."""
-        self.seperatorLabel.set_name("seperatorLabel" + str(self.shrunk))
+        self.separatorLabel.set_name("separatorLabel" + str(self.shrunk))
 
     def updateLineCounter(self):
         """Updates the line number label on the left of the code block.
@@ -330,50 +333,97 @@ class Simulator(object):
         self.cFlagOutMachine.set_text(str(int(self.machine.getFlag('C'))))
 
         if self.displayInHex:
-            self.regA.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('AX')))) + self.machine.intToHex(self.machine.getRegister('AX')))
-            self.regAH.set_text(self.machine.intToHex(self.machine.getEightBitRegister('AH')))
-            self.regAL.set_text(self.machine.intToHex(self.machine.getEightBitRegister('AL')))
-            self.regB.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('BX')))) + self.machine.intToHex(self.machine.getRegister('BX')))
-            self.regBH.set_text(self.machine.intToHex(self.machine.getEightBitRegister('BH')))
-            self.regBL.set_text(self.machine.intToHex(self.machine.getEightBitRegister('BL')))
-            self.regC.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('CX')))) + self.machine.intToHex(self.machine.getRegister('CX')))
-            self.regCH.set_text(self.machine.intToHex(self.machine.getEightBitRegister('CH')))
-            self.regCL.set_text(self.machine.intToHex(self.machine.getEightBitRegister('CL')))
-            self.regD.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('DX')))) + self.machine.intToHex(self.machine.getRegister('DX')))
-            self.regDH.set_text(self.machine.intToHex(self.machine.getEightBitRegister('DH')))
-            self.regDL.set_text(self.machine.intToHex(self.machine.getEightBitRegister('DL')))
-            self.regBP.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('BP')))) + self.machine.intToHex(self.machine.getRegister('BP')))
-            self.regSP.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('SP')))) + self.machine.intToHex(self.machine.getRegister('SP')))
-            self.regDI.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('DI')))) + self.machine.intToHex(self.machine.getRegister('DI')))
-            self.regSI.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('SI')))) + self.machine.intToHex(self.machine.getRegister('SI')))
-            self.regPC.set_text("0"*(4 - len(self.machine.intToHex(self.machine.getRegister('PC')))) + self.machine.intToHex(self.machine.getRegister('PC')))
-            self.memoryBuffer.set_text("".join([self.machine.intToHex(ord(x)) for x in self.machine.getFromMemoryAddress(0, 144)]))
+            hexA = self.machine.intToHex(self.machine.getRegister('AX'))
+            regAText = "0" * (4 - len(hexA)) + hexA
+            regALText = self.machine.intToHex(
+                                      self.machine.getEightBitRegister('AL'))
+            regAHText = self.machine.intToHex(
+                                      self.machine.getEightBitRegister('AH'))
+
+            hexB = self.machine.intToHex(self.machine.getRegister('BX'))
+            regBText = "0" * (4 - len(hexB)) + hexB
+            regBLText = self.machine.intToHex(
+                                      self.machine.getEightBitRegister('BL'))
+            regBHText = self.machine.intToHex(
+                                      self.machine.getEightBitRegister('BH'))
+
+            hexC = self.machine.intToHex(self.machine.getRegister('CX'))
+            regCText = "0" * (4 - len(hexC)) + hexC
+            regCLText = self.machine.intToHex(
+                                      self.machine.getEightBitRegister('CL'))
+            regCHText = self.machine.intToHex(
+                                      self.machine.getEightBitRegister('CH'))
+
+            hexD = self.machine.intToHex(self.machine.getRegister('DX'))
+            regDText = "0" * (4 - len(hexD)) + hexD
+            regDLText = self.machine.intToHex(
+                                      self.machine.getEightBitRegister('DL'))
+            regDHText = self.machine.intToHex(
+                                      self.machine.getEightBitRegister('DH'))
+
+            hexBP = self.machine.intToHex(self.machine.getRegister('BP'))
+            regBPText = "0" * (4 - len(hexBP)) + hexBP
+            hexSP = self.machine.intToHex(self.machine.getRegister('SP'))
+            regSPText = "0" * (4 - len(hexSP)) + hexSP
+            hexDI = self.machine.intToHex(self.machine.getRegister('DI'))
+            regDIText = "0" * (4 - len(hexDI)) + hexDI
+            hexSI = self.machine.intToHex(self.machine.getRegister('SI'))
+            regSIText = "0" * (4 - len(hexSI)) + hexSI
+            hexPC = self.machine.intToHex(self.machine.getRegister('PC'))
+            regPCText = "0" * (4 - len(hexPC)) + hexPC
+
+            memToDisplay = [self.machine.intToHex(ord(x))
+                            for x in self.machine.getFromMemoryAddress(0, 144)]
             self.colourMemory()
         else:
-            self.regA.set_text(str(self.machine.getRegister('AX')))
-            self.regAH.set_text(str(self.machine.getEightBitRegister('AH')))
-            self.regAL.set_text(str(self.machine.getEightBitRegister('AL')))
-            self.regB.set_text(str(self.machine.getRegister('BX')))
-            self.regBH.set_text(str(self.machine.getEightBitRegister('BH')))
-            self.regBL.set_text(str(self.machine.getEightBitRegister('BL')))
-            self.regC.set_text(str(self.machine.getRegister('CX')))
-            self.regCH.set_text(str(self.machine.getEightBitRegister('CH')))
-            self.regCL.set_text(str(self.machine.getEightBitRegister('CL')))
-            self.regD.set_text(str(self.machine.getRegister('DX')))
-            self.regDH.set_text(str(self.machine.getEightBitRegister('DH')))
-            self.regDL.set_text(str(self.machine.getEightBitRegister('DL')))
-            self.regBP.set_text(str(self.machine.getRegister('BP')))
-            self.regSP.set_text(str(self.machine.getRegister('SP')))
-            self.regDI.set_text(str(self.machine.getRegister('DI')))
-            self.regSI.set_text(str(self.machine.getRegister('SI')))
-            self.regPC.set_text(str(self.machine.getRegister('PC')))
+            regAText = str(self.machine.getRegister('AX'))
+            regAHText = str(self.machine.getEightBitRegister('AH'))
+            regALText = str(self.machine.getEightBitRegister('AL'))
+
+            regBText = str(self.machine.getRegister('BX'))
+            regBHText = str(self.machine.getEightBitRegister('BH'))
+            regBLText = str(self.machine.getEightBitRegister('BL'))
+
+            regCText = str(self.machine.getRegister('CX'))
+            regCHText = str(self.machine.getEightBitRegister('CH'))
+            regCLText = str(self.machine.getEightBitRegister('CL'))
+
+            regDText = str(self.machine.getRegister('DX'))
+            regDHText = str(self.machine.getEightBitRegister('DH'))
+            regDLText = str(self.machine.getEightBitRegister('DL'))
+
+            regBPText = str(self.machine.getRegister('BP'))
+            regSPText = str(self.machine.getRegister('SP'))
+            regPCText = str(self.machine.getRegister('PC'))
+            regDIText = str(self.machine.getRegister('DI'))
+            regSIText = str(self.machine.getRegister('SI'))
 
             memToDisplay = self.machine.getFromMemoryAddress(0,
                                                      288 - self.backSlashCount)
 
-            escapedMem = [self.escapeSequences(x) for x in memToDisplay]
-            self.memory.get_buffer().set_text("".join(escapedMem))
-            self.colourMemory()
+        escapedMem = [self.machine.escapeSequences(x) for x in memToDisplay]
+
+        self.regA.set_text(regAText)
+        self.regAL.set_text(regALText)
+        self.regAH.set_text(regAHText)
+        self.regB.set_text(regBText)
+        self.regBL.set_text(regBLText)
+        self.regBH.set_text(regBHText)
+        self.regC.set_text(regCText)
+        self.regCL.set_text(regCLText)
+        self.regCH.set_text(regCHText)
+        self.regD.set_text(regDText)
+        self.regDL.set_text(regDLText)
+        self.regDH.set_text(regDHText)
+
+        self.regDI.set_text(regSIText)
+        self.regSI.set_text(regDIText)
+        self.regSP.set_text(regSPText)
+        self.regBP.set_text(regBPText)
+        self.regPC.set_text(regPCText)
+
+        self.memoryBuffer.set_text("".join(escapedMem))
+        self.colourMemory()
 
     def makeHelpBox(self):
         """Called at construction, creates the help box including a TreeView to
@@ -520,7 +570,7 @@ class Simulator(object):
 
         self.memory.set_name("memory")
         self.notebook.set_name("notebook")
-        self.seperatorLabel.set_name("seperatorLabelTrue")
+        self.separatorLabel.set_name("separatorLabel" + str(self.shrunk))
         self.builder.get_object("codeScrolled").set_name("codeScrolled")
         self.builder.get_object("outScrolled").set_name("outScrolled")
         self.builder.get_object("memorySW").set_name("memorySW")
@@ -557,13 +607,12 @@ class Simulator(object):
 
         # Key events!
         self.win.connect('key_press_event', self.onKeyPressEvent)
-        self.win.connect('key_release_event', self.onKeyReleaseEvent)
 
-        self.seperatorLabelEB.connect('button_press_event',
+        self.separatorLabelEB.connect('button_press_event',
                                       self.clickSeperator)
-        self.seperatorLabelEB.connect('enter-notify-event',
+        self.separatorLabelEB.connect('enter-notify-event',
                                       self.hoverOverSeperator)
-        self.seperatorLabelEB.connect('leave-notify-event',
+        self.separatorLabelEB.connect('leave-notify-event',
                                       self.hoverOffSeperator)
 
         self.builder.get_object("new").connect("activate",
@@ -631,8 +680,8 @@ class Simulator(object):
 
         self.notebook = self.builder.get_object("notebook")
 
-        self.seperatorLabelEB = self.builder.get_object("seperatorLabelEB")
-        self.seperatorLabel = self.builder.get_object("seperatorLabel")
+        self.separatorLabelEB = self.builder.get_object("separatorLabelEB")
+        self.separatorLabel = self.builder.get_object("separatorLabel")
 
         self.buttonBox = self.builder.get_object("buttonBox")
 
@@ -759,9 +808,13 @@ class Simulator(object):
         if self.machine.isRunningAll():
             return
         if self.displayInHex:
-            self.stackBuffer.set_text("\n".join(["0"*(4 - len(hex(int(x)).split("x")[1])) + hex(int(x)).split("x")[1] for x in self.machine.getStack()]))
+            stackText = ["0" * (4 - len(hex(int(x)).split("x")[1])) +
+                    hex(int(x)).split("x")[1] for x in self.machine.getStack()]
         else:
-            self.stackBuffer.set_text("\n".join(["0"*(4 - len(str(x))) + str(x) for x in self.machine.getStack()]))
+            stackText = ["0" * (4 - len(str(x))) +
+                    str(x) for x in self.machine.getStack()]
+
+        self.stackBuffer.set_text("\n".join(stackText))
 
     def setupTextBuffers(self):
         """ Binds various textBuffers to local variables """
@@ -1104,40 +1157,51 @@ class Simulator(object):
             self.stepButtonClicked()
 
     def onKeyPressEvent(self, widget, event):
-        """ Handles Key Down events, puts the corresponding keyval into a list
-        self.keysDown. Also checks for key combinations. """
+        """ Handles Key Down events checks for key combinations.
+            Enter -> Step
+            Ctrl+Enter -> Run All
+            Shift+Enter -> Run All
+            Ctrl+N -> New File
+            Ctrl+S -> Save
+            Ctrl+O -> Open File
+            Ctrl+Q -> Quit File
+            Ctrl+Shift+N -> Save As
+        """
 
         keyval = event.keyval
 
         keyname = Gdk.keyval_name(keyval)
 
-        mod = Gtk.accelerator_get_label(keyval, event.state)
-        # Possibly a better way ^^ weird things with MOD though.
-        # label.set_markup('<span size="xx-large">%s\n%d</span>' % (mod, keyval))
+        keysDown = Gtk.accelerator_get_label(keyval, event.state).split("+")
+        keysDown.remove("Mod2")  # This is when numLock is on
 
-        if keyname == 'Return' or keyname == 'KP_Enter':
-            if not self.code.has_focus():
-                self.stepButtonClicked()
-            return
+        if len(keysDown) == 1:
+            if keyname == 'Return' or keyname == 'KP_Enter':
+                if not  self.code.has_focus():
+                    self.stepButtonClicked()
+                return
 
-        self.keysDown[keyname] = time.time()
+        elif len(keysDown) == 2:
+            if "Ctrl" in keysDown:
+                if "O" in keysDown:
+                    self.openFileDialog()
+                if "N" in keysDown:
+                    self.new()
+                if "S" in keysDown:
+                    self.saveFile()
+                if "Q" in keysDown:
+                    self.exit()
+                if "Return" in keysDown or "Enter (keypad)" in keysDown:
+                    self.runAll()
+            elif "Shift" in keysDown:
+                if "Return" in keysDown or "Enter (keypad)" in keysDown:
+                    self.runAll()
 
-        for key in self.keysDown.keys():
-            if time.time() - self.keysDown[key] > self._KEYTIMEOUT:
-                self.keysDown.pop(key)
-
-        if len(self.keysDown) == 2 and (('O' in self.keysDown) ^ ('o' in self.keysDown)) and (('Control_L' in self.keysDown) ^ ('Control_R' in self.keysDown)):
-            self.keysDown = {}
-            self.openFileDialog()
-        elif len(self.keysDown) == 2 and (('S' in self.keysDown) ^ ('s' in self.keysDown)) and (('Control_L' in self.keysDown) ^ ('Control_R' in self.keysDown)):
-            self.keysDown = {}
-            self.saveFile()
-        elif len(self.keysDown) == 2 and (('N' in self.keysDown) ^ ('n' in self.keysDown)) and (('Control_L' in self.keysDown) ^ ('Control_R' in self.keysDown)):
-            self.keysDown = {}
-            self.new()
-        elif len(self.keysDown) == 2 and (('Q' in self.keysDown) ^ ('q' in self.keysDown)) and (('Control_L' in self.keysDown) ^ ('Control_R' in self.keysDown)):
-            self.keysDown = {}
-            self.exit()
+        elif len(keysDown) == 3:
+            if "Ctrl" in keysDown:
+                if "S" in keysDown:
+                    if "Shift" in keysDown:
+                        self.saveFile(saveAs=True)
 
     def outPutFromMachine(self, string):
         """ Outputs the result of a machine query.
@@ -1230,6 +1294,8 @@ class Simulator(object):
         about.set_version(self._VERSION)
         about.set_copyright("(c) Brydon Eastman")
         about.set_comments(self._DESCRIPTION)
+        # TODO: Credit "\nIcons Courtesy of
+        # http://gentleface.com/free_icon_set.html" for the icons
         about.set_website(self._WEBSITE)
         about.set_license_type(self._LICENSE)
         logoPath = self._PATH + self._PATHDELIM.join([self._PATHDELIM +
@@ -1241,11 +1307,14 @@ class Simulator(object):
 
     def memoryToolTipOption(self, widget, x, y, keyboard_tip, tooltip, data):
         """ For printing the tooltips in the memory textview """
-        if keyboard_tip:  # if the tooltip is focus from the keyboard, get those bounds
+
+        # if the tooltip is focus from the keyboard, get those bounds
+        if keyboard_tip:
             offset = widget.props.buffer.cursor_position
             ret = widget.props.buffer.get_iter_at_offset(offset)
         else:  # else get the bounds by the cursor
-            coords = widget.window_to_buffer_coords(Gtk.TextWindowType.TEXT, x, y)
+            coords = widget.window_to_buffer_coords(Gtk.TextWindowType.TEXT,
+                                                    x, y)
             ret = widget.get_iter_at_position(coords[0], coords[1])
 
         if ret[0].has_tag(data):
@@ -1254,23 +1323,20 @@ class Simulator(object):
                 memStart = self.machine.effectiveBSSandDATALocation[element][0]
                 memEnd = self.machine.effectiveBSSandDATALocation[element][1]
                 if memStart <= offset <= memEnd:
-                    if element in self.machine.getBSSKeys():
-                        tooltip.set_text("%s (from %s to %s)" % (element, self.machine.intToHex(self.machine.BSS[element][0]) if self.displayInHex else str(self.machine.BSS[element][0]), self.machine.intToHex(self.machine.BSS[element][1]) if self.displayInHex else str(self.machine.BSS[element][1])))
-                    else:
-                        tooltip.set_text("%s (from %s to %s)" % (element, self.machine.intToHex(self.machine.DATA[element][0]) if self.displayInHex else str(self.machine.DATA[element][0]), self.machine.intToHex(self.machine.DATA[element][1]) if self.displayInHex else str(self.machine.DATA[element][1])))
+                    start = self.machine.getFromBSSorDATA(element, 0)
+                    end = self.machine.getFromBSSorDATA(element, 1)
+
+                    if self.displayInHex:
+                        start = self.machine.intToHex(start)
+                        end = self.machine.intToHex(end)
+
+                    tooltip.set_text("%s (from %s to %s)" % (element,
+                                                        str(start), str(end)))
                     break
         else:
             return False
 
         return True
-
-    def onKeyReleaseEvent(self, widget, event):
-        """ Handles Key Up events, removes the corresponding keyval from the
-        list self.keysDown. """
-        keyname = Gdk.keyval_name(event.keyval)
-
-        if keyname in self.keysDown.keys():
-            self.keysDown.pop(keyname)
 
     def hexSwitchClicked(self, button=None, data=None):
         """ Gets called when the hex switch is toggled,
@@ -1300,14 +1366,16 @@ class Simulator(object):
         if not startOfArrow.ends_line():
             endOfArrow = self.codeBuffer.get_iter_at_line_offset(curLine, 1)
 
-            if self.codeBuffer.get_text(startOfArrow, endOfArrow, False) == ">":
+            if self.codeBuffer.get_text(startOfArrow,
+                                        endOfArrow, False) == ">":
+
                 self.codeBuffer.delete(startOfArrow, endOfArrow)
             else:
-                startOfArrow = self.codeBuffer.get_iter_at_line_offset(lastLine
-                                                                       , 0)
+                startOfArrow = self.codeBuffer.get_iter_at_line_offset(
+                                                                   lastLine, 0)
                 if not startOfArrow.ends_line():
-                    endOfArrow = self.codeBuffer.get_iter_at_line_offset(lastLine
-                                                                         , 1)
+                    endOfArrow = self.codeBuffer.get_iter_at_line_offset(
+                                                                lastLine, 1)
                     if self.codeBuffer.get_text(startOfArrow, endOfArrow,
                                                 False) == ">":
                         self.codeBuffer.delete(startOfArrow, endOfArrow)
@@ -1325,12 +1393,10 @@ class Simulator(object):
             self.outPut("\n----\nCode executed succesfully.\n")
         else:
             self.outPut("\n----\nCode execution terminated.\n")
-        # TODO: EOF, anything important like that should go here.
 
     def getChar(self):
-        # TODO: make this a dialog
-        """ Get's chars from the entry element.
-            Interfaces with as88 system trap """
+        """ Get's input by creating an entrydialog.
+            Interfaces with GetChar system trap """
 
         entry = entrydialog.EntryDialog(title="Waiting for input",
                                         label="Waiting for input",
@@ -1406,8 +1472,8 @@ class Simulator(object):
                                        "Do you want to quit?",
                                        title="Are you sure?")
 
-            dialog.format_secondary_text("There is a simulation \
-                                        currently in progress.")
+            warning = "There is a simulation currently in progress."
+            dialog.format_secondary_text(warning)
 
             response = dialog.run()
 
