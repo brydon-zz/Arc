@@ -862,7 +862,7 @@ class Simulator(object):
 
         newEB = Gtk.EventBox()
         newEB.add(new)
-        newEB.set_tooltip_text("New")
+        newEB.set_tooltip_text("New - Ctrl + N")
 
         self.buttonBox.pack_start(newEB, False, False, 1)
 
@@ -872,7 +872,7 @@ class Simulator(object):
 
         openEB = Gtk.EventBox()
         openEB.add(openImage)
-        openEB.set_tooltip_text("Open")
+        openEB.set_tooltip_text("Open - Ctrl + O")
 
         self.buttonBox.pack_start(openEB, False, False, 1)
 
@@ -882,7 +882,7 @@ class Simulator(object):
 
         saveEB = Gtk.EventBox()
         saveEB.add(save)
-        saveEB.set_tooltip_text("Save")
+        saveEB.set_tooltip_text("Save - Ctrl + S")
 
         self.buttonBox.pack_start(saveEB, False, False, 1)
 
@@ -892,7 +892,7 @@ class Simulator(object):
 
         allEB = Gtk.EventBox()
         allEB.add(allIcon)
-        allEB.set_tooltip_text("Run All")
+        allEB.set_tooltip_text("Run All - Ctrl + Enter")
 
         self.buttonBox.pack_start(allEB, False, False, 1)
 
@@ -902,7 +902,7 @@ class Simulator(object):
 
         stepEB = Gtk.EventBox()
         stepEB.add(step)
-        stepEB.set_tooltip_text("Run One Line")
+        stepEB.set_tooltip_text("Run One Line - Enter")
 
         self.buttonBox.pack_start(stepEB, False, False, 1)
 
@@ -912,7 +912,7 @@ class Simulator(object):
 
         stopEB = Gtk.EventBox()
         stopEB.add(stop)
-        stopEB.set_tooltip_text("Stop Running")
+        stopEB.set_tooltip_text("Stop Running - Ctrl + X")
         self.buttonBox.pack_start(stopEB, False, False, 1)
 
         for x in [newEB, openEB, saveEB, allEB, stepEB, stopEB]:
@@ -1166,6 +1166,7 @@ class Simulator(object):
             Ctrl+O -> Open File
             Ctrl+Q -> Quit File
             Ctrl+Shift+N -> Save As
+            Ctrl+X -> Stop Running
         """
 
         keyval = event.keyval
@@ -1185,14 +1186,16 @@ class Simulator(object):
             if "Ctrl" in keysDown:
                 if "O" in keysDown:
                     self.openFileDialog()
-                if "N" in keysDown:
+                elif "N" in keysDown:
                     self.new()
-                if "S" in keysDown:
+                elif "S" in keysDown:
                     self.saveFile()
-                if "Q" in keysDown:
+                elif "Q" in keysDown:
                     self.exit()
-                if "Return" in keysDown or "Enter (keypad)" in keysDown:
+                elif "Return" in keysDown or "Enter (keypad)" in keysDown:
                     self.runAll()
+                elif "X" in keysDown:
+                    self.stopRunning(-1)
             elif "Shift" in keysDown:
                 if "Return" in keysDown or "Enter (keypad)" in keysDown:
                     self.runAll()
