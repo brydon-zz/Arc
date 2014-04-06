@@ -312,7 +312,7 @@ If AL>9, AAS decrements AH and sets the Carry and Auxiliary Carry flags.
     def ADC(self, command, i):
         """name: ADC
         title: Add with Carry
-        args: [reg: mem],[reg: mem: immed]
+        args:[reg: mem],[reg: mem: immed]
         description: Adds the source and destination operands, and adds the \
 contents of the Carry flag to the sum, which is stored in the destination
         flags: *,,,*,*,*,*,*"""
@@ -321,7 +321,7 @@ contents of the Carry flag to the sum, which is stored in the destination
     def ADD(self, command, i, carry=False, inPlace=False):
         """name: ADD
         title: Add
-        args: [reg: mem],[reg: mem: immed]
+        args:[reg: mem],[reg: mem: immed]
         description: A source operand is added to a destination operand, and \
 the sum is stored in the destination.
         flags: *,,,*,*,*,*,*"""
@@ -384,7 +384,7 @@ the sum is stored in the destination.
     def AND(self, command, i, inPlace=False):
         """name: AND
         title: Logical And
-        args: [reg: mem],[reg: mem: immed]
+        args:[reg: mem],[reg: mem: immed]
         description: Each bit in the destination operand is ANDed with the \
 corresponding bit in the source operand
         flags: *,,,*,*,?,*,0"""
@@ -411,7 +411,7 @@ corresponding bit in the source operand
     def CALL(self, command, i):
         """name: CALL
         title: Call
-        args: [label]
+        args:[label]
         description: Calls the function in the source operand. The current \
         program counter value is pushed to the stack before the call.
         flags: ,,,,,,,
@@ -474,7 +474,7 @@ instructions will automatically increment SI and DI
     def CMP(self, command, i):
         """name: CMP
         title: Compare
-        args: [reg: mem],[reg: mem: immed]
+        args:[reg: mem],[reg: mem: immed]
         description: Compares the destination word to the source word by \
 performing an implied subtraction of the source from the destination.
         flags: *,,,*,*,*,*,*"""
@@ -497,7 +497,7 @@ performing an implied subtraction of the source from the destination.
     def CMPB(self, command, i):
         """name: CMPB
         title: Compare Byte
-        args: [reg8: mem],[reg8: mem: immed]
+        args:[reg8: mem],[reg8: mem: immed]
         description: Compares the destination byte to the source byte by \
 performing an implied subtraction of the source from the destination.
         flags: *,,,*,*,*,*,*"""
@@ -570,7 +570,7 @@ two packed BCD digits in AL.
     def DEC(self, command, i):
         """name: DEC
         title: Decrement
-        args: [reg: mem]
+        args:[reg: mem]
         description: Subtracts one from the register or memory address provided
         flags: *,,,*,*,*,*,"""
         self.incdec(command, i, -1)
@@ -578,7 +578,7 @@ two packed BCD digits in AL.
     def INC(self, command, i):
         """name: INC
         title: Increment
-        args: [reg: mem]
+        args:[reg: mem]
         description: Adds one to the register or memory address provided
         flags: *,,,*,*,*,*,"""
         self.incdec(command, i, 1)
@@ -586,7 +586,7 @@ two packed BCD digits in AL.
     def JA(self, command, i):
         """name: JA
         title: Jump to a label if above
-        args: [label]
+        args:[label]
         description: The same as JG. Jumps if the sign flag is clear and the \
 zero flag is clear
         flags: ,,,,,,,"""
@@ -596,7 +596,7 @@ zero flag is clear
     def JAE(self, command, i):
         """name: JAE
         title: Jump to a label if above or equal
-        args: [label]
+        args:[label]
         description: The same as JGE. Jumps if the sign flag is clear and/or \
 the zero flag is set
         flags: ,,,,,,,"""
@@ -606,7 +606,7 @@ the zero flag is set
     def JB(self, command, i):
         """name: JB
         title: Jump to a label if below
-        args: [label]
+        args:[label]
         description: The same as JL. Jumps if the sign flag is set and the \
 zero flag is clear
         flags: ,,,,,,,"""
@@ -616,7 +616,7 @@ zero flag is clear
     def JBE(self, command, i):
         """name: JBE
         title: Jump to a label if below or equal
-        args: [label]
+        args:[label]
         description: The same as JLE. Jumps if the sign flag is set and/or the\
  zero flag is set
         flags: ,,,,,,,"""
@@ -626,7 +626,7 @@ zero flag is clear
     def JC(self, command, i):
         """name: JC
         title: Jump to a label if carry
-        args: [label]
+        args:[label]
         description: Jumps if the carry flag is set
         flags: ,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('C'))
@@ -634,7 +634,7 @@ zero flag is clear
     def JCXZ(self, command, i):
         """name: JCXZ
         title: Jump to a label if CX is zero
-        args: [label]
+        args:[label]
         description: Jumps if the value of the CX register is zero
         flags: ,,,,,,,"""
         self.jf(command, i, self.machine.getRegister('CX') == 0)
@@ -642,7 +642,7 @@ zero flag is clear
     def JE(self, command, i):
         """name: JE
         title: Jump to a label if equal
-        args: [label]
+        args:[label]
         description: Jumps if the zero flag is set
         flags: ,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('Z'))
@@ -650,7 +650,7 @@ zero flag is clear
     def JG(self, command, i):
         """name: JG
         title: Jump to a label if greater than
-        args: [label]
+        args:[label]
         description: Jumps if the sign flag is clear and the zero flag is clear
         flags: ,,,,,,,"""
         self.jf(command, i,
@@ -659,7 +659,7 @@ zero flag is clear
     def JGE(self, command, i):
         """name: JGE
         title: Jump to a label if greater than or equal
-        args: [label]
+        args:[label]
         description: Jumps if the sign flag is clear and/or the zero flag is \
 set
         flags: ,,,,,,,"""
@@ -669,7 +669,7 @@ set
     def JL(self, command, i):
         """name: JL
         title: Jump to a label if less than
-        args: [label]
+        args:[label]
         description: Jumps if the sign flag is set and the zero flag is clear
         flags: ,,,,,,,"""
         self.jf(command, i,
@@ -678,7 +678,7 @@ set
     def JLE(self, command, i):
         """name: JLE
         title: Jump to a label if less than or equal
-        args: [label]
+        args:[label]
         description: Jumps if the sign flag is set and/or the zero flag is set
         flags: ,,,,,,,"""
         self.jf(command, i,
@@ -687,7 +687,7 @@ set
     def JNA(self, command, i):
         """name: JNA
         title: Jump to a label if not above
-        args: [label]
+        args:[label]
         description: The same as JLE. Jumps if the sign flag is set and/or the\
  zero flag is set.
         flags: ,,,,,,,"""
@@ -697,7 +697,7 @@ set
     def JNAE(self, command, i):
         """name: JNAE
         title: Jump to a label if not above or equal
-        args: [label]
+        args:[label]
         description: The same as JL. Jumps if the sign flag is set and the \
 zero flag is clear
         flags: ,,,,,,,"""
@@ -707,7 +707,7 @@ zero flag is clear
     def JNB(self, command, i):
         """name: JNB
         title: Jump to a label if not below
-        args: [label]
+        args:[label]
         description: The same as JGE. Jumps if the sign flag is clear and/or \
 the zero flag is set.
         flags: ,,,,,,,"""
@@ -717,7 +717,7 @@ the zero flag is set.
     def JNBE(self, command, i):
         """name: JNBE
         title: Jump to a label if not below or equal
-        args: [label]
+        args:[label]
         description: The same as JG. Jumps if the sign flag is clear and the \
 zero flag is clear.
         flags: ,,,,,,,"""
@@ -727,7 +727,7 @@ zero flag is clear.
     def JNC(self, command, i):
         """name: JNC
         title: Jump to a label if not carry
-        args: [label]
+        args:[label]
         description: Jumps if the carry flag is clear
         flags: ,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('C'))
@@ -735,7 +735,7 @@ zero flag is clear.
     def JNE(self, command, i):
         """name: JNE
         title: Jump to a label if not equal
-        args: [label]
+        args:[label]
         description: Jumps if the zero flag is clear
         flags: ,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('Z'))
@@ -743,7 +743,7 @@ zero flag is clear.
     def JNG(self, command, i):
         """name: JNG
         title: Jump to a label if not greater than
-        args: [label]
+        args:[label]
         description: The same as JLE. Jumps if the sign flag is set and/or \
 the zero flag is set.
         flags: ,,,,,,,"""
@@ -753,7 +753,7 @@ the zero flag is set.
     def JNGE(self, command, i):
         """name: JNGE
         title: Jump to a label if not greater than or equal
-        args: [label]
+        args:[label]
         description: The same as JL. Jumps if the sign flag is set and the \
 zero flag is clear.
         flags: ,,,,,,,"""
@@ -763,7 +763,7 @@ zero flag is clear.
     def JNL(self, command, i):
         """name: JNL
         title: Jump to a label if not less than
-        args: [label]
+        args:[label]
         description: The same as JGE. Jumps if the sign flag is clear and/or \
 the zero flag is set.
         flags: ,,,,,,,"""
@@ -773,7 +773,7 @@ the zero flag is set.
     def JNLE(self, command, i):
         """name: JNLE
         title: Jump to a label if not less than or equal
-        args: [label]
+        args:[label]
         description: The same as JG. Jumps if the sign flag is clear and the \
 zero flag is clear.
         flags: ,,,,,,,"""
@@ -783,7 +783,7 @@ zero flag is clear.
     def JNO(self, command, i):
         """name: JNO
         title: Jump to a label if not overflow
-        args: [label]
+        args:[label]
         description: Jumps if the overflow flag is clear.
         flags: ,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('O'))
@@ -791,7 +791,7 @@ zero flag is clear.
     def JNP(self, command, i):
         """name: JNP
         title: Jump to a label if not parity
-        args: [label]
+        args:[label]
         description: Jumps if the parity flag is clear.
         flags: ,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('P'))
@@ -799,7 +799,7 @@ zero flag is clear.
     def JNS(self, command, i):
         """name: JC
         title: Jump to a label if not sign.
-        args: [label]
+        args:[label]
         description: The same as JG. Jumps if the sign flag is clear.
         flags: ,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('S'))
@@ -807,7 +807,7 @@ zero flag is clear.
     def JNZ(self, command, i):
         """name: JC
         title: Jump to a label if not zero
-        args: [label]
+        args:[label]
         description: Jumps if the zero flag is clear
         flags: ,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('Z'))
@@ -815,7 +815,7 @@ zero flag is clear.
     def JO(self, command, i):
         """name: JC
         title: Jump to a label if overflow.
-        args: [label]
+        args:[label]
         description: Jumps if the overflow flag is set
         flags: ,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('O'))
@@ -823,7 +823,7 @@ zero flag is clear.
     def JP(self, command, i):
         """name: JC
         title: Jump to a label if parity
-        args: [label]
+        args:[label]
         description: Jumps if the parity flag is set
         flags: ,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('P'))
@@ -831,7 +831,7 @@ zero flag is clear.
     def JPE(self, command, i):
         """name: JC
         title: Jump to a label if parity or equal
-        args: [label]
+        args:[label]
         description: Jumps if the parity flag is set and/or the zero flag is \
 set
         flags: ,,,,,,,"""
@@ -841,7 +841,7 @@ set
     def JPO(self, command, i):
         """name: JC
         title: Jump to a label if parity or overflow
-        args: [label]
+        args:[label]
         description: Jumps if the parity flag is set or the overflow flag is \
 set
         flags: ,,,,,,,"""
@@ -851,7 +851,7 @@ set
     def JS(self, command, i):
         """name: JC
         title: Jump to a label if sign
-        args: [label]
+        args:[label]
         description: The same as JL. Jumps if the sign flag is set.
         flags: ,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('S'))
@@ -859,7 +859,7 @@ set
     def JZ(self, command, i):
         """name: JC
         title: Jump to a label if zero
-        args: [label]
+        args:[label]
         description: The same as JE. Jumps if the zero flag is set
         flags: ,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('Z'))
@@ -867,7 +867,7 @@ set
     def JMP(self, command, i, referer="JMP"):
         """name: JMP
         title: Jump unconditionally to a label
-        args: [label]
+        args:[label]
         description: The program counter is adjusted to the value referenced \
 by the label and program execution continues.
         flags: ,,,,,,,"""
@@ -947,7 +947,7 @@ by the label and program execution continues.
     def LOOP(self, command, i, flag=True):
         """name: LOOP
         title: Loop
-        args: [label]
+        args:[label]
         description: Decrements CX and jumps to the label if CX is greater \
 than zero.
         flags: ,,,,,,,"""
@@ -963,7 +963,7 @@ than zero.
     def LOOPE(self, command, i):
         """name: LOOPE
         title: Loop if equal
-        args: [label]
+        args:[label]
         description: Decrements CX and jumps to a label if CX>0 and the Zero \
 flag is set.
         flags: ,,,,,,,"""
@@ -972,7 +972,7 @@ flag is set.
     def LOOPNE(self, command, i):
         """name: LOOPNE
         title: Loop if not equal
-        args: [label]
+        args:[label]
         description: Decrements CX and jumps to a label if CX>0 and the Zero \
 flag is clear.
         flags: ,,,,,,,"""
@@ -981,7 +981,7 @@ flag is clear.
     def LOOPNZ(self, command, i):
         """name: LOOPNZ
         title: Loop if not zero
-        args: [label]
+        args:[label]
         description: Decrements CX and jumps to a label if CX>0 and the Zero \
 flag is clear.
         flags: ,,,,,,,"""
@@ -990,7 +990,7 @@ flag is clear.
     def LOOPZ(self, command, i):
         """name: LOOPZ
         title: Loop if zero
-        args: [label]
+        args:[label]
         description: Decrements CX and jumps to a label if CX>0 and the Zero \
 flag is set.
         flags: ,,,,,,,"""
@@ -999,7 +999,7 @@ flag is set.
     def MOV(self, command, i):
         """name: MOV
         title: Move
-        args: [reg: mem],[reg: mem: immed]
+        args:[reg: mem],[reg: mem: immed]
         description: Copies a byte or word from a source operand to a \
 destination operand.
         flags: ,,,,,,,"""
@@ -1062,7 +1062,7 @@ and decreased if the Direction flag is set (1).
     def NEG(self, command, i):
         """name: NEG
         title: Negate
-        args: [reg]
+        args:[reg]
         description: Calculates the twos complement of the argument in place.
         flags: *,,,*,*,*,*,*"""
         argumentType = self.testArgument(command, 1, i, [self._REG])
@@ -1081,7 +1081,7 @@ and decreased if the Direction flag is set (1).
     def NOT(self, command, i):
         """name: NOT
         title: Logical Not
-        args: [reg: mem]
+        args:[reg: mem]
         description: Performs a logical not on an operand by reversing each of\
  its bits.
         flags: ,,,,,,,"""
@@ -1094,7 +1094,7 @@ and decreased if the Direction flag is set (1).
     def OR(self, command, i):
         """name: OR
         title: Inclusive Or
-        args: [reg: mem],[reg: mem: immed]
+        args:[reg: mem],[reg: mem: immed]
         description: Performs a logical OR between each bit in the destination\
  operand and each bit in the source operand. If either bit is a 1 in each \
 position, the result bit is a 1.
@@ -1123,7 +1123,7 @@ position, the result bit is a 1.
     def POP(self, command, i):
         """name: POP
         title: Pop from stack
-        args: [reg]
+        args:[reg]
         description: Copies a word at the current stack pointer location into\
  the destination operand, and adds 2 to the SP.
         flags: ,,,,,,,"""
@@ -1158,7 +1158,7 @@ position, the result bit is a 1.
     def PUSH(self, command, i):
         """name: PUSH
         title: Push on stack
-        args: [reg: mem: immed]
+        args:[reg: mem: immed]
         description: Subtracts 2 from SP and copies the source operand into\
  the stack location pointed to by SP.
         flags: ,,,,,,,"""
@@ -1189,7 +1189,7 @@ position, the result bit is a 1.
     def RCL(self, command, i):
         """name: RCL
         title: Rotate carry left
-        args: [reg]
+        args:[reg]
         description: Rotates the destionation operand left. The carry flag is\
  copied into the lowest bit, and the highest bit is copied into the Carry flag
         flags: *,,,,,,,*"""
@@ -1216,7 +1216,7 @@ position, the result bit is a 1.
     def RCR(self, command, i):
         """name: RCR
         title: Rotates carry right
-        args: [reg]
+        args:[reg]
         description: Rotates the destination operand right, using the source\
  operand to determine the number of rotations. The carry flag is copied into \
 the highest bit, and the lowest bit is copied into the Carry flag.
@@ -1247,7 +1247,7 @@ the highest bit, and the lowest bit is copied into the Carry flag.
     def REP(self, command, i):
         """name: REP
         title: Repeating string primitive command
-        args: [MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
+        args:[MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
 STOSB: STOSW: LODS: LODSB: LODSW]
 description: Repeats a string primitive instruction, using CX as a \
 counter. CX is decremented each time the instruction is repeated, \
@@ -1267,7 +1267,7 @@ until CX = 0. EG REP MOVSB
     def REPE(self, command, i):
         """name: REPE
         title: Repeating string primitive command if equal
-        args: [MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
+        args:[MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
 STOSB: STOSW: LODS: LODSB: LODSW]
         description: Repeats a string primitive instruction, using CX as a \
 counter. CX is decremented each time the instruction is repeated, until CX = 0\
@@ -1287,7 +1287,7 @@ counter. CX is decremented each time the instruction is repeated, until CX = 0\
     def REPNE(self, command, i):
         """name: REPNE
         title: Repeating string primitive command if not equal
-        args: [MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
+        args:[MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
 STOSB: STOSW: LODS: LODSB: LODSW]
         description: Repeats a string primitive instruction, using CX as a \
 counter. CX is decremented each time the instruction is repeated, until CX = 0\
@@ -1308,7 +1308,7 @@ counter. CX is decremented each time the instruction is repeated, until CX = 0\
     def REPNZ(self, command, i):
         """name: REPNZ
         title: Repeating string primitive command if not zero
-        args: [MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
+        args:[MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
 STOSB: STOSW: LODS: LODSB: LODSW]
         description: Repeats a string primitive instruction, using CX as a \
 counter. CX is decremented each time the instruction is repeated, until CX = 0\
@@ -1320,7 +1320,7 @@ counter. CX is decremented each time the instruction is repeated, until CX = 0\
     def REPZ(self, command, i):
         """name: REPZ
         title: Repeating string primitive command if zero
-        args: [MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
+        args:[MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
 STOSB: STOSW: LODS: LODSB: LODSW]
         description: Repeats a string primitive instruction, using CX as a \
 counter. CX is decremented each time the instruction is repeated, until CX = 0\
@@ -1332,7 +1332,7 @@ counter. CX is decremented each time the instruction is repeated, until CX = 0\
     def RET(self, command, i):
         """name: RET
         title: Return from procedure
-        args: [None: immed]
+        args:[None: immed]
         description: Pop a return address from the stack. An optional argument\
  tells the CPU to add a value to SP after popping the return address.
         flags: ,,,,,,,"""
@@ -1352,7 +1352,7 @@ counter. CX is decremented each time the instruction is repeated, until CX = 0\
     def ROL(self, command, i):
         """name: ROL
         title: Rotate left
-        args: [reg]
+        args:[reg]
         description: Rotates the destination operand left. The highest bit is \
 copied into the Carry flag and moved into the loewst bit position.
         flags: *,,,,,,,*"""
@@ -1379,7 +1379,7 @@ copied into the Carry flag and moved into the loewst bit position.
     def ROR(self, command, i):
         """name: ROR
         title: Rotate right
-        args: [reg]
+        args:[reg]
         description: Rotates the destination operand right. The lowest bit is\
  copied into both the Carry flag and the highest bit position.
         flags: *,,,,,,,*"""
@@ -1418,7 +1418,7 @@ The Trap, Interrupt, DIrection, and Overflow flags are not affected.
     def SAL(self, command, i):
         """name: SAL
         title: Shift arithmetic left
-        args: [reg]
+        args:[reg]
         description: Identical to SHL, only included in the instruction set \
 for completeness.
         flags: *,,,*,*,?,*,*"""
@@ -1427,7 +1427,7 @@ for completeness.
     def SAR(self, command, i):
         """name: SAR
         title: Shift arithmetic right
-        args: [reg]
+        args:[reg]
         description: Shifts each bit in the destination operand to the right. \
 The lowest bit is copied into the Carry flag, and the highest bit retains its \
 previous value. This hift is often used with signed operands, because it \
@@ -1455,7 +1455,7 @@ preserves the number's sign.
     def SBB(self, command, i):
         """name: SBB
         title: Subtract with borrow
-        args: [reg: mem],[reg: mem: immed]
+        args:[reg: mem],[reg: mem: immed]
         description: Subtracts the source operand from the destination operand\
  and then subtracts the Carry flag from the destination.
         flags: *,,,*,*,*,*,*"""
@@ -1508,7 +1508,7 @@ decreased if the Direction flag is set (1).
     def SHL(self, command, i):
         """name: SHL
         title: Shift left
-        args: [reg]
+        args:[reg]
         description: Shifts each bit in the destination operand to the left.\
  The highest bit is copied into the Carry flag and the lowest bit is filled \
 with a zero.
@@ -1620,7 +1620,7 @@ the Direction flag is set (1).
     def SUB(self, command, i, inPlace=False):
         """name: SUB
         title: Subtract
-        args: [reg: mem],[reg: mem: immed]
+        args:[reg: mem],[reg: mem: immed]
         description: Subtracts the source opearand from the destination operand
         flags: *,,,*,*,*,*,*"""
         self.ADD(command, i, inPlace=inPlace)
@@ -1677,7 +1677,7 @@ arguments with _PRINTF." % i
     def TEST(self, command, i):
         """name: TEST
         title: Test
-        args: [reg: mem],[reg: mem: immed]
+        args:[reg: mem],[reg: mem: immed]
         description: Tests individual bits in the destination operand against \
 those in the source operand. Performs a logial AND operation that affects the \
 flags but not the destination operand.
@@ -1687,7 +1687,7 @@ flags but not the destination operand.
     def XCHG(self, command, i):
         """name: XCHG
         title: Exchange
-        args: [reg],[reg]
+        args:[reg],[reg]
         description: Exchanges the contents of the source and destination \
 operands
         flags: ,,,,,,,"""
@@ -1707,7 +1707,7 @@ operands
     def XOR(self, command, i):
         """name: XOR
         title: Exclusive OR
-        args: [reg: mem],[reg: mem: immed]
+        args:[reg: mem],[reg: mem: immed]
         description: Each bit in the source operand is exclusive ORed with \
 its corresponding bit in the destination. The destination bit is a 1 only when\
  the original source and destination bits are different.
