@@ -64,7 +64,7 @@ To do this enter very simple assignments at the top of the document.
 
 Things like
 
-  _EXIT = 1
+    _EXIT = 1
 
 etc.
 
@@ -72,19 +72,16 @@ Blank Buffers in memory can be defined in the .SECT .BSS section at the bottom o
 
 Like so:
 
-  .SECT .BSS
-
-    num: .SPACE 3
+    .SECT .BSS
+      num: .SPACE 3
 
 Defines a 3 space buffer called "num".
 
 Values can be loaded into memory with the .SECT .DATA section like so:
 
-  .SECT .DATA
-
-    helloWorld:   .ASCIIZ "Hello World"
-
-    helloNoZerp:  .ASCII "Hello World"
+    .SECT .DATA
+      helloWorld:   .ASCIIZ "Hello World"
+      helloNoZerp:  .ASCII "Hello World"
 
 Where .ASCIIZ stores a zero terminated string in memory.
 And .ASCII stores the string in memory.  
@@ -98,9 +95,8 @@ by a "h". Otherwise they are interpreted as int.
 
 Like so:
 
-  PUSH 25   ! This pushes the integer 25
-
-  PUSH 25h  ! This pushes the hex value 0x25 = 37
+    PUSH 25   ! This pushes the integer 25
+    PUSH 25h  ! This pushes the hex value 0x25 = 37
 
 ##Simulator Interface Basics
 The text field on the left hand side is for the entering/loading of assembly code.  
