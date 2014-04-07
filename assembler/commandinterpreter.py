@@ -255,13 +255,13 @@ class CommandInterpreter(object):
             }
 
     def AAA(self, command, i):
-        """name: AAA
-        title: ASCII Adjust AL After Addition
-        args: None
+        """name:AAA
+        title:ASCII Adjust AL After Addition
+        args:None
         description: Adjusts the result in AL after two ASCII digits have been\
  added together. If AL>9, the high digit of the result is placed in AH, \
 and the Carry and Auxiliary flags are set.
-        flags: ?,,,?,?,*,?,*"""
+        flags:?,,,?,?,*,?,*"""
         if (self.machine.getEightBitRegister('AL') & 15 > 9) or \
         self.machine.getFlag('A'):
             tempAH = self.machine.getEightBitRegister('AH')
@@ -276,32 +276,32 @@ and the Carry and Auxiliary flags are set.
             self.machine.setFlag('C', 0)
 
     def AAD(self, command, i):
-        """name: AAD
-        title: ASCII Adjust AL Before Division
-        args: None
+        """name:AAD
+        title:ASCII Adjust AL Before Division
+        args:None
         description: Converts unpacked BCD digits in AH and AL to a single \
 binary value in preperation for the DIV instruction.
-        flags: ?,,,*,*,?,*,?"""
+        flags:?,,,*,*,?,*,?"""
         self.machine.setRegister('AX', self.machine.getEightBitRegister('AL') +
                                   self.machine.getEightBitRegister('AH') * 10)
 
     def AAM(self, command, i):
-        """name: AAM
-        title: ASCII Adjust AL After Multiplication
-        args: None
+        """name:AAM
+        title:ASCII Adjust AL After Multiplication
+        args:None
         description: Adjusts the result in AX after two unpacked BCD digits \
 have been multiplied together
-        flags: ?,,,*,*,?,*,?"""
+        flags:?,,,*,*,?,*,?"""
         tempAL = self.machine.getEightBitRegister('AL')
         self.machine.setRegister('AX', (tempAL % 10) + (tempAL / 10) * 256)
 
     def AAS(self, command, i):
-        """name: AAS
-        title: ASCII Adjust AL After Subtraction
-        args: None
+        """name:AAS
+        title:ASCII Adjust AL After Subtraction
+        args:None
         description: Adjusts the result in AX after a subtraction operation.\
 If AL>9, AAS decrements AH and sets the Carry and Auxiliary Carry flags.
-        flags: ?,,,?,?,*,?,*"""
+        flags:?,,,?,?,*,?,*"""
         if (self.machine.getEightBitRegister('AL') & 15 > 9) or \
                                         self.machine.getFlag('A'):
             tempAH = self.machine.getEightBitRegister('AH')
@@ -316,21 +316,21 @@ If AL>9, AAS decrements AH and sets the Carry and Auxiliary Carry flags.
             self.machine.setFlag('C', 0)
 
     def ADC(self, command, i):
-        """name: ADC
-        title: Add with Carry
-        args:[reg: mem],[reg: mem: immed]
+        """name:ADC
+        title:Add with Carry
+        args:[reg:mem],[reg:mem:immed]
         description: Adds the source and destination operands, and adds the \
 contents of the Carry flag to the sum, which is stored in the destination
-        flags: *,,,*,*,*,*,*"""
+        flags:*,,,*,*,*,*,*"""
         self.ADD(command, i, carry=True)
 
     def ADD(self, command, i, carry=False, inPlace=False):
-        """name: ADD
-        title: Add
-        args:[reg: mem],[reg: mem: immed]
+        """name:ADD
+        title:Add
+        args:[reg:mem],[reg:mem:immed]
         description: A source operand is added to a destination operand, and \
 the sum is stored in the destination.
-        flags: *,,,*,*,*,*,*"""
+        flags:*,,,*,*,*,*,*"""
 
         if command[1] == "SP" and command[2].isdigit():
             for j in range(int(command[2]) / 2):
@@ -388,12 +388,12 @@ the sum is stored in the destination.
         self.machine.setFlag('P', result % 2)
 
     def AND(self, command, i, inPlace=False):
-        """name: AND
-        title: Logical And
-        args:[reg: mem],[reg: mem: immed]
+        """name:AND
+        title:Logical And
+        args:[reg:mem],[reg:mem:immed]
         description: Each bit in the destination operand is ANDed with the \
 corresponding bit in the source operand
-        flags: *,,,*,*,?,*,0"""
+        flags:*,,,*,*,?,*,0"""
 
         argumentType = self.testArgument(command, 2, i, (self._IMMED,
                                                          self._REG, self._MEM))
@@ -415,12 +415,12 @@ corresponding bit in the source operand
         self.machine.setFlag('C', 0)
 
     def CALL(self, command, i):
-        """name: CALL
-        title: Call
+        """name:CALL
+        title:Call
         args:[label]
         description: Calls the function in the source operand. The current \
         program counter value is pushed to the stack before the call.
-        flags: ,,,,,,,
+        flags:,,,,,,,
         """
         if command[1] in self.machine.getLookupTable().keys():
             self.machine.setJumpLocation(
@@ -433,57 +433,57 @@ corresponding bit in the source operand
                 command[1] + ". It does not exist."
 
     def CBW(self, command, i):
-        """name: CBW
-        title: Convert Byte to Word
-        args: None
+        """name:CBW
+        title:Convert Byte to Word
+        args:None
         description: Extends the sign bit in AL throughout the AH register
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         if self.machine.getEightBitRegister("AL") >= 128:
             self.machine.setRegister('AX',
                                      self.machine.getRegister('AX') - 256)
 
     def CLC(self, command, i):
-        """name: CLC
-        title: Clear carry flag
-        args: None
+        """name:CLC
+        title:Clear carry flag
+        args:None
         description: Clears the carry flag to zero.
-        flags: ,,,,,,,0
+        flags:,,,,,,,0
         """
         self.machine.setFlag("C", 0)
 
     def CLD(self, command, i):
-        """name: CLD
-        title: Clear direction flag
-        args: None
+        """name:CLD
+        title:Clear direction flag
+        args:None
         description: Clears the Direction flag to zero. String primitive \
 instructions will automatically increment SI and DI
-        flags: ,0,,,,,,"""
+        flags:,0,,,,,,"""
         self.machine.setFlag("D", 0)
 
     def CLI(self, commmand, i):
-        """name: CLI
-        title: Clear Interrupt flag
-        args: None
+        """name:CLI
+        title:Clear Interrupt flag
+        args:None
         description: Clears the interrupt flag to zero. This disables maskable\
  hardware interrupts until an STI instruction is executed
-        flags: ,,0,,,,,"""
+        flags:,,0,,,,,"""
         self.machine.setFlag("I", 0)
 
     def CMC(self, command, i):
-        """name: CMC
-        title: Complement Carry flag
-        args: None
+        """name:CMC
+        title:Complement Carry flag
+        args:None
         description: Toggles the current value of the Carry flag
-        flags: ,,,,,,,*"""
+        flags:,,,,,,,*"""
         self.machine.setFlag("C", not self.machine.getFlag('C'))
 
     def CMP(self, command, i):
-        """name: CMP
-        title: Compare
-        args:[reg: mem],[reg: mem: immed]
+        """name:CMP
+        title:Compare
+        args:[reg:mem],[reg:mem:immed]
         description: Compares the destination word to the source word by \
 performing an implied subtraction of the source from the destination.
-        flags: *,,,*,*,*,*,*"""
+        flags:*,,,*,*,*,*,*"""
 
         argType = self.testArgument(command, 1, i, [self._REG, self._MEM])
         if argType == self._ERROR:
@@ -501,12 +501,12 @@ performing an implied subtraction of the source from the destination.
         self.SUB(["CMP", str(x), str(y)], i, inPlace=True)
 
     def CMPB(self, command, i):
-        """name: CMPB
-        title: Compare Byte
-        args:[reg8: mem],[reg8: mem: immed]
+        """name:CMPB
+        title:Compare Byte
+        args:[reg8:mem],[reg8:mem:immed]
         description: Compares the destination byte to the source byte by \
 performing an implied subtraction of the source from the destination.
-        flags: *,,,*,*,*,*,*"""
+        flags:*,,,*,*,*,*,*"""
         for x in command[1: 3]:
             if x in ['AX', 'BX', 'CX', 'DX']:
                 self.machine.stopRunning(-1)
@@ -530,12 +530,12 @@ register, perhaps you meant one of the 8 bit %s or %s registers?" \
         self.SUB(["CMPB", str(x), str(y)], i, inPlace=True)
 
     def DAA(self, command, i):
-        """name: DAA
-        title: Decimal adjust after addition
-        args: None
+        """name:DAA
+        title:Decimal adjust after addition
+        args:None
         description: Adjusts the binary sum in AL after two packed BCD values \
 have been added. Converts the sum to two BCD digits in AL.
-        flags: ?,,,*,*,*,*,*"""
+        flags:?,,,*,*,*,*,*"""
 
         if (self.machine.getEightBitRegister('AL') & 15 > 9) or \
                                         self.machine.getFlag('A'):
@@ -552,12 +552,12 @@ have been added. Converts the sum to two BCD digits in AL.
             self.machine.setFlag('C', 0)
 
     def DAS(self, command, i):
-        """name: DAS
-        title: Decimal adjust after subtraction
-        args: None
+        """name:DAS
+        title:Decimal adjust after subtraction
+        args:None
         description: Converts the binary result of a subtraction operation to \
 two packed BCD digits in AL.
-        flags: ?,,,*,*,*,*,*"""
+        flags:?,,,*,*,*,*,*"""
 
         if (self.machine.getEightBitRegister('AL') & 15 > 9) or \
                                         self.machine.getFlag('A'):
@@ -574,309 +574,309 @@ two packed BCD digits in AL.
             self.machine.setFlag('C', 0)
 
     def DEC(self, command, i):
-        """name: DEC
-        title: Decrement
-        args:[reg: mem]
+        """name:DEC
+        title:Decrement
+        args:[reg:mem]
         description: Subtracts one from the register or memory address provided
-        flags: *,,,*,*,*,*,"""
+        flags:*,,,*,*,*,*,"""
         self.incdec(command, i, -1)
 
     def INC(self, command, i):
-        """name: INC
-        title: Increment
-        args:[reg: mem]
+        """name:INC
+        title:Increment
+        args:[reg:mem]
         description: Adds one to the register or memory address provided
-        flags: *,,,*,*,*,*,"""
+        flags:*,,,*,*,*,*,"""
         self.incdec(command, i, 1)
 
     def JA(self, command, i):
-        """name: JA
-        title: Jump to a label if above
+        """name:JA
+        title:Jump to a label if above
         args:[label]
         description: The same as JG. Jumps if the sign flag is clear and the \
 zero flag is clear
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(self, i,
             not self.machine.getFlag('S') and not self.machine.getFlag('Z'))
 
     def JAE(self, command, i):
-        """name: JAE
-        title: Jump to a label if above or equal
+        """name:JAE
+        title:Jump to a label if above or equal
         args:[label]
         description: The same as JGE. Jumps if the sign flag is clear and/or \
 the zero flag is set
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             not self.machine.getFlag('S') or self.machine.getFlag('Z'))
 
     def JB(self, command, i):
-        """name: JB
-        title: Jump to a label if below
+        """name:JB
+        title:Jump to a label if below
         args:[label]
         description: The same as JL. Jumps if the sign flag is set and the \
 zero flag is clear
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             self.machine.getFlag('S') and not self.machine.getFlag('Z'))
 
     def JBE(self, command, i):
-        """name: JBE
-        title: Jump to a label if below or equal
+        """name:JBE
+        title:Jump to a label if below or equal
         args:[label]
         description: The same as JLE. Jumps if the sign flag is set and/or the\
  zero flag is set
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             self.machine.getFlag('S') or self.machine.getFlag('Z'))
 
     def JC(self, command, i):
-        """name: JC
-        title: Jump to a label if carry
+        """name:JC
+        title:Jump to a label if carry
         args:[label]
         description: Jumps if the carry flag is set
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('C'))
 
     def JCXZ(self, command, i):
-        """name: JCXZ
-        title: Jump to a label if CX is zero
+        """name:JCXZ
+        title:Jump to a label if CX is zero
         args:[label]
         description: Jumps if the value of the CX register is zero
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, self.machine.getRegister('CX') == 0)
 
     def JE(self, command, i):
-        """name: JE
-        title: Jump to a label if equal
+        """name:JE
+        title:Jump to a label if equal
         args:[label]
         description: Jumps if the zero flag is set
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('Z'))
 
     def JG(self, command, i):
-        """name: JG
-        title: Jump to a label if greater than
+        """name:JG
+        title:Jump to a label if greater than
         args:[label]
         description: Jumps if the sign flag is clear and the zero flag is clear
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             not self.machine.getFlag('S') and not self.machine.getFlag('Z'))
 
     def JGE(self, command, i):
-        """name: JGE
-        title: Jump to a label if greater than or equal
+        """name:JGE
+        title:Jump to a label if greater than or equal
         args:[label]
         description: Jumps if the sign flag is clear and/or the zero flag is \
 set
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             not self.machine.getFlag('S') or self.machine.getFlag('Z'))
 
     def JL(self, command, i):
-        """name: JL
-        title: Jump to a label if less than
+        """name:JL
+        title:Jump to a label if less than
         args:[label]
         description: Jumps if the sign flag is set and the zero flag is clear
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             self.machine.getFlag('S') and not self.machine.getFlag('Z'))
 
     def JLE(self, command, i):
-        """name: JLE
-        title: Jump to a label if less than or equal
+        """name:JLE
+        title:Jump to a label if less than or equal
         args:[label]
         description: Jumps if the sign flag is set and/or the zero flag is set
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             self.machine.getFlag('S') or self.machine.getFlag('Z'))
 
     def JNA(self, command, i):
-        """name: JNA
-        title: Jump to a label if not above
+        """name:JNA
+        title:Jump to a label if not above
         args:[label]
         description: The same as JLE. Jumps if the sign flag is set and/or the\
  zero flag is set.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             self.machine.getFlag('S') or self.machine.getFlag('Z'))
 
     def JNAE(self, command, i):
-        """name: JNAE
-        title: Jump to a label if not above or equal
+        """name:JNAE
+        title:Jump to a label if not above or equal
         args:[label]
         description: The same as JL. Jumps if the sign flag is set and the \
 zero flag is clear
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             self.machine.getFlag('S') and not self.machine.getFlag('Z'))
 
     def JNB(self, command, i):
-        """name: JNB
-        title: Jump to a label if not below
+        """name:JNB
+        title:Jump to a label if not below
         args:[label]
         description: The same as JGE. Jumps if the sign flag is clear and/or \
 the zero flag is set.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             not self.machine.getFlag('S') or self.machine.getFlag('Z'))
 
     def JNBE(self, command, i):
-        """name: JNBE
-        title: Jump to a label if not below or equal
+        """name:JNBE
+        title:Jump to a label if not below or equal
         args:[label]
         description: The same as JG. Jumps if the sign flag is clear and the \
 zero flag is clear.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             not self.machine.getFlag('S') and not self.machine.getFlag('Z'))
 
     def JNC(self, command, i):
-        """name: JNC
-        title: Jump to a label if not carry
+        """name:JNC
+        title:Jump to a label if not carry
         args:[label]
         description: Jumps if the carry flag is clear
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('C'))
 
     def JNE(self, command, i):
-        """name: JNE
-        title: Jump to a label if not equal
+        """name:JNE
+        title:Jump to a label if not equal
         args:[label]
         description: Jumps if the zero flag is clear
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('Z'))
 
     def JNG(self, command, i):
-        """name: JNG
-        title: Jump to a label if not greater than
+        """name:JNG
+        title:Jump to a label if not greater than
         args:[label]
         description: The same as JLE. Jumps if the sign flag is set and/or \
 the zero flag is set.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             self.machine.getFlag('S') or self.machine.getFlag('Z'))
 
     def JNGE(self, command, i):
-        """name: JNGE
-        title: Jump to a label if not greater than or equal
+        """name:JNGE
+        title:Jump to a label if not greater than or equal
         args:[label]
         description: The same as JL. Jumps if the sign flag is set and the \
 zero flag is clear.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             self.machine.getFlag('S') and not self.machine.getFlag('Z'))
 
     def JNL(self, command, i):
-        """name: JNL
-        title: Jump to a label if not less than
+        """name:JNL
+        title:Jump to a label if not less than
         args:[label]
         description: The same as JGE. Jumps if the sign flag is clear and/or \
 the zero flag is set.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             not self.machine.getFlag('S') or self.machine.getFlag('Z'))
 
     def JNLE(self, command, i):
-        """name: JNLE
-        title: Jump to a label if not less than or equal
+        """name:JNLE
+        title:Jump to a label if not less than or equal
         args:[label]
         description: The same as JG. Jumps if the sign flag is clear and the \
 zero flag is clear.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             not self.machine.getFlag('S') and not self.machine.getFlag('Z'))
 
     def JNO(self, command, i):
-        """name: JNO
-        title: Jump to a label if not overflow
+        """name:JNO
+        title:Jump to a label if not overflow
         args:[label]
         description: Jumps if the overflow flag is clear.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('O'))
 
     def JNP(self, command, i):
-        """name: JNP
-        title: Jump to a label if not parity
+        """name:JNP
+        title:Jump to a label if not parity
         args:[label]
         description: Jumps if the parity flag is clear.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('P'))
 
     def JNS(self, command, i):
-        """name: JC
-        title: Jump to a label if not sign.
+        """name:JC
+        title:Jump to a label if not sign.
         args:[label]
         description: The same as JG. Jumps if the sign flag is clear.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('S'))
 
     def JNZ(self, command, i):
-        """name: JC
-        title: Jump to a label if not zero
+        """name:JC
+        title:Jump to a label if not zero
         args:[label]
         description: Jumps if the zero flag is clear
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, not self.machine.getFlag('Z'))
 
     def JO(self, command, i):
-        """name: JC
-        title: Jump to a label if overflow.
+        """name:JC
+        title:Jump to a label if overflow.
         args:[label]
         description: Jumps if the overflow flag is set
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('O'))
 
     def JP(self, command, i):
-        """name: JC
-        title: Jump to a label if parity
+        """name:JC
+        title:Jump to a label if parity
         args:[label]
         description: Jumps if the parity flag is set
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('P'))
 
     def JPE(self, command, i):
-        """name: JC
-        title: Jump to a label if parity or equal
+        """name:JC
+        title:Jump to a label if parity or equal
         args:[label]
         description: Jumps if the parity flag is set and/or the zero flag is \
 set
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
             self.machine.getFlag('P') or self.machine.getFlag('Z'))
 
     def JPO(self, command, i):
-        """name: JC
-        title: Jump to a label if parity or overflow
+        """name:JC
+        title:Jump to a label if parity or overflow
         args:[label]
         description: Jumps if the parity flag is set or the overflow flag is \
 set
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i,
                 self.machine.getFlag('P') or self.machine.getFlag('O'))
 
     def JS(self, command, i):
-        """name: JC
-        title: Jump to a label if sign
+        """name:JC
+        title:Jump to a label if sign
         args:[label]
         description: The same as JL. Jumps if the sign flag is set.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('S'))
 
     def JZ(self, command, i):
-        """name: JC
-        title: Jump to a label if zero
+        """name:JC
+        title:Jump to a label if zero
         args:[label]
         description: The same as JE. Jumps if the zero flag is set
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.jf(command, i, self.machine.getFlag('Z'))
 
     def JMP(self, command, i, referer="JMP"):
-        """name: JMP
-        title: Jump unconditionally to a label
+        """name:JMP
+        title:Jump unconditionally to a label
         args:[label]
         description: The program counter is adjusted to the value referenced \
 by the label and program execution continues.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         if command[1] in self.machine.getLookupTable().keys() and \
                                     not self.machine.isHex(command[1]):
             self.machine.setJumpLocation(
@@ -916,11 +916,11 @@ by the label and program execution continues.
                 " is not defined for " + referer + "-ing to."
 
     def LODSB(self, command, i):
-        """name: LODSB
-        title: Load accumulator from string
-        args: None
+        """name:LODSB
+        title:Load accumulator from string
+        args:None
         description: Loads a memory byte addressed by SI into AL.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         si = self.machine.getRegister('SI')
         byte = self.machine.getFromMemoryAddress(si)
         self.machine.setRegister('AX', byte)
@@ -933,11 +933,11 @@ by the label and program execution continues.
         self.machine.setRegister('SI', siVal)
 
     def LODSW(self, command, i):
-        """name: LODSW
-        title: Load accumulator from string
-        args: None
+        """name:LODSW
+        title:Load accumulator from string
+        args:None
         description: Loads a memory word addressed by SI into AX.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         si = self.machine.getRegister('SI')
         word = self.machine.getFromMemoryAddress(si)
         word += self.machine.getFromMemoryAddress(si + 1) * 256
@@ -951,12 +951,12 @@ by the label and program execution continues.
         self.machine.setRegister('SI', siVal)
 
     def LOOP(self, command, i, flag=True):
-        """name: LOOP
-        title: Loop
+        """name:LOOP
+        title:Loop
         args:[label]
         description: Decrements CX and jumps to the label if CX is greater \
 than zero.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
 
         argumentType = self.testArgument(command, 1, i, [self._LABEL])
         if argumentType == self._ERROR:
@@ -967,48 +967,48 @@ than zero.
             self.machine.setRegister("CX", self.machine.getRegister('CX') - 1)
 
     def LOOPE(self, command, i):
-        """name: LOOPE
-        title: Loop if equal
+        """name:LOOPE
+        title:Loop if equal
         args:[label]
         description: Decrements CX and jumps to a label if CX>0 and the Zero \
 flag is set.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.LOOP(command, i, self.machine.getFlag('Z'))
 
     def LOOPNE(self, command, i):
-        """name: LOOPNE
-        title: Loop if not equal
+        """name:LOOPNE
+        title:Loop if not equal
         args:[label]
         description: Decrements CX and jumps to a label if CX>0 and the Zero \
 flag is clear.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.LOOP(command, i, not self.machine.getFlag('Z'))
 
     def LOOPNZ(self, command, i):
-        """name: LOOPNZ
-        title: Loop if not zero
+        """name:LOOPNZ
+        title:Loop if not zero
         args:[label]
         description: Decrements CX and jumps to a label if CX>0 and the Zero \
 flag is clear.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.LOOP(command, i, not self.machine.getFlag('Z'))
 
     def LOOPZ(self, command, i):
-        """name: LOOPZ
-        title: Loop if zero
+        """name:LOOPZ
+        title:Loop if zero
         args:[label]
         description: Decrements CX and jumps to a label if CX>0 and the Zero \
 flag is set.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         self.LOOP(command, i, self.machine.getFlag('Z'))
 
     def MOV(self, command, i):
-        """name: MOV
-        title: Move
-        args:[reg: mem],[reg: mem: immed]
+        """name:MOV
+        title:Move
+        args:[reg:mem],[reg:mem:immed]
         description: Copies a byte or word from a source operand to a \
 destination operand.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
 
         argumentType = self.testArgument(command, 2, i, (self._IMMED,
                                                          self._REG, self._MEM))
@@ -1024,22 +1024,22 @@ destination operand.
         self.setValue(command[1], argumentType, t)
 
     def NOP(self, command, i):
-        """name: NOP
-        title: No Operation
-        args: None
+        """name:NOP
+        title:No Operation
+        args:None
         description: Does nothing. Usually implemented at machine level as \
 XCHG AX,AX
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         return
 
     def MOVSB(self, command, i):
-        """name: MOVSB
-        title: Move string
-        args: None
+        """name:MOVSB
+        title:Move string
+        args:None
         description: Copies a byte from memory addressed by SI to a memory \
 addressed by DI. SI and DI are increased if the Direction flag is clear (0) \
 and decreased if the Direction flag is set (1).
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         si = self.machine.getRegister('SI')
         self.machine.setMemoryAddress(self.machine.getRegister('DI'),
                                       self.machine.getFromMemoryAddress(si))
@@ -1048,13 +1048,13 @@ and decreased if the Direction flag is set (1).
         self.machine.setRegister('SI', newSiVal)
 
     def MOVSW(self, command, i):
-        """name: MOVSW
-        title: Move string
-        args: None
+        """name:MOVSW
+        title:Move string
+        args:None
         description: Copies a word from memory addressed by SI to a memory \
 addressed by DI. SI and DI are increased if the Direction flag is clear (0) \
 and decreased if the Direction flag is set (1).
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         si = self.machine.getRegister('SI')
         di = self.machine.getRegister('DI')
         self.machine.setMemoryAddress(di,
@@ -1066,11 +1066,11 @@ and decreased if the Direction flag is set (1).
         self.machine.setRegister('SI', newSiVal)
 
     def NEG(self, command, i):
-        """name: NEG
-        title: Negate
+        """name:NEG
+        title:Negate
         args:[reg]
         description: Calculates the twos complement of the argument in place.
-        flags: *,,,*,*,*,*,*"""
+        flags:*,,,*,*,*,*,*"""
         argumentType = self.testArgument(command, 1, i, [self._REG])
         if argumentType == self._ERROR:
             return self.ERRSTR
@@ -1085,12 +1085,12 @@ and decreased if the Direction flag is set (1).
         self.machine.setFlag('Z', result == 0)
 
     def NOT(self, command, i):
-        """name: NOT
-        title: Logical Not
-        args:[reg: mem]
+        """name:NOT
+        title:Logical Not
+        args:[reg:mem]
         description: Performs a logical not on an operand by reversing each of\
  its bits.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         argType = self.testArgument(command, 1, i, [self._REG, self._MEM])
         if argType == self._ERROR:
             return self.ERRSTR
@@ -1098,13 +1098,13 @@ and decreased if the Direction flag is set (1).
         self.setValue(command[1], argType, ~self.getValue(command[1], argType))
 
     def OR(self, command, i):
-        """name: OR
-        title: Inclusive Or
-        args:[reg: mem],[reg: mem: immed]
+        """name:OR
+        title:Inclusive Or
+        args:[reg:mem],[reg:mem:immed]
         description: Performs a logical OR between each bit in the destination\
  operand and each bit in the source operand. If either bit is a 1 in each \
 position, the result bit is a 1.
-        flags: 0,,,*,*,?,*,0"""
+        flags:0,,,*,*,?,*,0"""
 
         argumentType = self.testArgument(command, 2, i, (self._IMMED,
                                                          self._REG, self._MEM))
@@ -1127,12 +1127,12 @@ position, the result bit is a 1.
         self.machine.setFlag('C', 0)
 
     def POP(self, command, i):
-        """name: POP
-        title: Pop from stack
+        """name:POP
+        title:Pop from stack
         args:[reg]
         description: Copies a word at the current stack pointer location into\
  the destination operand, and adds 2 to the SP.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         argumentType = self.testArgument(command, 1, i, [self._REG])
         if argumentType == self._ERROR:
             return self.ERRSTR
@@ -1141,12 +1141,12 @@ position, the result bit is a 1.
         self.machine.setRegister('SP', self.machine.getRegister('SP') + 2)
 
     def POPF(self, command, i):
-        """name: POPF
-        title: Pop flags from stack
-        args: None
+        """name:POPF
+        title:Pop flags from stack
+        args:None
         description: POPF pops the top of the stack into the 16-bit Flags\
  register.
-        flags: *,*,*,*,*,*,*,*"""
+        flags:*,*,*,*,*,*,*,*"""
         flags = self.machine.popFromStack()
 
         self.machine.setFlag('C', flags % 2)
@@ -1162,12 +1162,12 @@ position, the result bit is a 1.
         self.machine.setRegister('SP', self.machine.getRegister('SP') + 2)
 
     def PUSH(self, command, i):
-        """name: PUSH
-        title: Push on stack
-        args:[reg: mem: immed]
+        """name:PUSH
+        title:Push on stack
+        args:[reg:mem:immed]
         description: Subtracts 2 from SP and copies the source operand into\
  the stack location pointed to by SP.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         argType = self.testArgument(command, 1, i, [self._REG,
                                                     self._MEM, self._IMMED])
         if argType == self._ERROR:
@@ -1178,11 +1178,11 @@ position, the result bit is a 1.
         self.machine.setRegister('SP', self.machine.getRegister('SP') - 2)
 
     def PUSHF(self, command, i):
-        """name: PUSHF
-        title: Push flags onto the stack
-        args: None
+        """name:PUSHF
+        title:Push flags onto the stack
+        args:None
         description: PUSHF pushes the Flags register onto the stack.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         flags = self.machine.getFlag('S') * (128)
         flags += self.machine.getFlag('Z') * (64)
         flags += self.machine.getFlag('A') * (16)
@@ -1193,12 +1193,12 @@ position, the result bit is a 1.
         self.machine.setRegister('SP', self.machine.getRegister('SP') - 2)
 
     def RCL(self, command, i):
-        """name: RCL
-        title: Rotate carry left
+        """name:RCL
+        title:Rotate carry left
         args:[reg]
         description: Rotates the destionation operand left. The carry flag is\
  copied into the lowest bit, and the highest bit is copied into the Carry flag
-        flags: *,,,,,,,*"""
+        flags:*,,,,,,,*"""
         argumentType = self.testArgument(command, 1, i, [self._REG])
         if argumentType == self._ERROR:
             return self.ERRSTR
@@ -1220,13 +1220,13 @@ position, the result bit is a 1.
         self.machine.setFlag('C', temp)
 
     def RCR(self, command, i):
-        """name: RCR
-        title: Rotates carry right
+        """name:RCR
+        title:Rotates carry right
         args:[reg]
         description: Rotates the destination operand right, using the source\
  operand to determine the number of rotations. The carry flag is copied into \
 the highest bit, and the lowest bit is copied into the Carry flag.
-        flags: *,,,,,,,*"""
+        flags:*,,,,,,,*"""
         argumentType = self.testArgument(command, 1, i, [self._REG])
         if argumentType == self._ERROR:
             return self.ERRSTR
@@ -1251,14 +1251,14 @@ the highest bit, and the lowest bit is copied into the Carry flag.
         self.machine.setFlag('C', temp)
 
     def REP(self, command, i):
-        """name: REP
-        title: Repeating string primitive command
-        args:[MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
-STOSB: STOSW: LODS: LODSB: LODSW]
+        """name:REP
+        title:Repeating string primitive command
+        args:[MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:\
+STOSB:STOSW:LODS:LODSB:LODSW]
 description: Repeats a string primitive instruction, using CX as a \
 counter. CX is decremented each time the instruction is repeated, \
 until CX = 0. EG REP MOVSB
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         if command[1] in ["MOVS", "MOVSB", "CMPS", "CMPSB", "CMPSW", "SCAS",
                           "SCASB", "SCASW", "STOS", "STOSB", "STOSW", "LODS",
                           "LODSB", "LODSW"]:
@@ -1271,14 +1271,14 @@ until CX = 0. EG REP MOVSB
             return "Innapropriate command used with REP on line " + str(i)
 
     def REPE(self, command, i):
-        """name: REPE
-        title: Repeating string primitive command if equal
-        args:[MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
-STOSB: STOSW: LODS: LODSB: LODSW]
+        """name:REPE
+        title:Repeating string primitive command if equal
+        args:[MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:\
+STOSB:STOSW:LODS:LODSB:LODSW]
         description: Repeats a string primitive instruction, using CX as a \
 counter. CX is decremented each time the instruction is repeated, until CX = 0\
  while the zero flag is set. EG REP MOVSB
-        flags: ,,,,*,,,"""
+        flags:,,,,*,,,"""
         if command[1] in ["CMPS", "CMPSB", "CMPSW", "SCAS", "SCASB", "SCASW"]:
             while self.machine.getFlag("Z") and \
                                         self.machine.getRegister('CX') > 0:
@@ -1291,14 +1291,14 @@ counter. CX is decremented each time the instruction is repeated, until CX = 0\
                 " on line " + str(i)
 
     def REPNE(self, command, i):
-        """name: REPNE
-        title: Repeating string primitive command if not equal
-        args:[MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
-STOSB: STOSW: LODS: LODSB: LODSW]
+        """name:REPNE
+        title:Repeating string primitive command if not equal
+        args:[MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:\
+STOSB:STOSW:LODS:LODSB:LODSW]
         description: Repeats a string primitive instruction, using CX as a \
 counter. CX is decremented each time the instruction is repeated, until CX = 0\
  while the zero flag is clear. EG REP MOVSB
-        flags: ,,,,*,,,"""
+        flags:,,,,*,,,"""
 
         if command[1] in ["CMPS", "CMPSB", "CMPSW", "SCAS", "SCASB", "SCASW"]:
             while not self.machine.getFlag("Z") and \
@@ -1312,36 +1312,36 @@ counter. CX is decremented each time the instruction is repeated, until CX = 0\
                 " on line " + str(i)
 
     def REPNZ(self, command, i):
-        """name: REPNZ
-        title: Repeating string primitive command if not zero
-        args:[MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
-STOSB: STOSW: LODS: LODSB: LODSW]
+        """name:REPNZ
+        title:Repeating string primitive command if not zero
+        args:[MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:\
+STOSB:STOSW:LODS:LODSB:LODSW]
         description: Repeats a string primitive instruction, using CX as a \
 counter. CX is decremented each time the instruction is repeated, until CX = 0\
  while the zero flag is clear. EG REP MOVSB
-        flags: ,,,,*,,,"""
+        flags:,,,,*,,,"""
 
         self.REPNE(command, i)
 
     def REPZ(self, command, i):
-        """name: REPZ
-        title: Repeating string primitive command if zero
-        args:[MOVS: MOVSB: CMPS: CMPSB: CMPSW: SCAS: SCASB: SCASW: STOS: \
-STOSB: STOSW: LODS: LODSB: LODSW]
+        """name:REPZ
+        title:Repeating string primitive command if zero
+        args:[MOVS:MOVSB:CMPS:CMPSB:CMPSW:SCAS:SCASB:SCASW:STOS:\
+STOSB:STOSW:LODS:LODSB:LODSW]
         description: Repeats a string primitive instruction, using CX as a \
 counter. CX is decremented each time the instruction is repeated, until CX = 0\
  while the zero flag is set. EG REP MOVSB
-        flags: ,,,,*,,,"""
+        flags:,,,,*,,,"""
 
         self.REPE(command, i)
 
     def RET(self, command, i):
-        """name: RET
-        title: Return from procedure
-        args:[None: immed]
+        """name:RET
+        title:Return from procedure
+        args:[None:immed]
         description: Pop a return address from the stack. An optional argument\
  tells the CPU to add a value to SP after popping the return address.
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         if self.machine.stackSize() == 0:
             self.machine.stopRunning(-1)
             return "Fatal Error: The stack is empty and RET was called, there\
@@ -1356,12 +1356,12 @@ counter. CX is decremented each time the instruction is repeated, until CX = 0\
             return "Returning address out of bounds. Line " + str(i)
 
     def ROL(self, command, i):
-        """name: ROL
-        title: Rotate left
+        """name:ROL
+        title:Rotate left
         args:[reg]
         description: Rotates the destination operand left. The highest bit is \
 copied into the Carry flag and moved into the loewst bit position.
-        flags: *,,,,,,,*"""
+        flags:*,,,,,,,*"""
         argumentType = self.testArgument(command, 1, i, [self._REG])
         if argumentType == self._ERROR:
             return self.ERRSTR
@@ -1383,12 +1383,12 @@ copied into the Carry flag and moved into the loewst bit position.
         self.machine.setFlag('C', temp)
 
     def ROR(self, command, i):
-        """name: ROR
-        title: Rotate right
+        """name:ROR
+        title:Rotate right
         args:[reg]
         description: Rotates the destination operand right. The lowest bit is\
  copied into both the Carry flag and the highest bit position.
-        flags: *,,,,,,,*"""
+        flags:*,,,,,,,*"""
         argumentType = self.testArgument(command, 1, i, [self._REG])
         if argumentType == self._ERROR:
             return self.ERRSTR
@@ -1410,35 +1410,35 @@ copied into the Carry flag and moved into the loewst bit position.
         self.machine.setFlag('C', temp)
 
     def SAHF(self, command, i):
-        """name: SAHF
-        title: Store AH into flags
-        args: None
+        """name:SAHF
+        title:Store AH into flags
+        args:None
         description: Copies AH into bits 0 through 7 of the Flags register. \
 The Trap, Interrupt, DIrection, and Overflow flags are not affected.
-        flags: ,,,*,*,*,*,*"""
+        flags:,,,*,*,*,*,*"""
         flags = self.machine.getEightBitRegister('AH')
         for f in ['C', 'P', 'A', 'Z', 'S', 'I', 'D', 'O']:
             self.machine.setFlags(f, flags % 2)
             flags /= 2
 
     def SAL(self, command, i):
-        """name: SAL
-        title: Shift arithmetic left
+        """name:SAL
+        title:Shift arithmetic left
         args:[reg]
         description: Identical to SHL, only included in the instruction set \
 for completeness.
-        flags: *,,,*,*,?,*,*"""
+        flags:*,,,*,*,?,*,*"""
         self.SHL(self, command, i)
 
     def SAR(self, command, i):
-        """name: SAR
-        title: Shift arithmetic right
+        """name:SAR
+        title:Shift arithmetic right
         args:[reg]
         description: Shifts each bit in the destination operand to the right. \
 The lowest bit is copied into the Carry flag, and the highest bit retains its \
 previous value. This hift is often used with signed operands, because it \
 preserves the number's sign.
-        flags: *,,,*,*,?,*,*"""
+        flags:*,,,*,*,?,*,*"""
         argumentType = self.testArgument(command, 1, i, [self._REG])
         if argumentType == self._ERROR:
             return self.ERRSTR
@@ -1459,12 +1459,12 @@ preserves the number's sign.
         self.machine.setRegister(command[1], reg)
 
     def SBB(self, command, i):
-        """name: SBB
-        title: Subtract with borrow
-        args:[reg: mem],[reg: mem: immed]
+        """name:SBB
+        title:Subtract with borrow
+        args:[reg:mem],[reg:mem:immed]
         description: Subtracts the source operand from the destination operand\
  and then subtracts the Carry flag from the destination.
-        flags: *,,,*,*,*,*,*"""
+        flags:*,,,*,*,*,*,*"""
 
         argumentType = self.testArgument(command, 1, i, [self._REG, self._MEM])
         if argumentType == self._ERROR:
@@ -1477,13 +1477,13 @@ preserves the number's sign.
         self.ADD(command, i, carry=True)
 
     def SCASB(self, command, i):
-        """name: SCASB
-        title: Scan string
-        args: None
+        """name:SCASB
+        title:Scan string
+        args:None
         description: Scans a string in memory pointed to by DI for a value \
 that matches AL. DI is increased if the Direction flag is clear (0) and \
 decreased if the Direction flag is set (1).
-        flags: *,,,*,*,*,*,*"""
+        flags:*,,,*,*,*,*,*"""
 
         di = self.machine.getRegister('DI')
         self.SUB(['SCASB', str(self.machine.getEightBitRegister('AL')),
@@ -1493,13 +1493,13 @@ decreased if the Direction flag is set (1).
         self.machine.setRegister('DI', newDiVal)
 
     def SCASW(self, command, i):
-        """name: SCASW
-        title: Scan string
-        args: None
+        """name:SCASW
+        title:Scan string
+        args:None
         description: Scans a string in memory pointed to by DI for a value \
 that matches AX. DI is increased if the Direction flag is clear (0) and \
 decreased if the Direction flag is set (1).
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
 
         di = self.machine.getRegister('DI')
         word = self.machine.getFromMemoryAddress(di + 1)
@@ -1512,13 +1512,13 @@ decreased if the Direction flag is set (1).
         self.machine.setRegister('DI', newDiVal)
 
     def SHL(self, command, i):
-        """name: SHL
-        title: Shift left
+        """name:SHL
+        title:Shift left
         args:[reg]
         description: Shifts each bit in the destination operand to the left.\
  The highest bit is copied into the Carry flag and the lowest bit is filled \
 with a zero.
-        flags: *,,,*,*,?,*,*"""
+        flags:*,,,*,*,?,*,*"""
 
         argumentType = self.testArgument(command, 1, i, [self._REG])
         if argumentType == self._ERROR:
@@ -1539,13 +1539,13 @@ with a zero.
         self.machine.setFlag('C', temp)
 
     def SHR(self, command, i):
-        """name: SHR
-        title: Shift right
-        args: None
+        """name:SHR
+        title:Shift right
+        args:None
         description: SHifts each bit in the destination operand to the right.\
  The highest bit is filled with a zero, and the lowest bit is copied into the\
  Carry flag.
-        flags: *,,,*,*,?,*,*"""
+        flags:*,,,*,*,?,*,*"""
 
         argumentType = self.testArgument(command, 1, i, [self._REG])
         if argumentType == self._ERROR:
@@ -1566,37 +1566,37 @@ with a zero.
         self.machine.setFlag('C', temp)
 
     def STC(self, command, i):
-        """name: STC
-        title: Set the Carry flag
-        args: None
+        """name:STC
+        title:Set the Carry flag
+        args:None
         description: Sets the Carry flag to 1
-        flags: ,,,,,,,1"""
+        flags:,,,,,,,1"""
         self.machine.setFlag("C")
 
     def STD(self, command, i):
-        """name: STD
-        title: Set the Direction flag
-        args: None
+        """name:STD
+        title:Set the Direction flag
+        args:None
         description: Sets the Direction flag to 1
-        flags: ,1,,,,,,"""
+        flags:,1,,,,,,"""
         self.machine.setFlag("D")
 
     def STI(self, command, i):
-        """name: STI
-        title: Sets the Interrupt flag
-        args: None
+        """name:STI
+        title:Sets the Interrupt flag
+        args:None
         description: Sets the Interrupt flag to 1
-        flags: ,,1,,,,,"""
+        flags:,,1,,,,,"""
         self.machine.setFlag("I")
 
     def STOSB(self, command, i):
-        """name: STOSB
-        title: Store string data
-        args: None
+        """name:STOSB
+        title:Store string data
+        args:None
         description: Stores the value of AL in the memory location addressed \
 by DI. DI is increased if the Direction flag is clear (0), and decreased if \
 the Direction flag is set (1).
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
 
         di = self.machine.getRegister('DI')
         self.machine.setMemoryAddress(di,
@@ -1606,13 +1606,13 @@ the Direction flag is set (1).
         self.machine.setRegister('DI', newDiVal)
 
     def STOSW(self, command, i):
-        """name: STOSW
-        title: Store string data
-        args: None
+        """name:STOSW
+        title:Store string data
+        args:None
         description: Stores the value of AX in the memory location addressed \
 by DI. DI is increased if the Direction flag is clear (0), and decreased if \
 the Direction flag is set (1).
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
 
         di = self.machine.getRegister("DI")
         self.machine.setMemoryAddress(di,
@@ -1624,20 +1624,20 @@ the Direction flag is set (1).
         self.machine.setRegister('DI', newDiVal)
 
     def SUB(self, command, i, inPlace=False):
-        """name: SUB
-        title: Subtract
-        args:[reg: mem],[reg: mem: immed]
+        """name:SUB
+        title:Subtract
+        args:[reg:mem],[reg:mem:immed]
         description: Subtracts the source opearand from the destination operand
-        flags: *,,,*,*,*,*,*"""
+        flags:*,,,*,*,*,*,*"""
         self.ADD(command, i, inPlace=inPlace)
 
     def SYS(self, command, i):
-        """name: SYS
-        title: System trap
-        args: None
+        """name:SYS
+        title:System trap
+        args:None
         description: Calls a system trap: evaluates based on the last piece \
 of data on the stack
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         if self.machine.stackSize() == 0:
             self.machine.stopRunning(-1)
             return "Invalid system trap: SYS called on line %d without any \
@@ -1681,22 +1681,22 @@ on the stack is not understood" % (i, self.machine.getStack()[-1])
 arguments with _PRINTF." % i
 
     def TEST(self, command, i):
-        """name: TEST
-        title: Test
-        args:[reg: mem],[reg: mem: immed]
+        """name:TEST
+        title:Test
+        args:[reg:mem],[reg:mem:immed]
         description: Tests individual bits in the destination operand against \
 those in the source operand. Performs a logial AND operation that affects the \
 flags but not the destination operand.
-        flags: 0,,,*,*,?,*,0"""
+        flags:0,,,*,*,?,*,0"""
         self.AND(command, i, inPlace=True)
 
     def XCHG(self, command, i):
-        """name: XCHG
-        title: Exchange
+        """name:XCHG
+        title:Exchange
         args:[reg],[reg]
         description: Exchanges the contents of the source and destination \
 operands
-        flags: ,,,,,,,"""
+        flags:,,,,,,,"""
         argType1 = self.testArgument(command, 1, i, [self._REG])
         if argType1 == self._ERROR:
             return self.ERRSTR
@@ -1711,14 +1711,14 @@ operands
             self.machine.setRegister(command[2], temp)
 
     def XOR(self, command, i):
-        """name: XOR
-        title: Exclusive OR
-        args:[reg: mem],[reg: mem: immed]
+        """name:XOR
+        title:Exclusive OR
+        args:[reg:mem],[reg:mem:immed]
         description: Each bit in the source operand is exclusive ORed with \
 its corresponding bit in the destination. The destination bit is a 1 only when\
  the original source and destination bits are different.
-        flags: 0,,,*,*,?,*,0
-        flags: ODISZAPC"""
+        flags:0,,,*,*,?,*,0
+        flags:ODISZAPC"""
 
         argumentType = self.testArgument(command, 2, i, (self._IMMED,
                                                          self._REG, self._MEM))
