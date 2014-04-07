@@ -1512,7 +1512,7 @@ class Simulator(object):
 
     def makeCharPrintable(self, string):
         """ Char's "below" " " in the ascii table or above "~" do not have nice
-            printable forms. So we replace them with periods. """
+            printable forms. So we replace them with zeros. """
 
         _ESCAPESEQUENCES = ["\n", "'", '"', "\a", "\b", "\f", "\r", "\t", "\v"]
 
