@@ -1,4 +1,0 @@
-	T = 3
-.SECT .TEXT
-	PUSH T
-	POP AX
