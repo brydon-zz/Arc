@@ -374,6 +374,9 @@ class Simulator(object):
 
             memToDisplay = [self.machine.intToHex(ord(x))
                             for x in self.machine.getFromMemoryAddress(0, 144)]
+
+            self.memoryBuffer.set_text("".join(memToDisplay))
+
             self.colourMemory()
         else:
             regAText = str(self.machine.getRegister('AX'))
@@ -401,7 +404,10 @@ class Simulator(object):
             memToDisplay = self.machine.getFromMemoryAddress(0,
                                                      288 - self.backSlashCount)
 
-        escapedMem = [self.machine.escapeSequences(x) for x in memToDisplay]
+            escapedMem = [self.machine.escapeSequences(self.makeCharPrintable(x)) \
+                                                        for x in memToDisplay]
+
+            self.memoryBuffer.set_text("".join(escapedMem))
 
         self.regA.set_text(regAText)
         self.regAL.set_text(regALText)
@@ -422,7 +428,6 @@ class Simulator(object):
         self.regBP.set_text(regBPText)
         self.regPC.set_text(regPCText)
 
-        self.memoryBuffer.set_text("".join(escapedMem))
         self.colourMemory()
 
     def makeHelpBox(self):
@@ -1504,6 +1509,18 @@ class Simulator(object):
             dialog.destroy()
 
         Gtk.main_quit(args)
+
+    def makeCharPrintable(self, string):
+        """ Char's "below" " " in the ascii table or above "~" do not have nice
+            printable forms. So we replace them with periods. """
+
+        _ESCAPESEQUENCES = ["\n", "'", '"', "\a", "\b", "\f", "\r", "\t", "\v"]
+
+        if string in _ESCAPESEQUENCES:
+            return string
+        if ord(string) < ord(" ") or ord(string) > ord("~"):
+            return "0"
+        return string
 
 
 def main():
