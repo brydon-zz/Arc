@@ -34,6 +34,12 @@ class CommandInterpreter(object):
     _MEM = 9
     _IMMED = 10
     _CHAR = 11
+    _IMMEDMEMHEX = 12
+    _IMMEDMEMINT = 13
+    _IMMEDMEMREG8 = 14
+    _IMMEDMEMREG = 15
+    _DATAVAL = 16
+    _BSSVAL = 17
 
     def __init__(self, machine):
         """ Link's this module with the self.machine instance """
@@ -1653,10 +1659,10 @@ on the stack is not understood" % (i, self.machine.getStack()[-1])
                     args = []
                     while True:  # TODO: fix this VV
                         j = int(self.machine.getStack()[-k])
-                        if self.machine.addressSpace.count("0") == 0:
+                        if self.machine.addressSpace.count(chr(0)) == 0:
                             formatStr = "".join(self.machine.addressSpace[j:])
                         else:
-                            f = self.machine.addressSpace.index("0",
+                            f = self.machine.addressSpace.index(chr(0),
                                             int(self.machine.getStack()[-k]))
 
                             formatStr = "".join(self.machine.addressSpace[j:f])
@@ -1761,16 +1767,32 @@ the polarity (-1 for dec, 1 for inc) """
             if command[numArg] in self.machine.getRegisterNames():
                 return self._REG
         if self._MEM in argList:
-            if self.machine.inBSSKeys(command[numArg]):
-                return self._BSS
-            elif self.machine.inDATAKeys(command[numArg]):
-                return self._DATA
+            if len(command[numArg]) > 2:
+                if command[numArg][0] == "(" and command[numArg][-1] == ")":
+                    arg = command[numArg].lstrip("(").rstrip(")")
+                    if self.machine.isHex(arg):
+                        if arg[-1] == "h":
+                            return self._IMMEDMEMHEX
+                        else:
+                            return self._IMMEDMEMINT
+                    elif self.machine.inBSSKeys(arg):
+                        return self._BSS
+                    elif self.machine.inDATAKeys(arg):
+                        return self._DATA
+                    elif arg in self.machine.getRegisterNames():
+                        return self._IMMEDMEMREG
+                    elif arg in self.machine.getEightBitRegisterNames():
+                        return self._IMMEDMEMREG8
         if self._REG8 in argList:
             if command[numArg] in self.machine.getEightBitRegisterNames():
                 return self._REG8
         if self._IMMED in argList:
             if self.machine.isLocalVar(command[numArg]):
                 return self._LOCALVAR
+            elif self.machine.inBSSKeys(command[numArg]):
+                return self._BSSVAL
+            elif self.machine.inDATAKeys(command[numArg]):
+                return self._DATAVAL
             elif self.machine.isHex(command[numArg]):
                 if command[numArg][-1] == "h":
                     return self._HEX
@@ -1785,6 +1807,7 @@ the polarity (-1 for dec, 1 for inc) """
                     return self._CHAR
                 except TypeError:
                     """ Fall thru """
+
         if self._LABEL in argList:
             if command[numArg] in self.machine.getLookupTable():
                 return self._LABEL
@@ -1807,10 +1830,32 @@ the polarity (-1 for dec, 1 for inc) """
             return int(arg)
         elif argumentType == self._LOCALVAR:
             return int(self.machine.getLocalVar(arg))
+        elif argumentType == self._BSSVAL:
+            return self.machine.getFromBSS(arg, 0)
+        elif argumentType == self._DATAVAL:
+            return self.machine.getFromDATA(arg, 0)
         elif argumentType == self._BSS:
-            return int(self.machine.getFromBSS(arg, 0))
+            arg = arg.lstrip('(').rstrip(')')
+            addr = int(self.machine.getFromBSS(arg, 0))
+            return ord(self.machine.getFromMemoryAddress(addr))
         elif argumentType == self._DATA:
-            return int(self.machine.getFromDATA(arg, 0))
+            arg = arg.lstrip('(').rstrip(')')
+            addr = int(self.machine.getFromDATA(arg, 0))
+            return ord(self.machine.getFromMemoryAddress(addr))
+        elif argumentType == self._IMMEDMEMINT:
+            addr = int(arg.lstrip('(').rstrip(')'))
+            return ord(self.machine.getFromMemoryAddress(addr))
+        elif argumentType == self._IMMEDMEMHEX:
+            addr = int(arg.lstrip('(').rstrip(')')[:-1], 16)
+            return ord(self.machine.getFromMemoryAddress(addr))
+        elif argumentType == self._IMMEDMEMREG:
+            reg = arg.lstrip('(').rstrip(')')
+            addr = self.machine.getRegister(reg)
+            return ord(self.machine.getFromMemoryAddress(addr))
+        elif argumentType == self._IMMEDMEMREG8:
+            reg = arg.lstrip('(').rstrip(')')
+            addr = self.machine.getEightBitRegister(reg)
+            return ord(self.machine.getFromMemoryAddress(addr))
         elif argumentType == self._LABEL:
             return self.machine.getLabelFromLookupTable(arg)
         elif argumentType == self._CHAR:
@@ -1839,7 +1884,9 @@ the polarity (-1 for dec, 1 for inc) """
                 self.machine.setFlag('O')
 
             self.machine.setRegister(arg, to)
-        elif argType == self._BSS:  # each memory cell is 1 byte
+        elif argType == self._IMMEDMEMHEX or argType == self._IMMEDMEMREG or\
+             argType == self._IMMEDMEMINT or argType == self._IMMEDMEMREG8 or\
+             argType == self._DATA or argType == self._BSS:
             if to >= 256:
                 while to >= 256:
                     to -= 512
@@ -1849,18 +1896,20 @@ the polarity (-1 for dec, 1 for inc) """
                     to += 512
                 self.machine.setFlag('O')
 
-            self.machine.setMemoryAddress(self.machine.getFromBSS(arg, 0), to)
-        elif argType == self._DATA:  # Each memory cell is 1 byte
-            if to >= 256:
-                while to >= 256:
-                    to -= 512
-                self.machine.setFlag('O')
-            elif to < -256:
-                while to < -256:
-                    to += 512
-                self.machine.setFlag('O')
+            innerArg = arg.lstrip('(').rstrip(')')
 
-            self.machine.setMemoryAddress(self.machine.getFromDATA(arg, 0), to)
+            if argType == self._IMMEDMEMHEX:
+                addr = int(innerArg[:-1], 16)
+            elif argType == self._IMMEDMEMINT:
+                addr = int(innerArg)
+            elif argType == self._IMMEDMEMREG:
+                addr = self.machine.getRegister(innerArg)
+            elif argType == self._IMMEDMEMREG8:
+                addr = self.machine.getEightBitRegister(innerArg)
+            else:
+                addr = self.machine.getFromBSSorDATA(innerArg, 0)
+
+            self.machine.setMemoryAddress(addr, chr(to))
 
     def wrongArgsError(self, command, i, args, numArg):
         print "Wrong args error!!!"
@@ -1883,8 +1932,8 @@ the polarity (-1 for dec, 1 for inc) """
             argStr += ", or a " + argList[-1]
 
         self.machine.stopRunning(-1)
-
         if len(argList) == 0:
+
             self.ERRSTR = "Error on line %s. %s expected no arguments! \
 Received %s." % command[numArg]
         else:
@@ -1893,7 +1942,7 @@ argument. Received \"%s\"." % (i, command[0], "either a" * (len(argList) > 1),
                                 argStr, "first" if numArg == 1 else "second",
                                 command[numArg])
 
-"""   9 more to go
+"""   10 more to go
 "CMPSB": -1,  # Compare bytes in memory
 "CMPSW": -1,  # Compare words in memory
 "DIV": 2,  # Unsigned divide
@@ -1902,5 +1951,6 @@ argument. Received \"%s\"." % (i, command[0], "either a" * (len(argList) > 1),
 "LDS": 2,  # Load pointer using DS
 "LEA": 2,  # Load effective address
 "LES": 2,  # Load ES with pointer
+"MOVB: 2,
 "MUL": 2,  # Unsigned Multiply
 """

@@ -1174,7 +1174,9 @@ class Simulator(object):
         keyname = Gdk.keyval_name(keyval)
 
         keysDown = Gtk.accelerator_get_label(keyval, event.state).split("+")
-        keysDown.remove("Mod2")  # This is when numLock is on
+
+        if "Mod2" in keysDown:
+            keysDown.remove("Mod2")  # This is when numLock is on
 
         if len(keysDown) == 1:
             if keyname == 'Return' or keyname == 'KP_Enter':

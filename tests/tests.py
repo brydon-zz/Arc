@@ -172,10 +172,10 @@ class Test(unittest.TestCase):
         self.functionTable['CMP'](["CMP", 'AX', '"f"'], 0)
         self.assertFalse(self.machine.flags['Z'])
 
-    """ 
+    """
     ******* Jump Tests ********
         Kind of jumps
-        JMP, JCXZ, JE-JNE, JG-JNG, JL-JNL, JGE-JNGE, JLE-JNLE, JC-JNC, JO-JNO, JP-JNP, JZ-JNZ, JS-JNS, JPE, JPO   
+        JMP, JCXZ, JE-JNE, JG-JNG, JL-JNL, JGE-JNGE, JLE-JNLE, JC-JNC, JO-JNO, JP-JNP, JZ-JNZ, JS-JNS, JPE, JPO
     """
 
     def testCli(self):
@@ -1057,14 +1057,47 @@ class Test(unittest.TestCase):
         self.functionTable['DEC'](["DEC", "AX"], 0)
         self.assertEqual(self.machine.registers['AX'], 1)
 
-    def testIncMem(self):
-        self.machine.BSS = {'test':[0, 2]}
-        self.machine.addressSpace[0] = 0
-        self.functionTable['INC'](["INC", 'test'], 0)
-        self.assertEqual(self.machine.addressSpace[0], 1)
+    def testMemAddressingWithInc(self):
+        self.machine.BSS = {'test': [0, 2]}
+        self.machine.DATA = {'test2': [3, 4]}
+
+        self.functionTable['INC'](["INC", '(test)'], 0)
+        self.assertEqual(self.machine.addressSpace[0], chr(1))
+
+        self.functionTable['INC'](["INC", '(test2)'], 0)
+        self.assertEqual(self.machine.addressSpace[3], chr(1))
+
+        self.functionTable['INC'](["INC", '(5)'], 0)
+        self.assertEqual(self.machine.addressSpace[5], chr(1))
+
+        self.machine.registers['AX'] = 6
+        self.functionTable['INC'](["INC", '(AX)'], 0)
+        self.assertEqual(self.machine.addressSpace[6], chr(1))
+
+        self.machine.registers['AX'] = 25
+        self.functionTable['INC'](["INC", '(AL)'], 0)
+        self.assertEqual(self.machine.addressSpace[25], chr(1))
+
+        self.machine.setEightBitRegister('AH', 28)
+        self.functionTable['INC'](["INC", '(AH)'], 0)
+        self.assertEqual(self.machine.addressSpace[28], chr(1))
+        self.assertEqual(self.machine.addressSpace[10], chr(0))
+
+        self.functionTable['INC'](["INC", '(Ah)'], 0)
+        self.assertEqual(self.machine.addressSpace[10], chr(1))
+
+    def testMovMem(self):
+        self.machine.BSS = {"test": [23, 25]}
+        self.functionTable['MOV'](["MOV", "AX", "test"], 0)
+        self.assertEqual(self.machine.registers['AX'], 23)
+
+        self.machine.addressSpace[0] = 'A'
+        self.functionTable['MOV'](["MOV", "AX", "(0)"], 0)
+        self.assertEqual(self.machine.registers['AX'], 65)
 
     def outPut(self, s):
-        """ Necessary - the as88 interpreter calls the assemblers output methods when errors happen """
+        """ Necessary - the as88 interpreter calls the assemblers output
+        methods when errors happen """
         print s
 
     def stopRunning(self, x=1):

@@ -12,6 +12,10 @@ It also includes some "higher level" tracer functions like:
     Local Variables
     Receiving Input text
 
+All registers and stack data types store INTEGERS
+The flag data type stores BOOLEANS
+The memory data type stores CHARS
+
     Copyright (C) 2014 Brydon Eastman
 
     This program is free software; you can redistribute it and/or modify
@@ -63,7 +67,7 @@ class Intel8088(object):
         self.waitingForChar = False
         self.inBuffer = ""
 
-        self.addressSpace = [str(0) for i in range(1024)]
+        self.addressSpace = [chr(0) for i in range(1024)]
 
         self.jumpLocation = -1
 
@@ -188,7 +192,7 @@ class Intel8088(object):
                                            (".ASCIZ" in line.upper()) - 1]
                         # and set temp equal to a list of hex vals of each char
                         self.addressSpace[BSScount:BSScount + len(temp2)] = \
-                            temp2 + "0" * (".ASCIZ" in line.upper())
+                            temp2 + chr(0) * (".ASCIZ" in line.upper())
 
                         BSScount += len(temp2) + (".ASCIZ" in line.upper())
 
@@ -254,11 +258,11 @@ class Intel8088(object):
             is the command recognised?)
         Before passing it off to the command interpreter class."""
         if self.running:
-            if self.getRegister('PC') >= self.codeBounds[1]:
+            try:
+                line = self.lines[self.getRegister('PC')].replace("\t", "")
+            except IndexError:
                 self.stopRunning()
-                return self._OVER
-
-            line = self.lines[self.getRegister('PC')].replace("\t", "")
+                return
             # clear out tabs
 
             if "!" in line:  # exclamations mean comments
@@ -266,10 +270,6 @@ class Intel8088(object):
 
             if ":" in line:  # colons mean labels, we dealt with those already.
                 line = line[line.find(":") + 1:].strip()  # ignore jump points
-
-            if line.count(",") > 1:  # any command can have at most 2 arguments
-                self.stopRunning(-1)
-                return "Too many commas on line " + str(self.getRegister('PC'))
 
             command = [self.replaceEscapedSequences(x.strip()) for x in \
                        line.replace(" ", ",").split(",")]
@@ -280,13 +280,14 @@ class Intel8088(object):
             if command is None or command == []:
                 self.lastLine = self.getRegister('PC')
                 self.setRegister('PC', self.getRegister('PC') + 1)
-                return  # skip the empty self.lines
+                return  # skip the empty lines
 
             if command[0] not in self.commandArgs.keys():
                 self.stopRunning(-1)
                 return "Fatal error. " + command[0] + " not recognised."
 
-            if len(command) - 1 != self.commandArgs[command[0]]:
+            if self.commandArgs[command[0]] != -1 and \
+               len(command) - 1 != self.commandArgs[command[0]]:
                 self.stopRunning(-1)
                 return "Invalid number of arguments on line " + \
                     str(self.getRegister('PC')) + ". " + command[0] + \
