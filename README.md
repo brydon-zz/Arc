@@ -1,6 +1,5 @@
-
 	
-#Intel 8088 Simulator 
+#Arc
  
 This program is an interactive Intel 8088 CPU and assembly code IDE. 
 It provides an environment for users to write Intel 8088 Assembly Code. 
