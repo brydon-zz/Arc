@@ -1,4 +1,5 @@
 logs/
+gimpFiles/
 *.notes
 *.pyc
 .project
