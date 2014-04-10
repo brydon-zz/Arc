@@ -48,7 +48,7 @@ import time
 
 
 class Simulator(object):
-    _PROGRAMNAME = "The Best 8088 Simulator"
+    _PROGRAMNAME = "Arc"
     _VERSION = "0.5"
     _DESCRIPTION = "A Program for Writing and Simulating\
  Intel 8088 Assembly Code"
@@ -404,8 +404,8 @@ class Simulator(object):
             memToDisplay = self.machine.getFromMemoryAddress(0,
                                                      288 - self.backSlashCount)
 
-            escapedMem = [self.machine.escapeSequences(self.makeCharPrintable(x)) \
-                                                        for x in memToDisplay]
+            escapedMem = [self.machine.escapeSequences(
+                           self.makeCharPrintable(x)) for x in memToDisplay]
 
             self.memoryBuffer.set_text("".join(escapedMem))
 

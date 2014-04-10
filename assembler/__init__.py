@@ -16,6 +16,8 @@ The program has a graphical representation of the registers and memory
 space of the Intel 8088 to assist the user in understanding the assembly
 code their writing.
 
+This project lives at https://github.com/brydon/8088-Simulator
+
 Features
 
     Development Environment with Syntax Highlighting

@@ -1196,7 +1196,7 @@ position, the result bit is a 1.
         """name:RCL
         title:Rotate carry left
         args:[reg]
-        description: Rotates the destionation operand left. The carry flag is\
+        description: Rotates the destination operand left. The carry flag is\
  copied into the lowest bit, and the highest bit is copied into the Carry flag
         flags:*,,,,,,,*"""
         argumentType = self.testArgument(command, 1, i, [self._REG])
