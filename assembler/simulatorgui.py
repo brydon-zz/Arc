@@ -58,6 +58,7 @@ class Simulator(object):
     _CSSFILENAME = "default.css"
     _INTERFACEXMLFILENAME = "defaultInterface.xml"
     _DOUBLECLICKTIME = 0.2
+    _MAXSTACKLINES = 29
     # the time, in seconds, between clicks that determines a double click
 
     def __init__(self):
@@ -241,7 +242,7 @@ class Simulator(object):
             tokenStart = self.codeBuffer.get_iter_at_line_offset(lineOffset
                                                            + srow - 1, scol)
 
-            if srow == self.codeBuffer.get_line_count():
+            if lineOffset + srow == self.codeBuffer.get_line_count():
                 endOfLine = self.codeBuffer.get_end_iter()
             else:
                 endOfLine = self.codeBuffer.get_iter_at_line_offset(lineOffset
@@ -288,10 +289,11 @@ class Simulator(object):
                         self.codeBuffer.apply_tag(self.textTagRedText,
                                                   tokenStart, tokenEnd)
             elif tokenize.tok_name[typeOfToken] == "NUMBER":
-                tokenEnd = self.codeBuffer.get_iter_at_line_offset(lineOffset +
-                                                               erow - 1, ecol)
-                self.codeBuffer.remove_all_tags(tokenStart, tokenEnd)
-                self.codeBuffer.apply_tag(self.textTagGreenText,
+                tokenEnd = self.codeBuffer.get_iter_at_line_offset(
+                                                lineOffset + erow - 1, ecol)
+                if not comment:
+                    self.codeBuffer.remove_all_tags(tokenStart, tokenEnd)
+                    self.codeBuffer.apply_tag(self.textTagGreenText,
                                           tokenStart, tokenEnd)
 
         try:
@@ -801,6 +803,7 @@ class Simulator(object):
     def updateStatusLabel(self, *args):
         """ Updates the status label at the bottom of the screen,
             including current line number, status of the simulation, etc. """
+
         lineNum = self.codeBuffer.get_iter_at_offset(
                             self.codeBuffer.props.cursor_position).get_line()
 
@@ -819,7 +822,10 @@ class Simulator(object):
             stackText = ["0" * (4 - len(str(x))) +
                     str(x) for x in self.machine.getStack()]
 
-        self.stackBuffer.set_text("\n".join(stackText))
+        stackText.reverse()
+
+        self.stackBuffer.set_text("\n" * (self._MAXSTACKLINES - len(stackText))
+                                   + "\n".join(stackText))
 
     def setupTextBuffers(self):
         """ Binds various textBuffers to local variables """
