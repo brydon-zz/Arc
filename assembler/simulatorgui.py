@@ -35,7 +35,7 @@ The GUI displays the values of the registers, stack, and memory.
 """
 
 from gi.repository import Gdk, GdkPixbuf, GObject, Gtk, Pango
-
+from CodeStates import TextStates
 import intel8088
 import readliner
 import entrydialog
@@ -59,17 +59,22 @@ class Simulator(object):
     _INTERFACEXMLFILENAME = "defaultInterface.xml"
     _DOUBLECLICKTIME = 0.2
     _MAXSTACKLINES = 29
+    _SAVE_STATE_TIME = 0.5
     # the time, in seconds, between clicks that determines a double click
 
     def __init__(self):
         localDir = os.path.dirname(os.path.realpath(__file__))
         self._PATH = self._PATHDELIM.join(localDir.split(self._PATHDELIM)[:-1])
+        print self._PATH
 
         """ Begin GUI """
         cssFile = self._PATHDELIM.join([self._PATHDELIM + "styles",
                                         self._CSSFILENAME])
 
         styles = open(self._PATH + cssFile, 'r').read()
+
+        self.codeStates = TextStates()
+        self.timer = time.time()
 
         """Handlers for the actions in the interface."""
 
@@ -1167,6 +1172,12 @@ class Simulator(object):
             self.startRunning()
             self.stepButtonClicked()
 
+    def resetTimer(self):
+        self.timer = time.time()
+
+    def timeToUndo(self):
+        return (time.time() - self.timer > self._SAVE_STATE_TIME)
+
     def onKeyPressEvent(self, widget, event):
         """ Handles Key Down events checks for key combinations.
             Enter -> Step
@@ -1179,6 +1190,13 @@ class Simulator(object):
             Ctrl+Shift+N -> Save As
             Ctrl+X -> Stop Running
         """
+
+        if self.timeToUndo():
+            codeStart = self.codeBuffer.get_start_iter()
+            codeEnd = self.codeBuffer.get_end_iter()
+            tempState = self.codeBuffer.get_text(codeStart, codeEnd, False)
+            self.codeStates.saveState(tempState)
+            self.resetTimer()
 
         keyval = event.keyval
 
@@ -1209,15 +1227,38 @@ class Simulator(object):
                     self.runAll()
                 elif "X" in keysDown:
                     self.stopRunning(-1)
+                elif "Z" in keysDown:
+                    self.undo()
+                elif "Y" in keysDown:
+                    self.redo()
             elif "Shift" in keysDown:
                 if "Return" in keysDown or "Enter (keypad)" in keysDown:
                     self.runAll()
 
         elif len(keysDown) == 3:
             if "Ctrl" in keysDown:
-                if "S" in keysDown:
-                    if "Shift" in keysDown:
+                if "Shift" in keysDown:
+                    if "S" in keysDown:
                         self.saveFile(saveAs=True)
+                    elif "Z" in keysDown:
+                        self.redo()
+
+    def undo(self):
+        """ Undoes actions only in the text field """
+        print self.codeStates
+        if self.codeStates.canUndo():
+            codeStart = self.codeBuffer.get_start_iter()
+            codeEnd = self.codeBuffer.get_end_iter()
+            tempState = self.codeBuffer.get_text(codeStart, codeEnd, False)
+            self.codeBuffer.set_text(self.codeStates.undo(tempState))
+
+    def redo(self):
+        """ Redoes actions only in the text field """
+        if self.codeStates.canRedo():
+            codeStart = self.codeBuffer.get_start_iter()
+            codeEnd = self.codeBuffer.get_end_iter()
+            tempState = self.codeBuffer.get_text(codeStart, codeEnd, False)
+            self.codeBuffer.set_text(self.codeStates.redo())
 
     def outPutFromMachine(self, string):
         """ Outputs the result of a machine query.
