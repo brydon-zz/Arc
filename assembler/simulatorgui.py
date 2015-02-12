@@ -45,7 +45,9 @@ import tokenize
 import time
 
 """"Simulator Class for Intel 8088 Architecture"""
-
+# TODO: when pasting syntax highlighting is ignored, probs not the best.
+# TODO: when running code it should open the side bar if not already.
+# TODO: Do i wanna refactor the parser into it's own class?
 
 class Simulator(object):
     _PROGRAMNAME = "Arc"
@@ -1255,9 +1257,6 @@ class Simulator(object):
     def redo(self):
         """ Redoes actions only in the text field """
         if self.codeStates.canRedo():
-            codeStart = self.codeBuffer.get_start_iter()
-            codeEnd = self.codeBuffer.get_end_iter()
-            tempState = self.codeBuffer.get_text(codeStart, codeEnd, False)
             self.codeBuffer.set_text(self.codeStates.redo())
 
     def outPutFromMachine(self, string):

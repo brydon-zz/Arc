@@ -71,7 +71,7 @@ class CommandInterpreter(object):
                 "DAA": 0,  # Decimal adjust AL after ADDition
                 "DAS": 0,  # Decimal adjust AL after subtraction
                 "DEC": 1,  # Decrement by 1
-                "DIV": 2,  # Unsigned divide
+                "DIV": 1,  # Unsigned divide
                 "IDIV": 1,  # Signed divide
                 "IMUL": 1,  # Signed multiply
                 "INC": 1,  # Increment by 1
@@ -121,7 +121,7 @@ class CommandInterpreter(object):
                 "MOV": 2,  # Move
                 "MOVSB": 0,  # Move byte from string to string
                 "MOVSW": 0,  # Move word from string to string
-                "MUL": 2,  # Unsigned Multiply
+                "MUL": 1,  # Unsigned Multiply
                 "NEG": 1,  # Two's complement NEGation
                 "NOP": 0,  # No Operation.
                 "NOT": 1,  # Negate the opearand, logical NOT
@@ -180,6 +180,9 @@ class CommandInterpreter(object):
             "DAA": self.DAA,
             "DAS": self.DAS,
             "DEC": self.DEC,
+            "DIV": self.DIV,
+            "IDIV": self.IDIV,
+            "IMUL": self.IMUL,
             "INC": self.INC,
             "JA": self.JA,
             "JAE": self.JAE,
@@ -220,6 +223,7 @@ class CommandInterpreter(object):
             "LOOPNE": self.LOOPNE,
             "LOOPNZ": self.LOOPNZ,
             "LOOPZ": self.LOOPZ,
+            "MUL": self.MUL,
             "MOV": self.MOV,
             "NOP": self.NOP,  # best instruction
             "NOT": self.NOT,
@@ -580,6 +584,50 @@ two packed BCD digits in AL.
         description: Subtracts one from the register or memory address provided
         flags:*,,,*,*,*,*,"""
         self.incdec(command, i, -1)
+
+    def DIV(self, command, i):
+        """name:DIV
+        title:Unsigned Divide
+        args:[reg:mem:immed:reg8]
+        description: Divides one result from the other and stores the \
+        remainder in different places and stuff.
+        flags:,,,,,,,"""
+        # TODO: Update that descriptor and flags
+        argumentType = self.testArgument(command, 1, i, (self._IMMED,
+                                                         self._REG, self._REG8,
+                                                         self._MEM))
+        if argumentType == self._ERROR:
+            return self.ERRSTR
+
+        bottom = self.getValue(command[1], argumentType)
+        if argumentType in [self._BSSVAL, self._DATAVAL]:
+            bottom = ord(self.machine.getFromMemoryAddress(bottom))
+
+        quotient = self.machine.getRegister('AX') / bottom
+        remainder = self.machine.getRegister('AX') - quotient * bottom
+
+        self.machine.setRegister('AX', quotient)
+        self.machine.setRegister('DX', remainder)
+
+        # TODO: Flags, overflows, etc.
+
+    def IDIV(self, command, i):
+        """name:IDIV
+        title:Signed Divide
+        args:[reg:reg8:mem:immed]
+        description: Pretty much the same as DIV
+        flags:,,,,,,,"""
+        self.DIV(self, command, i)
+        # TODO: Do i wan't to change this?
+        # TODO: For whatever reasong reg8 isn't showing up in the args descriptor.
+
+    def IMUL(self, command, i):
+        """name:IMUL
+        title:Signed Multiply
+        args:[reg:reg8:mem:immed]
+        description: Pretty much the same as MUL
+        flags:,,,,,,,"""
+        self.MUL(self, command, i)
 
     def INC(self, command, i):
         """name:INC
@@ -1001,6 +1049,56 @@ flag is clear.
 flag is set.
         flags:,,,,,,,"""
         self.LOOP(command, i, self.machine.getFlag('Z'))
+
+    def MUL(self, command, i):
+        """name:MUL
+        title:Unsigned multiply
+        args:[reg:mem:immed:reg8]
+        description: Multiplies the argument by AX and stores the value \
+in AX.
+        flags:,,,,,,,"""
+        # TODO: fix desc and flags
+        argumentType = self.testArgument(command, 1, i, (self._IMMED,
+                                                         self._REG, self._REG8,
+                                                         self._MEM))
+        if argumentType == self._ERROR:
+            return self.ERRSTR
+
+        t = self.getValue(command[1], argumentType)
+        if argumentType in [self._BSSVAL, self._DATAVAL]:
+            t = ord(self.machine.getFromMemoryAddress(t))
+
+        val = t * self.machine.getRegister('AX')
+
+        if val > 0:
+            self.machine.setFlag('S', True)
+            if val >= 2 ** 15:
+                self.machine.setRegister('DX', val / (2 ** 16))
+                while val >= 2 ** 15:
+                    val -= 2 ** 16
+                    self.machine.setFlag('O', True)
+                while val < -2 ** 15:
+                    val += 2 ** 16
+                    self.machine.setFlag('O', True)
+
+        elif val < 0:
+            self.machine.setFlag('S', False)
+            if val < -2 ** 15:
+                if t < 0:
+                    val = (t + 2 ** 16) * self.machine.getRegister('AX')
+                else:
+                    val = t * (self.machine.getRegister('AX') + 2 ** 16)
+                self.machine.setRegister('DX', val / (2 ** 16))
+                while val >= 2 ** 15:
+                    val -= 2 ** 16
+                    self.machine.setFlag('O', True)
+                while val < -2 ** 15:
+                    val += 2 ** 16
+                    self.machine.setFlag('O', True)
+        else:
+            self.machine.setFlag('Z', True)
+
+        self.machine.setRegister('AX', val)
 
     def MOV(self, command, i):
         """name:MOV
@@ -1921,6 +2019,7 @@ the polarity (-1 for dec, 1 for inc) """
         if self._IMMED in args:
             argList.append("number")
             argList.append("local variable")
+
             argList.append("single character")
         if self._MEM in args:
             argList.append("memory location")
@@ -1942,15 +2041,11 @@ argument. Received \"%s\"." % (i, command[0], "either a" * (len(argList) > 1),
                                 argStr, "first" if numArg == 1 else "second",
                                 command[numArg])
 
-"""   10 more to go
+"""   6 more to go
 "CMPSB": -1,  # Compare bytes in memory
 "CMPSW": -1,  # Compare words in memory
-"DIV": 2,  # Unsigned divide
-"IDIV": 1,  # Signed divide
-"IMUL": 1,  # Signed multiply
 "LDS": 2,  # Load pointer using DS
 "LEA": 2,  # Load effective address
 "LES": 2,  # Load ES with pointer
 "MOVB: 2,
-"MUL": 2,  # Unsigned Multiply
 """

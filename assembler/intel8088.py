@@ -174,8 +174,8 @@ class Intel8088(object):
                     # str: .ASCIZ "hello world"
                     # where .ASCIZ means an ascii string with a zero at the end
                     # and .ASCII means an ascii string
-
-                    if ".ASCIZ" in line.upper() or ".ASCII" in line.upper():
+                    lus = line.upper().split()
+                    if ".ASCIZ" in lus or ".ASCII" in lus:
                         # If we're dealing with a string
                         if line.count("\"") < 2:
                             # each string to be defined should be in quotes
@@ -189,12 +189,12 @@ class Intel8088(object):
                                                      line.rfind("\"")])
                         # otherwise grab the stuff in quotes
                         self.DATA[temp] = [BSScount, BSScount + len(temp2) + \
-                                           (".ASCIZ" in line.upper()) - 1]
+                                           (".ASCIZ" in lus) - 1]
                         # and set temp equal to a list of hex vals of each char
                         self.addressSpace[BSScount:BSScount + len(temp2)] = \
-                            temp2 + chr(0) * (".ASCIZ" in line.upper())
+                            temp2 + chr(0) * (".ASCIZ" in lus)
 
-                        BSScount += len(temp2) + (".ASCIZ" in line.upper())
+                        BSScount += len(temp2) + (".ASCIZ" in lus)
 
                 elif mode == ".SECT .BSS":
                     # info in .SECT .BSS follows the format

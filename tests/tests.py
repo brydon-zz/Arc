@@ -172,6 +172,24 @@ class Test(unittest.TestCase):
         self.functionTable['CMP'](["CMP", 'AX', '"f"'], 0)
         self.assertFalse(self.machine.flags['Z'])
 
+    def testDiv(self):
+        self.machine.registers['AX'] = 1
+        self.functionTable['DIV'](["DIV", '2'], 0)
+        self.assertEquals(self.machine.registers['AX'], 0)
+        self.assertEquals(self.machine.registers['DX'], 1)
+
+        self.machine.registers['AX'] = 1
+        self.machine.registers['BX'] = 2
+        self.functionTable['DIV'](["DIV", 'BX'], 0)
+        self.assertEquals(self.machine.registers['AX'], 0)
+        self.assertEquals(self.machine.registers['DX'], 1)
+
+        self.machine.registers['AX'] = 4
+        self.machine.registers['BX'] = 2
+        self.functionTable['DIV'](["DIV", 'BX'], 0)
+        self.assertEquals(self.machine.registers['AX'], 2)
+        self.assertEquals(self.machine.registers['DX'], 0)
+
     """
     ******* Jump Tests ********
         Kind of jumps
@@ -667,6 +685,43 @@ class Test(unittest.TestCase):
         self.functionTable["LOOPNE"](["LOOPNE", "test2"], 0)
         self.assertEqual(self.machine.registers['CX'], 0)
         self.assertNotEqual(self.machine.jumpLocation, 20)
+
+    def testMulNumber(self):
+        self.machine.registers['AX'] = 3
+        self.functionTable['MUL'](['MUL', '4'], 0)
+        self.assertEqual(self.machine.registers['AX'], 12)
+
+        self.machine.registers['AX'] = 25
+        self.functionTable['MUL'](['MUL', '25'], 0)
+        self.assertEqual(self.machine.registers['AX'], 625)
+
+        self.machine.registers['AX'] = 30
+        self.functionTable['MUL'](['MUL', '25556'], 0)
+        self.assertEqual(self.machine.registers['AX'], -19752)
+        self.assertEqual(self.machine.registers['DX'], 11)
+
+        self.machine.registers['AX'] = -30
+        self.machine.registers['DX'] = 0
+        self.functionTable['MUL'](['MUL', '25556'], 0)
+        self.assertEqual(self.machine.registers['AX'], 19752)
+        self.assertEqual(self.machine.registers['DX'], 25544)
+
+        self.machine.registers['AX'] = 2
+        self.functionTable['MUL'](['MUL', '-2'], 0)
+        self.assertEqual(self.machine.registers['AX'], -4)
+
+    def testMulRegister(self):
+        self.machine.registers['AX'] = 3
+        self.machine.registers['BX'] = 10
+        self.functionTable['MUL'](['MUL', 'BX'], 0)
+        self.assertEqual(self.machine.registers['AX'], 30)
+
+    def testMulValue(self):
+        self.machine.registers['AX'] = 30
+        self.machine.addressSpace[0] = 'h'
+        self.machine.DATA = {'h': [0, 1]}
+        self.functionTable['MUL'](['MUL', '(h)'], 0)
+        self.assertEqual(self.machine.registers['AX'], 3120)
 
     def testMovLetter(self):
         self.machine.registers['AX'] = 3
