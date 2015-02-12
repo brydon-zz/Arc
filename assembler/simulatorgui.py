@@ -1546,7 +1546,7 @@ class Simulator(object):
         self.memoryBuffer.apply_tag(
           self.stackColour,
           self.memoryBuffer.get_iter_at_offset(self.machine.getRegister("SP") * (self.displayInHex + 1)),
-          self.memoryBuffer.get_iter_at_offset(1024 * (self.displayInHex + 1))
+          self.memoryBuffer.get_end_iter()
           )
 
     def exit(self, *args):

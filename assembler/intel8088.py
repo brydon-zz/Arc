@@ -35,10 +35,12 @@ The memory data type stores CHARS
 """
 
 import commandinterpreter
+import time
 
 
 class Intel8088(object):
     _OVER = 0
+    TIMETHRESH = 10
 
     def __init__(self):
         self.restart()
@@ -67,7 +69,7 @@ class Intel8088(object):
         self.waitingForChar = False
         self.inBuffer = ""
 
-        self.addressSpace = [chr(0) for i in range(1024)]
+        self.addressSpace = [chr(0) for _ in range(1024)]
 
         self.jumpLocation = -1
 
@@ -168,7 +170,7 @@ class Intel8088(object):
                                     "\" on line " + str(lineCount) + \
                                     " and line " + str(self.lookupTable[temp])\
                                      + "\n"
-
+                # TODO: Add the other shit
                 elif mode == ".SECT .DATA":
                     # info in .SECT .DATA follows the format
                     # str: .ASCIZ "hello world"
@@ -233,9 +235,13 @@ class Intel8088(object):
         self.breakPoints.remove(bp)
 
     def runAll(self):
+        startTime = time.time()
         totalResult = ""
         self.runningAll = True
         while self.running:
+            if time.time() - startTime > self.TIMETHRESH:
+                break
+
             if self.getRegister('PC') in self.breakPoints:
                 response = self.step()
                 if response is not None and response != 0:
@@ -378,6 +384,15 @@ class Intel8088(object):
     def getStack(self):
         """ returns the data from the stack """
         return self.stack
+
+    def getStackOffsetBy(self, offset):
+        off = (-int(offset) + (1022 - self.getRegister('BP'))) / 2
+        if off < 0:
+            off = 0
+        elif off >= len(self.stack):
+            off = len(self.stack) - 1
+
+        return self.stack[off]
 
     def insertInLookupTable(self, label, value):
         self.lookupTable[label] = value
@@ -525,14 +540,12 @@ class Intel8088(object):
         self.registers['SP'] -= 2
         hexval = self.intToHex(value, 4)
         try:
-            self.addressSpace[self.registers['SP']] = chr(int(hexval[-4:-2]))
-            self.addressSpace[self.registers['SP'] + 1] = chr(int(hexval[-2:]))
+            self.addressSpace[self.registers['SP']] = chr(int(hexval[-4:-2], 16))
+            self.addressSpace[self.registers['SP'] + 1] = chr(int(hexval[-2:], 16))
         except Exception as E:
             print E
 
     def popFromStack(self):
-        self.addressSpace[self.registers['SP']] = "00"
-        self.addressSpace[self.registers['SP' + 1]] = "00"
         self.registers['SP'] += 2
         return self.stack.pop()
 
