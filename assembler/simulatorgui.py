@@ -792,8 +792,8 @@ class Simulator(object):
         self.textTagGrey = Gtk.TextTag()
         self.textTagGrey.set_property("background", "grey")
         self.textTagBlack = Gtk.TextTag()
-        self.textTagBlack.set_property("background", "white")
-        self.textTagBlack.set_property("foreground", "black")
+        self.textTagBlack.set_property("background", "black")
+        self.textTagBlack.set_property("foreground", "white")
 
         self.memoryBuffer.get_tag_table().add(self.textTagGrey)
         self.memoryBuffer.get_tag_table().add(self.textTagRed)
@@ -858,8 +858,8 @@ class Simulator(object):
             newFileName = self.downFile
             self.downFile = ""
         else:
-            newFileName = widget.get_child().props.file.replace(".", "Over.")
-            newFileName = newFileName.replace("OverOver.", "Over.")
+            newFileName = widget.get_child().props.file.replace(".png", "Over.png")
+            newFileName = newFileName.replace("OverOver.png", "Over.png")
 
         widget.get_child().set_from_file(newFileName)
 
@@ -869,10 +869,10 @@ class Simulator(object):
 
     def hoverOffFileButton(self, widget, event):
         if self.downFile != "":
-            newFileName = self.downFile.replace("Over.", ".")
+            newFileName = self.downFile.replace("Over.png", ".png")
             self.downFile = ""
         else:
-            newFileName = widget.get_child().props.file.replace("Over.", ".")
+            newFileName = widget.get_child().props.file.replace("Over.png", ".png")
 
         widget.get_child().set_from_file(newFileName)
 
