@@ -19,6 +19,7 @@ It assumes working with the Intel8088 class as the "machine" parent class.
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA. Or by
     email to brydon.eastman@gmail.com.
 """
+import re
 
 
 class CommandInterpreter(object):
@@ -40,6 +41,8 @@ class CommandInterpreter(object):
     _IMMEDMEMREG = 15
     _DATAVAL = 16
     _BSSVAL = 17
+    _BPOFFSET = 18
+    REGEX = re.compile(ur'-*[0-9]+\(BP\)')
 
     def __init__(self, machine):
         """ Link's this module with the self.machine instance """
@@ -119,6 +122,7 @@ class CommandInterpreter(object):
                 "LOOPNZ": 1,  # Loop if not zero
                 "LOOPZ": 1,  # Loop if zero
                 "MOV": 2,  # Move
+                "MOVB": 2,  # Move byte
                 "MOVSB": 0,  # Move byte from string to string
                 "MOVSW": 0,  # Move word from string to string
                 "MUL": 1,  # Unsigned Multiply
@@ -225,6 +229,7 @@ class CommandInterpreter(object):
             "LOOPZ": self.LOOPZ,
             "MUL": self.MUL,
             "MOV": self.MOV,
+            "MOVB": self.MOVB,
             "NOP": self.NOP,  # best instruction
             "NOT": self.NOT,
             "OR": self.OR,
@@ -340,9 +345,6 @@ the sum is stored in the destination.
             for j in range(int(command[2]) / 2):
                 if self.machine.stackSize() > 0:
                     self.machine.popFromStack()
-
-            self.machine.setRegister('SP', self.machine.getRegister('SP') +
-                                     int(command[2]))
             return
 
         if self.machine.isHex(command[1]):
@@ -1104,7 +1106,7 @@ in AX.
         """name:MOV
         title:Move
         args:[reg:mem],[reg:mem:immed]
-        description: Copies a byte or word from a source operand to a \
+        description: Copies a word from a source operand to a \
 destination operand.
         flags:,,,,,,,"""
 
@@ -1116,6 +1118,27 @@ destination operand.
         t = self.getValue(command[2], argumentType)
 
         argumentType = self.testArgument(command, 1, i, (self._REG, self._MEM))
+        if argumentType == self._ERROR:
+            return self.ERRSTR
+
+        self.setValue(command[1], argumentType, t)
+
+    def MOVB(self, command, i):
+        """name:MOVB
+        title:Move Byte
+        args:[reg8:mem],[reg8:mem:immed]
+        description: Copies a byte from a source operand to a \
+destination operand.
+        flags:,,,,,,,"""
+
+        argumentType = self.testArgument(command, 2, i, (self._IMMED,
+                                                         self._REG8, self._MEM))
+        if argumentType == self._ERROR:
+            return self.ERRSTR
+
+        t = self.getValue(command[2], argumentType)
+
+        argumentType = self.testArgument(command, 1, i, (self._REG8, self._MEM))
         if argumentType == self._ERROR:
             return self.ERRSTR
 
@@ -1236,7 +1259,6 @@ position, the result bit is a 1.
             return self.ERRSTR
 
         self.machine.setRegister(command[1], int(self.machine.popFromStack()))
-        self.machine.setRegister('SP', self.machine.getRegister('SP') + 2)
 
     def POPF(self, command, i):
         """name:POPF
@@ -1257,8 +1279,6 @@ position, the result bit is a 1.
         flags /= 2
         self.machine.setFlag('S', flags % 2)
 
-        self.machine.setRegister('SP', self.machine.getRegister('SP') + 2)
-
     def PUSH(self, command, i):
         """name:PUSH
         title:Push on stack
@@ -1273,8 +1293,6 @@ position, the result bit is a 1.
 
         self.machine.addToStack(self.getValue(command[1], argType))
 
-        self.machine.setRegister('SP', self.machine.getRegister('SP') - 2)
-
     def PUSHF(self, command, i):
         """name:PUSHF
         title:Push flags onto the stack
@@ -1288,7 +1306,6 @@ position, the result bit is a 1.
         flags += self.machine.getFlag('C')
 
         self.machine.addToStack(flags)
-        self.machine.setRegister('SP', self.machine.getRegister('SP') - 2)
 
     def RCL(self, command, i):
         """name:RCL
@@ -1860,6 +1877,37 @@ the polarity (-1 for dec, 1 for inc) """
         argument types.
         Returns a constant detailing the argument type found. Or the _ERROR
         constant if the argument doesnt match."""
+        if command[numArg].count("-") > 1:
+            self.ERRSTR = "Too many minuses on line " + str(i) + "."
+            return self._ERROR
+
+        if self.REGEX.match(command[numArg]):
+            """ We gotta match! Doing some neat regex stuff. """
+            return self._BPOFFSET
+
+        if command[numArg][0] != "-" and "-" in command[numArg]:
+            temp = [x.replace("(", "( ").replace(")", " )") \
+                    for x in command[numArg].split("-")]
+
+            firstSplit = temp[0].split()
+            secondSplit = temp[1].split()
+
+            ftype = self.testArgument(firstSplit, len(firstSplit) - 1, 0, \
+                                      [self._IMMED])
+            stype = self.testArgument(secondSplit, 0, 0, \
+                                      [self._IMMED])
+
+            if ftype == self._ERROR or stype == self._ERROR:
+                self.ERRSTR = "I Don't know how I'm supposed to minus " + \
+                                firstSplit[-1] + " from " + secondSplit[-1] \
+                                + " on line " + str(i) + "."
+                return self._ERROR
+
+            fval = self.getValue(firstSplit[-1], ftype)
+            sval = self.getValue(secondSplit[0], stype)
+
+            command[numArg] = "".join(firstSplit[:-1] + [str(fval - sval)] \
+                                      + secondSplit[1:])
 
         if self._REG in argList:
             if command[numArg] in self.machine.getRegisterNames():
@@ -1958,6 +2006,9 @@ the polarity (-1 for dec, 1 for inc) """
             return self.machine.getLabelFromLookupTable(arg)
         elif argumentType == self._CHAR:
             return ord(arg.strip("'").strip('"'))
+        elif argumentType == self._BPOFFSET:
+            offset = int(arg.split("(")[0])
+            return self.machine.getStackOffsetBy(offset)
 
     def setValue(self, arg, argType, to):
         if argType == self._REG8:
@@ -2047,5 +2098,4 @@ argument. Received \"%s\"." % (i, command[0], "either a" * (len(argList) > 1),
 "LDS": 2,  # Load pointer using DS
 "LEA": 2,  # Load effective address
 "LES": 2,  # Load ES with pointer
-"MOVB: 2,
 """

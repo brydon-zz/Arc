@@ -728,6 +728,22 @@ class Test(unittest.TestCase):
         self.functionTable['MOV'](['MOV', 'AX', "'\n'"], 0)
         self.assertEqual(self.machine.registers['AX'], 10)
 
+    def testMovMinus(self):
+        self.machine.DATA = {'hH': [5, 7], "eE": [8, 9]}
+        self.functionTable['MOV'](['MOV', 'AX', "eE-hH"], 0)
+        self.assertEqual(self.machine.registers['AX'], 3)
+
+    def testMovMinus2(self):
+        self.machine.DATA = {'hH': [5, 7], "eE": [8, 9]}
+        self.machine.addressSpace[3] = '\n'
+        self.functionTable['MOV'](['MOV', 'AX', "(eE-hH)"], 0)
+        self.assertEqual(self.machine.registers['AX'], 10)
+
+    def testMovMinus3(self):
+        self.machine.DATA = {'hH': [5, 7], "eE": [8, 9]}
+        self.functionTable['MOV'](['MOV', 'AX', "hH-eE"], 0)
+        self.assertEqual(self.machine.registers['AX'], -3)
+
     def testMovPositiveSmallNumbers(self):
         """ Moving small positive integers - the easiest case """
         for x in self.machine.registers.keys():
@@ -759,19 +775,19 @@ class Test(unittest.TestCase):
     def testPopInRegister(self):
         """ testing popping into a register """
         for x in ['AX', 'BX', 'CX', 'DX']:
-            self.machine.stack = [10]
+            self.functionTable["PUSH"](["PUSH", "10"], 0)
             self.functionTable["POP"](['pop', x], 0)
             self.assertEqual(self.machine.registers[x], 10, \
                              x + " failed to Pop")
 
     def testPopf(self):
-        self.machine.stack.append(1 + 4 + 64)
+        self.functionTable["PUSH"](["PUSH", "69"], 0)
         self.functionTable['POPF'](['POPF'], 0)
         self.assertTrue(self.machine.flags['C'])
         self.assertTrue(self.machine.flags['P'])
         self.assertTrue(self.machine.flags['Z'])
 
-        self.machine.stack.append(1 + 4 + 16 + 64 + 128)
+        self.functionTable["PUSH"](["PUSH", str((1 + 4 + 16 + 64 + 128))], 0)
         self.functionTable['POPF'](['POPF'], 0)
         self.assertTrue(self.machine.flags['C'])
         self.assertTrue(self.machine.flags['P'])
@@ -802,6 +818,14 @@ class Test(unittest.TestCase):
             self.machine.registers[x] = 10
             self.functionTable["PUSH"](['push', x], 0)
             self.assertEqual(self.machine.stack, [10])
+
+    def testPushAndGrab(self):
+        self.functionTable["PUSH"](['PUSH', "1"], 0)
+        self.functionTable["PUSH"](['PUSH', "2"], 1)
+        self.functionTable["PUSH"](['PUSH', "3"], 2)
+        self.functionTable["MOV"](['MOV', "BP", "SP"], 3)
+        self.functionTable["MOV"](['MOV', 'CX', "2(BP)"], 0)
+        self.assertEqual(self.machine.registers['CX'], 2)
 
     def testPushf(self):
         self.machine.flags = {"Z": True, "S": True, "C": True, "A": True, \

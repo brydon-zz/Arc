@@ -44,8 +44,8 @@ class Intel8088(object):
         self.restart()
 
     def restart(self):
-        self.registers = {"AX": 0, "BX": 0, "CX": 0, "DX": 0, "SP": 32760,
-                          "BP": 32760, "SI": 0, "DI": 0, "PC": 0}
+        self.registers = {"AX": 0, "BX": 0, "CX": 0, "DX": 0, "SP": 1024,
+                          "BP": 1024, "SI": 0, "DI": 0, "PC": 0}
 
         """Z: zero flag, S: sign flag, O: overflow flag, C: carry flag,
         A: auxillary flag, P: parity flag, D: direction flag, I: interrupt"""
@@ -461,7 +461,7 @@ class Intel8088(object):
         except ValueError:
             return 0
 
-    def intToHex(self, i):
+    def intToHex(self, i, zerosToPad=2):
         """ Converts integers to 0-padded hex. Does twos complement for
         negative numbers.
         i.e. 17 is returned as 11, 15 is returned as 0F """
@@ -474,7 +474,7 @@ class Intel8088(object):
             print "FATAL ERROR"
 
         hexString = str(hex(i).split("x")[1]).upper()
-        return "0" * (2 - len(hexString)) + hexString
+        return "0" * (zerosToPad - len(hexString)) + hexString
 
     def replaceEscapedSequences(self, string):
         """ Replaces all escaped sequences with their counterparts """
@@ -522,8 +522,18 @@ class Intel8088(object):
 
     def addToStack(self, value):
         self.stack.append(value)
+        self.registers['SP'] -= 2
+        hexval = self.intToHex(value, 4)
+        try:
+            self.addressSpace[self.registers['SP']] = chr(int(hexval[-4:-2]))
+            self.addressSpace[self.registers['SP'] + 1] = chr(int(hexval[-2:]))
+        except Exception as E:
+            print E
 
     def popFromStack(self):
+        self.addressSpace[self.registers['SP']] = "00"
+        self.addressSpace[self.registers['SP' + 1]] = "00"
+        self.registers['SP'] += 2
         return self.stack.pop()
 
     def stackSize(self):

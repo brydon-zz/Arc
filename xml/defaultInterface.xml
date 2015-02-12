@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.16.1 -->
 <interface>
-  <!-- interface-requires gtk+ 3.0 -->
+  <requires lib="gtk+" version="3.0"/>
   <object class="GtkWindow" id="window">
     <property name="width_request">450</property>
     <property name="can_focus">True</property>
@@ -22,6 +23,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">_File</property>
+                <property name="use_underline">True</property>
                 <child type="submenu">
                   <object class="GtkMenu" id="menu1">
                     <property name="visible">True</property>
@@ -32,6 +34,7 @@
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">New File</property>
                         <property name="label" translatable="yes">_New</property>
+                        <property name="use_underline">True</property>
                       </object>
                     </child>
                     <child>
@@ -40,6 +43,7 @@
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Open File</property>
                         <property name="label">_Open</property>
+                        <property name="use_underline">True</property>
                       </object>
                     </child>
                     <child>
@@ -48,6 +52,7 @@
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Save File</property>
                         <property name="label">_Save</property>
+                        <property name="use_underline">True</property>
                       </object>
                     </child>
                     <child>
@@ -56,6 +61,7 @@
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Save File As</property>
                         <property name="label">Save _As</property>
+                        <property name="use_underline">True</property>
                       </object>
                     </child>
                     <child>
@@ -70,6 +76,7 @@
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Quit</property>
                         <property name="label">_Quit</property>
+                        <property name="use_underline">True</property>
                       </object>
                     </child>
                   </object>
@@ -81,6 +88,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">_Edit</property>
+                <property name="use_underline">True</property>
                 <child type="submenu">
                   <object class="GtkMenu" id="menu4">
                     <property name="visible">True</property>
@@ -91,6 +99,7 @@
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Run One Line</property>
                         <property name="label">_Step Once</property>
+                        <property name="use_underline">True</property>
                       </object>
                     </child>
                     <child>
@@ -99,6 +108,7 @@
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Run All</property>
                         <property name="label">Run _All</property>
+                        <property name="use_underline">True</property>
                       </object>
                     </child>
                     <child>
@@ -107,6 +117,7 @@
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">Stop Running</property>
                         <property name="label">Stop _Running</property>
+                        <property name="use_underline">True</property>
                       </object>
                     </child>
                   </object>
@@ -118,6 +129,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">_Help</property>
+                <property name="use_underline">True</property>
                 <child type="submenu">
                   <object class="GtkMenu" id="menu3">
                     <property name="visible">True</property>
@@ -128,6 +140,7 @@
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">About This Program</property>
                         <property name="label">_About</property>
+                        <property name="use_underline">True</property>
                       </object>
                     </child>
                   </object>

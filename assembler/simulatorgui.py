@@ -49,6 +49,7 @@ import time
 # TODO: when running code it should open the side bar if not already.
 # TODO: Do i wanna refactor the parser into it's own class?
 
+
 class Simulator(object):
     _PROGRAMNAME = "Arc"
     _VERSION = "0.5"
@@ -117,6 +118,7 @@ class Simulator(object):
 
         self.memory.props.has_tooltip = True
 
+        self.memory.connect('query-tooltip', self.stackToolTip, self.stackColour)
         # self.notebook.set_visible(False)
         for x in self.memoryColours:
             self.memory.connect("query-tooltip", self.memoryToolTipOption, x)
@@ -225,7 +227,7 @@ class Simulator(object):
             self.outPut("There was a fatal issue opening " + fileName
                         + ". Are you sure it's a file?")
 
-    def clickSeperator(self, a, b):
+    def clickSeperator(self, *_):
         """When the separator label is clicked, expand the viewport."""
         if self.shrunk:
             self.notebook.set_visible(True)
@@ -382,7 +384,7 @@ class Simulator(object):
             regPCText = "0" * (4 - len(hexPC)) + hexPC
 
             memToDisplay = [self.machine.intToHex(ord(x))
-                            for x in self.machine.getFromMemoryAddress(0, 144)]
+                            for x in self.machine.getFromMemoryAddress(0, 1024)]
 
             self.memoryBuffer.set_text("".join(memToDisplay))
 
@@ -410,8 +412,7 @@ class Simulator(object):
             regDIText = str(self.machine.getRegister('DI'))
             regSIText = str(self.machine.getRegister('SI'))
 
-            memToDisplay = self.machine.getFromMemoryAddress(0,
-                                                     288 - self.backSlashCount)
+            memToDisplay = self.machine.getFromMemoryAddress(0, 1024)
 
             escapedMem = [self.machine.escapeSequences(
                            self.makeCharPrintable(x)) for x in memToDisplay]
@@ -790,6 +791,9 @@ class Simulator(object):
         self.textTagGreen.set_property("background", "green")
         self.textTagGrey = Gtk.TextTag()
         self.textTagGrey.set_property("background", "grey")
+        self.textTagBlack = Gtk.TextTag()
+        self.textTagBlack.set_property("background", "white")
+        self.textTagBlack.set_property("foreground", "black")
 
         self.memoryBuffer.get_tag_table().add(self.textTagGrey)
         self.memoryBuffer.get_tag_table().add(self.textTagRed)
@@ -798,10 +802,12 @@ class Simulator(object):
         self.memoryBuffer.get_tag_table().add(self.textTagGreen)
         self.memoryBuffer.get_tag_table().add(self.textTagBlue)
         self.memoryBuffer.get_tag_table().add(self.textTagPurple)
+        self.memoryBuffer.get_tag_table().add(self.textTagBlack)
         self.memoryColours = [self.textTagRed, self.textTagOrange,
                               self.textTagMagenta, self.textTagGreen,
                               self.textTagBlue, self.textTagPurple,
                               self.textTagGrey]
+        self.stackColour = self.textTagBlack
 
         self.textTagBreakpoint = Gtk.TextTag()
         self.textTagBreakpoint.set_property("background", "red")
@@ -1123,6 +1129,11 @@ class Simulator(object):
         self.updateStack()
         self.code.set_editable(False)
 
+        self.notebook.set_visible(True)
+        self.separatorLabel.set_angle(90)
+        self.separatorLabel.set_text("^ hide ^")
+        self.shrunk = False
+
         self.lines = self.codeBuffer.get_text(self.codeBuffer.get_start_iter(),
                                               self.codeBuffer.get_end_iter(),
                                               False).split("\n")
@@ -1361,6 +1372,22 @@ class Simulator(object):
         about.run()
         about.destroy()
 
+    def stackToolTip(self, widget, x, y, keyboard_tip, tooltip, data):
+        if keyboard_tip:
+            offset = widget.props.buffer.cursor_position
+            ret = widget.props.buffer.get_iter_at_offset(offset)
+        else:  # else get the bounds by the cursor
+            coords = widget.window_to_buffer_coords(Gtk.TextWindowType.TEXT,
+                                            x, y)
+            ret = widget.get_iter_at_position(coords[0], coords[1])
+
+        if ret[0].has_tag(data):
+            tooltip.set_text("Stack")
+        else:
+            return False
+
+        return True
+
     def memoryToolTipOption(self, widget, x, y, keyboard_tip, tooltip, data):
         """ For printing the tooltips in the memory textview """
 
@@ -1516,6 +1543,11 @@ class Simulator(object):
                         self.memoryColours[index % len(self.memoryColours)],
                         self.memoryBuffer.get_iter_at_offset(before),
                         self.memoryBuffer.get_iter_at_offset(after))
+        self.memoryBuffer.apply_tag(
+          self.stackColour,
+          self.memoryBuffer.get_iter_at_offset(self.machine.getRegister("SP") * (self.displayInHex + 1)),
+          self.memoryBuffer.get_iter_at_offset(1024 * (self.displayInHex + 1))
+          )
 
     def exit(self, *args):
         """ Determines whether or not to exit, if there is an unsaved file or
@@ -1564,8 +1596,10 @@ class Simulator(object):
 
         if string in _ESCAPESEQUENCES:
             return string
-        if ord(string) < ord(" ") or ord(string) > ord("~"):
+        if ord(string) == 0:
             return "0"
+        if ord(string) < ord(" ") or ord(string) > ord("~"):
+            return "?"
         return string
 
 
