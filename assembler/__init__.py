@@ -48,8 +48,6 @@ Copyright (c) 2014 Brydon Eastman
 from simulatorgui import Simulator
 from gi.repository import Gtk
 
-if __name__ == "__main__":
-
-    A = Simulator()
-    print "Constructed"
-    Gtk.main()
+A = Simulator()
+print "Constructed"
+Gtk.main()

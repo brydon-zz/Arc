@@ -44,8 +44,6 @@ class TextStates(object):
         if not self.canUndo():
             Exception("Cannot Undo")
 
-        print self.pos
-
         if self.pos == len(self.states) - 1:
             if state != self.states[-1]:
                 self.states.append(state)

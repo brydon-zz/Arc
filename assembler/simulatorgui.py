@@ -78,6 +78,7 @@ class Simulator(object):
 
         self.codeStates = TextStates()
         self.timer = time.time()
+        self.updateAll = False
 
         """Handlers for the actions in the interface."""
 
@@ -1244,6 +1245,8 @@ class Simulator(object):
                     self.undo()
                 elif "Y" in keysDown:
                     self.redo()
+                elif "V" in keysDown:
+                    self.updateAll = True
             elif "Shift" in keysDown:
                 if "Return" in keysDown or "Enter (keypad)" in keysDown:
                     self.runAll()
@@ -1258,11 +1261,11 @@ class Simulator(object):
 
     def undo(self):
         """ Undoes actions only in the text field """
-        print self.codeStates
         if self.codeStates.canUndo():
             codeStart = self.codeBuffer.get_start_iter()
             codeEnd = self.codeBuffer.get_end_iter()
             tempState = self.codeBuffer.get_text(codeStart, codeEnd, False)
+            self.updateAll = 2
             self.codeBuffer.set_text(self.codeStates.undo(tempState))
 
     def redo(self):
@@ -1334,23 +1337,33 @@ class Simulator(object):
         Syntax Highglighting is applied on the changed line appropriately. """
         if not self.machine.isRunning():
             self.updateWindowTitle()
-            lineNumber = self.codeBuffer.get_iter_at_offset(
-                            self.codeBuffer.props.cursor_position).get_line()
-
-            startOfLineIter = self.codeBuffer.get_iter_at_line_offset(
-                                                                lineNumber, 0)
-
-            if lineNumber + 1 >= self.codeBuffer.get_line_count():
-                endOfLineIter = self.codeBuffer.get_end_iter()
+            if self.updateAll:
+                """ So this is to updateAll the text, specifically when a
+                paste or undo action occurs. but for whatever reason, in an
+                undo action the text is cleared, and then put in. So this
+                fires this function twice. Thus, for undo's updateAll
+                is set to 2. Hence it evals as true, and we can rip off
+                two function calls in quick succession. """
+                lineNumbers = range(self.codeBuffer.get_line_count() + 1)
+                self.updateAll -= 1
             else:
-                endOfLineIter = self.codeBuffer.get_iter_at_line_offset(
-                                                            lineNumber + 1, 0)
+                lineNumbers = [self.codeBuffer.get_iter_at_offset(
+                            self.codeBuffer.props.cursor_position).get_line()]
+            for lineNumber in lineNumbers:
+                startOfLineIter = self.codeBuffer.get_iter_at_line_offset(
+                                                        lineNumber, 0)
 
-            lineText = self.codeBuffer.get_text(startOfLineIter, endOfLineIter,
-                                                False)
+                if lineNumber + 1 >= self.codeBuffer.get_line_count():
+                    endOfLineIter = self.codeBuffer.get_end_iter()
+                else:
+                    endOfLineIter = self.codeBuffer.get_iter_at_line_offset(
+                                                        lineNumber + 1, 0)
 
-            self.syntaxHighlight(readliner.ReadLiner(lineText),
-                                 lineOffset=lineNumber)
+                lineText = self.codeBuffer.get_text(startOfLineIter,
+                                                    endOfLineIter, False)
+
+                self.syntaxHighlight(readliner.ReadLiner(lineText),
+                                     lineOffset=lineNumber)
 
     def makeAboutDialogue(self):
         """ Makes an About Dialog displaying basic info about the program
