@@ -36,11 +36,13 @@ The memory data type stores CHARS
 
 import commandinterpreter
 import time
+import os
 
 
 class Intel8088(object):
     _OVER = 0
     TIMETHRESH = 10
+    FILEMODES = ['r', 'w', 'rw']
 
     def __init__(self):
         self.restart()
@@ -58,6 +60,7 @@ class Intel8088(object):
         self.localVars = {}
         self.lastLine = -1
         self.stack = []
+        self.openFiles = []
         self.breakPoints = []
         self.DATA = {}
         self.BSS = {}
@@ -555,6 +558,14 @@ class Intel8088(object):
     def peekOnStack(self):
         return self.stack[-1]
 
+    def getZeroTerminatedMemStringAt(self, start):
+        try:
+            nextZero = self.addressSpace.index(chr(0), start)
+        except:
+            nextZero = len(self.addressSpace)
+        a = self.addressSpace[start:nextZero]
+        return "".join(a)
+
     def setFlag(self, f, a=1):
         self.flags[f] = a
 
@@ -621,3 +632,34 @@ class Intel8088(object):
 
     def isBreakPoint(self, bp):
         return bp in self.breakPoints
+
+    def openFile(self, fname, mode):
+        try:
+            self.openFiles.append(open(fname, self.FILEMODES[mode]))
+        except:
+            return -1
+        return len(self.openFiles)
+
+    def createFile(self, fname, mode):
+        if os.path.isfile(fname):
+            os.remove(fname)
+        return self.openFile(fname, mode)
+
+    def closeFile(self, fd):
+        try:
+            self.openFiles[fd].close()
+            return True
+        except:
+            return False
+
+    def read(self, fd, buf, nbytes):
+        try:
+            response = self.openFiles[fd].read(nbytes)
+            size = len(response)
+            self.addressSpace[buf:size + buf] = response
+            return size
+        except:
+            return 0
+
+    def seek(self, fd, buf, nbytes, mode):
+        return

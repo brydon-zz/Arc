@@ -47,7 +47,8 @@ class CommandInterpreter(object):
     def __init__(self, machine):
         """ Link's this module with the self.machine instance """
         self.SYSCodes = {"_EXIT": 1, "_PRINTF": 127, "_GETCHAR": 117,
-                         "_SSCANF": 125, "_READ": 3, "_OPEN": 5, "_CLOSE": 6}
+                         "_SSCANF": 125, "_READ": 3, "_OPEN": 5, "_CLOSE": 6,
+                         "_CREAT": 8, "_LSEEK": 19}
         self.machine = machine
         self.LIST_TYPE = type([1, 1])
 
@@ -1753,6 +1754,7 @@ the Direction flag is set (1).
         description: Calls a system trap: evaluates based on the last piece \
 of data on the stack
         flags:,,,,,,,"""
+
         if self.machine.stackSize() == 0:
             self.machine.stopRunning(-1)
             return "Invalid system trap: SYS called on line %d without any \
@@ -1767,6 +1769,71 @@ on the stack is not understood" % (i, self.machine.getStack()[-1])
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_GETCHAR"]:
                 self.machine.getChar()
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_OPEN"]:
+                ss = self.machine.stackSize()
+                if ss < 3:
+                    return "Error on line %d, open expects 3 arguments. \
+%d were found" % (i, ss)
+                self.machine.popFromStack()  # This is just the _OPEN code
+                fnameStart = self.machine.popFromStack()
+
+                fname = self.machine.getZeroTerminatedMemStringAt(fnameStart)
+
+                mode = self.machine.popFromStack()
+
+                if mode not in [0, 1, 2]:
+                    return "Error on line %d, the mode for opening is not \
+recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
+
+                print "Opening " + fname + " with mode " + str(mode)
+                response = self.machine.openFile(fname, mode)
+                self.machine.setRegister('AX', response)
+            elif int(self.machine.peekOnStack()) == self.SYSCodes["_CREAT"]:
+                ss = self.machine.stackSize()
+                if ss < 3:
+                    return "Error on line %d, Create expects 3 arguments. \
+%d were found" % (i, ss)
+                self.machine.popFromStack()  # This is just the _OPEN code
+                fnameStart = self.machine.popFromStack()
+
+                fname = self.machine.getZeroTerminatedMemStringAt(fnameStart)
+
+                mode = self.machine.popFromStack()
+
+                if mode not in [0, 1, 2]:
+                    return "Error on line %d, the mode for Creating is not \
+recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
+
+                print "Creating " + fname + " with mode " + str(mode)
+                response = self.machine.openFile(fname, mode)
+                print response
+                self.machine.setRegister('AX', response)
+            elif int(self.machine.peekOnStack()) == self.SYSCodes["_READ"]:
+                ss = self.machine.stackSize()
+                if ss < 4:
+                    return "Error on line %d, read expects 3 arguments. \
+%d were found" % (i, ss)
+                self.machine.popFromStack()  # This is just the _OPEN code
+
+                fd = self.machine.popFromStack()
+                buf = self.machine.popFromStack()
+                nbytes = self.machine.popFromStack()
+                if nbytes < 0:
+                    return "Error on line %d, cannot read negative number\
+ of bytes (%d)" % (i, nbytes)
+
+                self.machine.read(fd, buf, nbytes)
+
+            elif int(self.machine.peekOnStack()) == self.SYSCodes["_CLOSE"]:
+                ss = self.machine.stackSize()
+                if ss < 2:
+                    return "Error on line %d, close expects 3 arguments. \
+%d were found" % (i, ss)
+                self.machine.popFromStack()  # This is just the _CLOSE code
+                fd = self.machine.popFromStack()
+
+                if self.machine.closeFile(fd):
+                    self.machine.setRegister('AX', 0)
+            elif int(self.machine.peekOnStack()) == self.SYSCodes["_SSCANF"]:
                 1 + 1
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_PRINTF"]:
                 try:
@@ -2092,7 +2159,7 @@ argument. Received \"%s\"." % (i, command[0], "either a" * (len(argList) > 1),
                                 argStr, "first" if numArg == 1 else "second",
                                 command[numArg])
 
-"""   6 more to go
+"""   5 more to go
 "CMPSB": -1,  # Compare bytes in memory
 "CMPSW": -1,  # Compare words in memory
 "LDS": 2,  # Load pointer using DS
