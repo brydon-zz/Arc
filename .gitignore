@@ -4,3 +4,5 @@ gimpFiles/
 *.pyc
 .project
 .pydevproject
+*~
+build/
