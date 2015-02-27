@@ -48,7 +48,7 @@ class CommandInterpreter(object):
         """ Link's this module with the self.machine instance """
         self.SYSCodes = {"_EXIT": 1, "_PRINTF": 127, "_GETCHAR": 117,
                          "_SSCANF": 125, "_READ": 3, "_OPEN": 5, "_CLOSE": 6,
-                         "_CREAT": 8, "_LSEEK": 19, "_WRITE":4}
+                         "_CREAT": 8, "_LSEEK": 19, "_WRITE": 4}
         self.machine = machine
         self.LIST_TYPE = type([1, 1])
 
@@ -115,6 +115,7 @@ class CommandInterpreter(object):
                 "LDS": 2,  # Load pointer using DS
                 "LEA": 2,  # Load effective address
                 "LES": 2,  # Load ES with pointer
+                "LODS": 0,
                 "LODSB": 0,  # Load string byte
                 "LODSW": 0,  # Load string word
                 "LOOP": 1,  # Loop control
@@ -221,6 +222,7 @@ class CommandInterpreter(object):
             "JPO": self.JPO,
             "JS": self.JS,
             "JZ": self.JZ,
+            "LODS": self.LODSW,
             "LODSB": self.LODSB,
             "LODSW": self.LODSW,
             "LOOP": self.LOOP,
@@ -931,7 +933,7 @@ by the label and program execution continues.
         if command[1] in self.machine.getLookupTable().keys() and \
                                     not self.machine.isHex(command[1]):
             self.machine.setJumpLocation(
-                                    self.machine.getLookupTable()[command[1]])
+                                self.machine.getLookupTable()[command[1]] - 1)
         elif (command[1].rstrip('b').isdigit() or
               command[1].rstrip('f').isdigit()) and \
               command[1].strip('bf') in self.machine.getLookupTable().keys():
@@ -955,13 +957,13 @@ by the label and program execution continues.
                 return "Fatal error on line " + str(i) + ". The label " + \
                      command[1] + " could not be resolved."
             else:
-                self.machine.setJumpLocation(m)
+                self.machine.setJumpLocation(m - 1)
 
         elif self.machine.isHex(command[1]):
             if command[1][-1] == "h":
-                self.machine.setJumpLocation(int(command[1][:-1], 16))
+                self.machine.setJumpLocation(int(command[1][:-1], 16) - 1)
             else:
-                self.machine.setJumpLocation(int(command[1]))
+                self.machine.setJumpLocation(int(command[1]) - 1)
         else:
             return "Error on line " + str(i) + ". The label " + command[1] + \
                 " is not defined for " + referer + "-ing to."
@@ -973,7 +975,7 @@ by the label and program execution continues.
         description: Loads a memory byte addressed by SI into AL.
         flags:,,,,,,,"""
         si = self.machine.getRegister('SI')
-        byte = self.machine.getFromMemoryAddress(si)
+        byte = ord(self.machine.getFromMemoryAddress(si))
         self.machine.setRegister('AX', byte)
 
         if self.machine.getFlag('D'):
@@ -990,8 +992,8 @@ by the label and program execution continues.
         description: Loads a memory word addressed by SI into AX.
         flags:,,,,,,,"""
         si = self.machine.getRegister('SI')
-        word = self.machine.getFromMemoryAddress(si)
-        word += self.machine.getFromMemoryAddress(si + 1) * 256
+        word = ord(self.machine.getFromMemoryAddress(si))
+        word += ord(self.machine.getFromMemoryAddress(si + 1)) * 256
 
         self.machine.setRegister('AX', word)
 
@@ -1061,6 +1063,7 @@ flag is set.
 in AX.
         flags:,,,,,,,"""
         # TODO: fix desc and flags
+
         argumentType = self.testArgument(command, 1, i, (self._IMMED,
                                                          self._REG, self._REG8,
                                                          self._MEM))
@@ -1771,8 +1774,8 @@ on the stack is not understood" % (i, self.machine.getStack()[-1])
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_OPEN"]:
                 ss = self.machine.stackSize()
                 if ss < 3:
-                    return "Error on line %d, open expects 3 arguments. \
-%d were found" % (i, ss)
+                    return "Error on line %d, open expects 2 arguments. \
+%d were found" % (i, ss - 1)
                 self.machine.popFromStack()  # This is just the _OPEN code
                 fnameStart = self.machine.popFromStack()
 
@@ -1811,7 +1814,7 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
                 ss = self.machine.stackSize()
                 if ss < 4:
                     return "Error on line %d, read expects 3 arguments. \
-%d were found" % (i, ss)
+%d were found" % (i, ss - 1)
                 self.machine.popFromStack()  # This is just the _OPEN code
 
                 fd = self.machine.popFromStack()
@@ -1827,7 +1830,7 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
                 ss = self.machine.stackSize()
                 if ss < 4:
                     return "Error on line %d, write expects 3 arguments. \
-%d were found" % (i, ss)
+%d were found" % (i, ss - 1)
                 self.machine.popFromStack()  # This is just the _WRITE code
 
                 fd = self.machine.popFromStack()
@@ -1858,8 +1861,8 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_CLOSE"]:
                 ss = self.machine.stackSize()
                 if ss < 2:
-                    return "Error on line %d, close expects 3 arguments. \
-%d were found" % (i, ss)
+                    return "Error on line %d, close expects 1 arguments. \
+%d were found" % (i, ss - 1)
                 self.machine.popFromStack()  # This is just the _CLOSE code
                 fd = self.machine.popFromStack()
 
@@ -1868,31 +1871,39 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_SSCANF"]:
                 1 + 1
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_PRINTF"]:
-                try:
-                    k = 2
-                    args = []
-                    while True:  # TODO: fix this VV
-                        j = int(self.machine.getStack()[-k])
-                        if self.machine.addressSpace.count(chr(0)) == 0:
-                            formatStr = "".join(self.machine.addressSpace[j:])
-                        else:
-                            f = self.machine.addressSpace.index(chr(0),
-                                            int(self.machine.getStack()[-k]))
+                ss = self.machine.stackSize()
+                if ss < 3:
+                    return "Error on line %d, printf needs at least 3\
+ arguments. %d were found." % (i, ss - 1)
 
-                            formatStr = "".join(self.machine.addressSpace[j:f])
-                        k += 1
-                        print formatStr
-                        numArgs = formatStr.count("%") - formatStr.count("\%")
-                        if numArgs == len(args):
-                            break
-                        if numArgs != 0:
-                            continue
-                        args.append(formatStr)
-                    return formatStr % tuple(args)
-                except IndexError:
-                    self.machine.stopRunning(-1)
-                    return "Invalid system trap on line %d. Invalid number of \
-arguments with _PRINTF." % i
+                formatStr = self.machine.getZeroTerminatedMemStringAt(\
+                                            self.machine.peekOnStack(2))
+
+                numArgs = formatStr.count("%") - formatStr.count("%%")
+
+                if ss < 2 + numArgs:
+                    return "Error on line %d, this format string in the \
+printf call requires %d arguments. \
+You've only provided %d." % (i, numArgs, ss - 2)
+
+                args = []
+                formatStrNoDubs = formatStr.replace("%%", "")
+
+                for i in range(3, numArgs + 3):
+                    narg = self.machine.peekOnStack(i)
+                    j = formatStrNoDubs.index("%")
+                    if formatStrNoDubs[j + 1] in ("d", "x", "X", "n", "o", \
+                                                   "b", "c"):
+                        args.append(narg)
+                    elif formatStrNoDubs[j + 1] == "s":
+                        args.append(self.machine.getZeroTerminatedMemStringAt(\
+                                                                        narg))
+                    else:
+                        return "Error, I do not understand %" + \
+                                            formatStrNoDubs[j + 1]
+                    formatStrNoDubs = formatStrNoDubs[j + 2:]
+
+                return formatStr % tuple(args)
 
     def TEST(self, command, i):
         """name:TEST
@@ -2056,6 +2067,9 @@ the polarity (-1 for dec, 1 for inc) """
         if self._LABEL in argList:
             if command[numArg] in self.machine.getLookupTable():
                 return self._LABEL
+            elif command[numArg][-1] in ("b", "f") and \
+                    command[numArg][:-1].isdigit():
+                return self._LABEL
 
         if automaticErrors:
             self.wrongArgsError(command, i, argList, numArg)
@@ -2134,7 +2148,9 @@ the polarity (-1 for dec, 1 for inc) """
             self.machine.setRegister(arg, to)
         elif argType == self._IMMEDMEMHEX or argType == self._IMMEDMEMREG or\
              argType == self._IMMEDMEMINT or argType == self._IMMEDMEMREG8 or\
-             argType == self._DATA or argType == self._BSS:
+             argType == self._DATA or argType == self._BSS or\
+             argType == self._BPOFFSET:
+
             if to >= 256:
                 while to >= 256:
                     to -= 512
@@ -2144,20 +2160,23 @@ the polarity (-1 for dec, 1 for inc) """
                     to += 512
                 self.machine.setFlag('O')
 
-            innerArg = arg.lstrip('(').rstrip(')')
-
-            if argType == self._IMMEDMEMHEX:
-                addr = int(innerArg[:-1], 16)
-            elif argType == self._IMMEDMEMINT:
-                addr = int(innerArg)
-            elif argType == self._IMMEDMEMREG:
-                addr = self.machine.getRegister(innerArg)
-            elif argType == self._IMMEDMEMREG8:
-                addr = self.machine.getEightBitRegister(innerArg)
+            if argType == self._BPOFFSET:
+                where = arg.rstrip(")").split("(")[0]
+                self.machine.stackChange(where, to)
             else:
-                addr = self.machine.getFromBSSorDATA(innerArg, 0)
+                innerArg = arg.lstrip('(').rstrip(')')
+                if argType == self._IMMEDMEMHEX:
+                    addr = int(innerArg[:-1], 16)
+                elif argType == self._IMMEDMEMINT:
+                    addr = int(innerArg)
+                elif argType == self._IMMEDMEMREG:
+                    addr = self.machine.getRegister(innerArg)
+                elif argType == self._IMMEDMEMREG8:
+                    addr = self.machine.getEightBitRegister(innerArg)
+                else:
+                    addr = self.machine.getFromBSSorDATA(innerArg, 0)
 
-            self.machine.setMemoryAddress(addr, chr(to))
+                self.machine.setMemoryAddress(addr, chr(to))
 
     def wrongArgsError(self, command, i, args, numArg):
         print "Wrong args error!!!"
