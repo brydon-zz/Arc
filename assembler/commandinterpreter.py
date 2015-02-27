@@ -48,7 +48,7 @@ class CommandInterpreter(object):
         """ Link's this module with the self.machine instance """
         self.SYSCodes = {"_EXIT": 1, "_PRINTF": 127, "_GETCHAR": 117,
                          "_SSCANF": 125, "_READ": 3, "_OPEN": 5, "_CLOSE": 6,
-                         "_CREAT": 8, "_LSEEK": 19}
+                         "_CREAT": 8, "_LSEEK": 19, "_WRITE":4}
         self.machine = machine
         self.LIST_TYPE = type([1, 1])
 
@@ -1821,8 +1821,40 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
                     return "Error on line %d, cannot read negative number\
  of bytes (%d)" % (i, nbytes)
 
-                self.machine.read(fd, buf, nbytes)
+                response = self.machine.read(fd, buf, nbytes)
+                self.machine.setRegister('AX', response)
+            elif int(self.machine.peekOnStack()) == self.SYSCodes["_WRITE"]:
+                ss = self.machine.stackSize()
+                if ss < 4:
+                    return "Error on line %d, write expects 3 arguments. \
+%d were found" % (i, ss)
+                self.machine.popFromStack()  # This is just the _WRITE code
 
+                fd = self.machine.popFromStack()
+                buf = self.machine.popFromStack()
+                nbytes = self.machine.popFromStack()
+
+                if nbytes < 0:
+                    return "Error on line %d, cannot write negative number\
+ of bytes (%d)" % (i, nbytes)
+
+                if fd == 0:
+                    return "Error on line %d, cannot write to STDIN" % i
+                elif fd == 1:
+
+                    toWrite = self.machine.getFromMemoryAddress(buf, buf + nbytes)
+                    toWrite = "".join(toWrite)
+                    self.machine.setRegister('AX', len(toWrite))
+
+                    return toWrite
+                elif fd == 2:
+                    toWrite = self.machine.getFromMemAddres(buf, buf + nbytes)
+                    toWrite = "".join(toWrite)
+                    self.machine.setRegister('AX', len(toWrite))
+                    return "StdError: " + toWrite
+                else:
+                    response = self.machine.write(fd, buf, nbytes)
+                    self.machine.setRegister('AX', response)
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_CLOSE"]:
                 ss = self.machine.stackSize()
                 if ss < 2:

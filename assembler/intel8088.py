@@ -209,8 +209,6 @@ class Intel8088(object):
                         else:
                             bTyp = 2
 
-                        print bTyp
-
                         if len(lus) != 3 or lus[0][-1] != ":":
                             errorString += "Fatal error on line " + \
                                         str(lineCount) + \
@@ -249,12 +247,10 @@ class Intel8088(object):
                                         " Byte declaration should follow:" + \
                                         " [name]: .BYTE [integer or hex value]"
                                 return errorString
-                            print bTyp
-                            print 2 ** bTyp
+
                             BSSend = BSScount + 2 ** bTyp
                             self.DATA[name] = [BSScount, BSSend]
-                            print BSScount
-                            print BSScount + 2 ** bTyp
+
                             if bTyp != 0:
                                 self.addressSpace[BSScount:BSSend] = \
                                                 [chr(v) for v in varray]
@@ -262,7 +258,6 @@ class Intel8088(object):
                                 self.addressSpace[BSScount:BSSend] = \
                                                             chr(varray[0])
                             BSScount += 2 ** bTyp
-                        print line
                     else:
                         errorString += "Fatal error on line " + \
                                         str(lineCount) + \
@@ -728,6 +723,14 @@ class Intel8088(object):
             size = len(response)
             self.addressSpace[buf:size + buf] = response
             return size
+        except:
+            return 0
+
+    def write(self, fd, buf, nbytes):
+        try:
+            toWrite = "".join(self.getFromMemoryAddress(buf, buf + nbytes))
+            self.openFiles[fd].write(toWrite)
+            return len(toWrite)
         except:
             return 0
 
