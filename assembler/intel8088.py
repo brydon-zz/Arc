@@ -43,6 +43,7 @@ class Intel8088(object):
     _OVER = 0
     TIMETHRESH = 10
     FILEMODES = ['r', 'w', 'rw']
+    BITTYPES = ["Byte", "Word", "Long"]
 
     def __init__(self):
         self.restart()
@@ -60,7 +61,7 @@ class Intel8088(object):
         self.localVars = {}
         self.lastLine = -1
         self.stack = []
-        self.openFiles = []
+        self.openFiles = [0, 0, 0]
         self.breakPoints = []
         self.DATA = {}
         self.BSS = {}
@@ -85,7 +86,7 @@ class Intel8088(object):
 
         self.ran = False
         self.runningAll = False
-        self.lines = lines
+        self.lines = [l.replace("\t", " ") for l in lines]
 
         errorString = ""
 
@@ -173,7 +174,7 @@ class Intel8088(object):
                                     "\" on line " + str(lineCount) + \
                                     " and line " + str(self.lookupTable[temp])\
                                      + "\n"
-                # TODO: Add the other shit
+
                 elif mode == ".SECT .DATA":
                     # info in .SECT .DATA follows the format
                     # str: .ASCIZ "hello world"
@@ -200,6 +201,73 @@ class Intel8088(object):
                             temp2 + chr(0) * (".ASCIZ" in lus)
 
                         BSScount += len(temp2) + (".ASCIZ" in lus)
+                    elif ".BYTE" or ".WORD" or ".LONG" in lus:
+                        if ".BYTE" in lus:
+                            bTyp = 0
+                        elif ".WORD" in lus:
+                            bTyp = 1
+                        else:
+                            bTyp = 2
+
+                        print bTyp
+
+                        if len(lus) != 3 or lus[0][-1] != ":":
+                            errorString += "Fatal error on line " + \
+                                        str(lineCount) + \
+                                        self.BITTYPES[bTyp] + \
+                                        " declaration should follow:" + \
+                                        " [name]: ." + \
+                                        self.BITTYPES[bTyp].upper() \
+                                        + " [value]"
+                            return errorString
+                        else:
+                            ls = line.split()
+                            name = ls[0][:-1]
+                            try:
+                                value = ls[2]
+                                if value[-1] == 'h':
+                                    value = int(value, 16)
+                                else:
+                                    value = int(value)
+                                while value > 2 ** (8 * (2 ** bTyp)) - 1:
+                                    value -= 2 ** (8 * (2 ** bTyp)) - 1
+                                varray = [0 for _ in range(2 ** bTyp)]
+                                if value < 2 ** 8 - 1:
+                                    varray[0] = value
+                                elif value < 2 ** 16 - 1:
+                                    hv = hex(value)[2:]
+                                    varray[0] = int(hv[-2:], 16)
+                                    varray[1] = int(hv[:-2], 16)
+                                else:
+                                    hv = hex(value)[2:]
+                                    varray[0] = int(hv[-2:], 16)
+                                    varray[1] = int(hv[-4:-2], 16)
+                                    varray[2] = int(hv[:-4], 16)
+                            except:
+                                errorString += "Fatal error on line " + \
+                                        str(lineCount) + \
+                                        " Byte declaration should follow:" + \
+                                        " [name]: .BYTE [integer or hex value]"
+                                return errorString
+                            print bTyp
+                            print 2 ** bTyp
+                            BSSend = BSScount + 2 ** bTyp
+                            self.DATA[name] = [BSScount, BSSend]
+                            print BSScount
+                            print BSScount + 2 ** bTyp
+                            if bTyp != 0:
+                                self.addressSpace[BSScount:BSSend] = \
+                                                [chr(v) for v in varray]
+                            else:
+                                self.addressSpace[BSScount:BSSend] = \
+                                                            chr(varray[0])
+                            BSScount += 2 ** bTyp
+                        print line
+                    else:
+                        errorString += "Fatal error on line " + \
+                                        str(lineCount) + \
+                                        " I do not recognise the command.\n"
+                        return errorString
 
                 elif mode == ".SECT .BSS":
                     # info in .SECT .BSS follows the format
@@ -543,8 +611,10 @@ class Intel8088(object):
         self.registers['SP'] -= 2
         hexval = self.intToHex(value, 4)
         try:
-            self.addressSpace[self.registers['SP']] = chr(int(hexval[-4:-2], 16))
-            self.addressSpace[self.registers['SP'] + 1] = chr(int(hexval[-2:], 16))
+            self.addressSpace[self.registers['SP']] = \
+                                        chr(int(hexval[-4:-2], 16))
+            self.addressSpace[self.registers['SP'] + 1] = \
+                                        chr(int(hexval[-2:], 16))
         except Exception as E:
             print E
 
