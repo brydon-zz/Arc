@@ -42,7 +42,9 @@ class CommandInterpreter(object):
     _DATAVAL = 16
     _BSSVAL = 17
     _BPOFFSET = 18
-    REGEX = re.compile(ur'-*[0-9]+\(BP\)')
+    BPREGEX = re.compile(ur'-*[0-9]+\(BP\)')
+    SCANFREGEX = re.compile(ur'(%[dxXnobcs])+( )*')
+    LEGAL_FORMAT_STRS = ['%s', '%x', '%X', '%b', '%o', '%c', '%n', '%d']
 
     def __init__(self, machine):
         """ Link's this module with the self.machine instance """
@@ -1869,12 +1871,87 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
                 if self.machine.closeFile(fd):
                     self.machine.setRegister('AX', 0)
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_SSCANF"]:
-                1 + 1
+                print "IN"
+                ss = self.machine.stackSize()
+                if ss < 4:
+                    return "Error on line %d, scanf needs at least 3 arguments\
+(the string to be de-formatted, the format string, and at least one memory \
+location). %d were found." % (i, ss - 1)
+                dfStr = self.machine.getZeroTerminatedMemStringAt(\
+                                            self.machine.peekOnStack(2))
+                fStr = self.machine.getZeroTerminatedMemStringAt(\
+                                            self.machine.peekOnStack(3))
+
+                print "OKAY YA"
+                numArgs = fStr.count("%") - fStr.count("%%")
+
+                print ss, numArgs
+
+                if ss < 3 + numArgs:
+                    return "Error on line %d, this format string in the \
+scanf call requires %d arguments. \
+You've only provided %d." % (i, numArgs, ss - 2)
+
+                fArgs = [item for sub in re.findall(self.SCANFREGEX, fStr) \
+                         for item in sub]
+
+                print "Doin Well"
+
+                while " " in fArgs:
+                    fArgs.remove(" ")
+
+                while "" in fArgs:
+                    fArgs.remove("")
+
+                for x in fArgs:
+                    if x not in self.LEGAL_FORMAT_STRS:
+                        return x + " is not a legal format string. We only \
+allow one of: " + ",".join(self.LEGAL_FORMAT_STRS) + "."
+
+                print "round bouts here"
+
+                args = dfStr.strip().split()
+
+                while " " in args:
+                    args.remove(" ")
+
+                while "" in args:
+                    args.remove("")
+
+                print "lets do it"
+                if len(args) != len(fArgs):
+                    return "Error on line %d, your supplied string to scanf\
+doesn't contain the right number of arguments! Expected %d from your, \
+format string, received %d in the argument string!" % (fArgs, args)
+
+                print "ya"
+                for i in range(4, numArgs + 4):
+                    print self.machine.peekOnStack(i), fArgs[i - 4], args[i - 4]
+                    if fArgs[i - 4] in ('%s', '%c'):
+                        r = self.machine.insertStringAtMemLocation(args[i - 4], \
+                                                  self.machine.peekOnStack(i))
+                    elif fArgs[i - 4] in ('%x', '%X'):
+                        r = self.machine.insertHexAtMemLocation(args[i - 4], \
+                                                  self.machine.peekOnStack(i))
+                    elif fArgs[i - 4] in ('%n', '%d'):
+                        r = self.machine.insertIntAtMemLocation(args[i - 4], \
+                                                  self.machine.peekOnStack(i))
+                    elif fArgs[i - 4] == '%b':
+                        r = self.machine.insertBinAtMemLocation(args[i - 4], \
+                                                  self.machine.peekOnStack(i))
+                    elif fArgs[i - 4] == '%o':
+                        r = self.machine.insertOctAtMemLocation(args[i - 4], \
+                                                  self.machine.peekOnStack(i))
+                    if r == -1:
+                        return "Error, " + str(args[i - 3]) + " doesn't \
+match " + str(fArgs[i - 3])
+
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_PRINTF"]:
                 ss = self.machine.stackSize()
                 if ss < 3:
-                    return "Error on line %d, printf needs at least 3\
- arguments. %d were found." % (i, ss - 1)
+                    return "Error on line %d, printf needs at least 2\
+ arguments (the format string, and the string to print).\
+  %d were found." % (i, ss - 1)
 
                 formatStr = self.machine.getZeroTerminatedMemStringAt(\
                                             self.machine.peekOnStack(2))
@@ -1991,7 +2068,7 @@ the polarity (-1 for dec, 1 for inc) """
             self.ERRSTR = "Too many minuses on line " + str(i) + "."
             return self._ERROR
 
-        if self.REGEX.match(command[numArg]):
+        if self.BPREGEX.match(command[numArg]):
             """ We gotta match! Doing some neat regex stuff. """
             return self._BPOFFSET
 

@@ -181,10 +181,23 @@ class Intel8088(object):
                     # where .ASCIZ means an ascii string with a zero at the end
                     # and .ASCII means an ascii string
                     if ":" not in line:
-                        errorString += "I do not understand this line. Declarations need colons."
+                        trimmed = line.strip()
+                        if trimmed.startsWith(".ALIGN "):
+                            trimmed = trimmed[7:]
+                            try:
+                                trimmed = int(trimmed)
+                                if BSScount % trimmed != 0:
+                                    BSScount += trimmed - (BSScount % trimmed)
+                            except:
+                                errorString += ".ALIGN expects a single \
+integer argument."
+                        else:
+                            errorString += "I do not understand this line. \
+Either declarations or .ALIGN's are expected, and declarations need colons.\
+e.g. hw: .ASCIZ \"Hello World\""
                     else:
                         dc = line[line.index(":") + 1:].strip()
-                        if dc.startswith(".ASCIZ") or dc.startswith(".ASCII"):
+                        if dc.startswith(".ASCIZ ") or dc.startswith(".ASCII "):
                             # If we're dealing with a string
                             if line.count("\"") < 2:
                                 # each string to be defined should be in quotes
@@ -203,8 +216,8 @@ class Intel8088(object):
                                 temp2 + chr(0) * (dc.startswith(".ASCIZ"))
 
                             BSScount += len(temp2) + (dc.startswith(".ASCIZ"))
-                        elif dc.startswith(".BYTE") or dc.startswith(".WORD")\
-                        or dc.startswith(".LONG"):
+                        elif dc.startswith(".BYTE ") or dc.startswith(".WORD ")\
+                        or dc.startswith(".LONG "):
                             if dc.startswith(".BYTE"):
                                 bTyp = 0
                             elif dc.startswith(".WORD"):
@@ -684,7 +697,50 @@ class Intel8088(object):
 
     def setMemoryAddress(self, addr, to):
         """ Sets the value located at address 'addr' to 'to'"""
-        self.addressSpace[addr] = to
+        self.addressSpace[addr] = str(to)
+
+    def insertStringAtMemLocation(self, string, addr):
+        if addr + len(string) < len(self.addressSpace):
+            self.addressSpace[addr:addr + len(string)] = string
+
+    def insertIntAtMemLocation(self, i, addr):
+        try:
+            i = int(i)
+        except:
+            return -1
+
+        while i > 256:
+            i -= 256
+
+        print "Putting " + str(i) + " at " + str(addr)
+        self.setMemoryAddress(addr, chr(i))
+
+    def insertHexAtMemLocation(self, hexStr, addr):
+        if hexStr[-1] == "h":
+            hexStr = hexStr[:-1]
+        try:
+            hexStr = int(hexStr, 16)
+        except:
+            return -1
+
+        self.insertIntAtMemLocation(hexStr, addr)
+
+    def insertOctAtMemLocation(self, string, addr):
+        try:
+            string = int(string, 8)
+        except:
+            return -1
+
+        self.insertIntAtMemLocation(string, addr)
+
+    def insertBinAtMemLocation(self, string, addr):
+        print string
+        try:
+            string = int(string, 2)
+        except:
+            return -1
+        print string
+        self.insertIntAtMemLocation(string, addr)
 
     def isHex(self, string):
         try:

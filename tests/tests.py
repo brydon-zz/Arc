@@ -209,7 +209,7 @@ class Test(unittest.TestCase):
         self.machine.flags['C'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JC"](['jc', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJcTrue(self):
         """ testing the jump if carry method,
@@ -217,21 +217,21 @@ class Test(unittest.TestCase):
         self.machine.flags['C'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JC"](['jc', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJcxzFalse(self):
         """ Testing the CXZ method when passed a false condition"""
         self.machine.registers['CX'] = 1
         self.machine.lookupTable = {"test": 25}
         self.functionTable['JCXZ'](['jcxz', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJcxzTrue(self):
         """ Testing the CXZ method when passed a true condition"""
         self.machine.registers['CX'] = 0
         self.machine.lookupTable = {"test": 25}
         self.functionTable['JCXZ'](['jcxz', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJeFalse(self):
         """ testing the jump if equal method,
@@ -239,7 +239,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JE"](['je', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJeTrue(self):
         """ testing the jump if equal method,
@@ -247,7 +247,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JE"](['je', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJgFalse(self):
         """ testing the jump if greater than method,
@@ -256,7 +256,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JG"](['jg', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJgTrue(self):
         """ testing the jump if greater than method,
@@ -265,7 +265,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JG"](['jg', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJgeFalse(self):
         """ testing the jump if greater than equal method,
@@ -274,7 +274,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JGE"](['jge', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJgeTrue(self):
         """ testing the jump if greater than equal method,
@@ -283,7 +283,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JGE"](['jge', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJlFalse(self):
         """ testing the jump if less than method,
@@ -292,7 +292,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JL"](['jl', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJlTrue(self):
         """ testing the jump if les than method,
@@ -301,7 +301,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JL"](['jl', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJleFalse(self):
         """ testing the jump if less than equal method,
@@ -310,7 +310,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JLE"](['jge', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJleTrue(self):
         """ testing the jump if less than equal method,
@@ -319,13 +319,13 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JLE"](['jge', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJmp(self):
         """ Testing the jump method """
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JMP"](['jmp', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJncFalse(self):
         """ testing the jump if not carry method,
@@ -333,7 +333,7 @@ class Test(unittest.TestCase):
         self.machine.flags['C'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNC"](['jnc', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJncTrue(self):
         """ testing the jump if not carry method,
@@ -341,7 +341,7 @@ class Test(unittest.TestCase):
         self.machine.flags['C'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNC"](['jnc', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJneFalse(self):
         """ testing the jump if not equal method,
@@ -349,7 +349,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNE"](['jne', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJneTrue(self):
         """ testing the jump if not equal method,
@@ -357,7 +357,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNE"](['jne', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJngFalse(self):
         """ testing the jump if not greater than method,
@@ -366,7 +366,7 @@ class Test(unittest.TestCase):
         self.machine.flags['S'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNG"](['jnG', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJngTrue(self):
         """ testing the jump if not greater than method,
@@ -375,7 +375,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNG"](['jng', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJngeFalse(self):
         """ testing the jump if not greater than equal method,
@@ -384,7 +384,7 @@ class Test(unittest.TestCase):
         self.machine.flags['S'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNGE"](['jnG', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJngeTrue(self):
         """ testing the jump if not greater than equal method,
@@ -393,7 +393,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNGE"](['jng', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJnlFalse(self):
         """ testing the jump if not less than method,
@@ -402,7 +402,7 @@ class Test(unittest.TestCase):
         self.machine.flags['S'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNL"](['jnl', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJnlTrue(self):
         """ testing the jump if not less than method,
@@ -411,7 +411,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNL"](['jnl', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJnleFalse(self):
         """ testing the jump if not less than equal method,
@@ -420,7 +420,7 @@ class Test(unittest.TestCase):
         self.machine.flags['S'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNLE"](['jnG', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJnleTrue(self):
         """ testing the jump if not less than equal method,
@@ -429,7 +429,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNLE"](['jng', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJnoFalse(self):
         """ testing the jump if not overflow method,
@@ -437,7 +437,7 @@ class Test(unittest.TestCase):
         self.machine.flags['O'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNO"](['jno', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJnoTrue(self):
         """ testing the jump if not overflow method,
@@ -445,7 +445,7 @@ class Test(unittest.TestCase):
         self.machine.flags['O'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNO"](['jno', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJnpFalse(self):
         """ testing the jump if not parity method,
@@ -453,7 +453,7 @@ class Test(unittest.TestCase):
         self.machine.flags['P'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNP"](['jnp', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJnpTrue(self):
         """ testing the jump if not parity method,
@@ -461,7 +461,7 @@ class Test(unittest.TestCase):
         self.machine.flags['P'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNP"](['jnp', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJnsFalse(self):
         """ testing the jump if not sign method,
@@ -469,7 +469,7 @@ class Test(unittest.TestCase):
         self.machine.flags['S'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNS"](['jns', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJnsTrue(self):
         """ testing the jump if not sign method,
@@ -477,7 +477,7 @@ class Test(unittest.TestCase):
         self.machine.flags['S'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNS"](['jns', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJnzFalse(self):
         """ testing the jump if not zero method,
@@ -485,7 +485,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNZ"](['jnZ', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJnzTrue(self):
         """ testing the jump if not zero method,
@@ -493,7 +493,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JNZ"](['jnz', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJoFalse(self):
         """ testing the jump if overflow method,
@@ -501,7 +501,7 @@ class Test(unittest.TestCase):
         self.machine.flags['O'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JO"](['jo', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJoTrue(self):
         """ testing the jump if overflow method,
@@ -509,7 +509,7 @@ class Test(unittest.TestCase):
         self.machine.flags['O'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JO"](['jo', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJpFalse(self):
         """ testing the jump if parity method,
@@ -517,7 +517,7 @@ class Test(unittest.TestCase):
         self.machine.flags['P'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JP"](['jp', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJpTrue(self):
         """ testing the jump if parity method,
@@ -525,7 +525,7 @@ class Test(unittest.TestCase):
         self.machine.flags['P'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JP"](['jp', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJpeFalse(self):
         """ testing the jump if parity/equal method,
@@ -534,7 +534,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JPE"](['jpe', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJpeTrue(self):
         """ testing the jump if parity/equal method,
@@ -543,7 +543,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JPE"](['jpe', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJpoFalse(self):
         """ testing the jump if parity/overflow method,
@@ -552,7 +552,7 @@ class Test(unittest.TestCase):
         self.machine.flags['O'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JPO"](['jpo', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJpoTrue(self):
         """ testing the jump if parity/overflow method,
@@ -561,7 +561,7 @@ class Test(unittest.TestCase):
         self.machine.flags['O'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JPO"](['jpo', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJsFalse(self):
         """ testing the jump if sign method,
@@ -569,7 +569,7 @@ class Test(unittest.TestCase):
         self.machine.flags['S'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JS"](['js', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJsTrue(self):
         """ testing the jump if sign method,
@@ -577,21 +577,21 @@ class Test(unittest.TestCase):
         self.machine.flags['S'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JS"](['js', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testJumpFarNear(self):
         self.machine.lookupTable = {"1": [10, 20, 30, 40], "2": 35}
         self.machine.registers["PC"] = 11
         self.functionTable["JMP"](["JMP", "1f"], 0)
-        self.assertEqual(self.machine.jumpLocation, 20)
+        self.assertEqual(self.machine.jumpLocation, 19)
         self.functionTable["JMP"](["JMP", "1b"], 0)
-        self.assertEqual(self.machine.jumpLocation, 10)
+        self.assertEqual(self.machine.jumpLocation, 9)
         self.functionTable["JMP"](["JMP", "2"], 0)
-        self.assertEqual(self.machine.jumpLocation, 35)
+        self.assertEqual(self.machine.jumpLocation, 34)
 
     def testJumpImmed(self):
         self.functionTable["JMP"](['JMP', '10'], 0)
-        self.assertEqual(self.machine.jumpLocation, 10)
+        self.assertEqual(self.machine.jumpLocation, 9)
 
     def testJzFalse(self):
         """ testing the jump if zero method,
@@ -599,7 +599,7 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = False
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JZ"](['jz', 'test'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 25)
+        self.assertNotEqual(self.machine.jumpLocation, 24)
 
     def testJzTrue(self):
         """ testing the jump if zero method,
@@ -607,18 +607,18 @@ class Test(unittest.TestCase):
         self.machine.flags['Z'] = True
         self.machine.lookupTable = {"test": 25}
         self.functionTable["JZ"](['jz', 'test'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
 
     def testLodsb(self):
-        self.machine.addressSpace[70] = 24
+        self.machine.addressSpace[70] = chr(24)
         self.machine.registers['SI'] = 70
         self.functionTable["LODSB"](['LODSB'], 0)
         self.assertEqual(self.machine.getEightBitRegister('AL'), 24)
         self.assertEqual(self.machine.registers['SI'], 71)
 
     def testLodsw(self):
-        self.machine.addressSpace[70] = 24
-        self.machine.addressSpace[71] = 31
+        self.machine.addressSpace[70] = chr(24)
+        self.machine.addressSpace[71] = chr(31)
 
         self.functionTable["STD"](['STD'], 0)
         self.machine.registers['SI'] = 70
@@ -634,13 +634,13 @@ class Test(unittest.TestCase):
         self.machine.lookupTable = {"test": 25, "test2": 20}
         self.functionTable["LOOP"](["LOOP", "test2"], 0)
         self.assertEqual(self.machine.registers['CX'], 1)
-        self.assertEqual(self.machine.jumpLocation, 20)
+        self.assertEqual(self.machine.jumpLocation, 19)
         self.functionTable["LOOP"](["LOOP", "test"], 0)
         self.assertEqual(self.machine.registers['CX'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
         self.functionTable["LOOP"](["LOOP", "test2"], 0)
         self.assertEqual(self.machine.registers['CX'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 20)
+        self.assertNotEqual(self.machine.jumpLocation, 19)
 
     def testLoopEFalse(self):
         self.machine.flags['Z'] = False
@@ -648,7 +648,7 @@ class Test(unittest.TestCase):
         self.machine.lookupTable = {"test": 25, "test2": 20}
         self.functionTable["LOOPE"](["LOOPE", "test2"], 0)
         self.assertNotEqual(self.machine.registers['CX'], 1)
-        self.assertNotEqual(self.machine.jumpLocation, 20)
+        self.assertNotEqual(self.machine.jumpLocation, 19)
 
     def testLoopETrue(self):
         self.machine.flags['Z'] = True
@@ -656,13 +656,13 @@ class Test(unittest.TestCase):
         self.machine.lookupTable = {"test": 25, "test2": 20}
         self.functionTable["LOOPE"](["LOOPE", "test2"], 0)
         self.assertEqual(self.machine.registers['CX'], 1)
-        self.assertEqual(self.machine.jumpLocation, 20)
+        self.assertEqual(self.machine.jumpLocation, 19)
         self.functionTable["LOOPE"](["LOOPE", "test"], 0)
         self.assertEqual(self.machine.registers['CX'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
         self.functionTable["LOOPE"](["LOOPE", "test2"], 0)
         self.assertEqual(self.machine.registers['CX'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 20)
+        self.assertNotEqual(self.machine.jumpLocation, 19)
 
     def testLoopNEFalse(self):
         self.machine.flags['Z'] = True
@@ -670,7 +670,7 @@ class Test(unittest.TestCase):
         self.machine.lookupTable = {"test": 25, "test2": 20}
         self.functionTable["LOOPNE"](["LOOPNE", "test2"], 0)
         self.assertNotEqual(self.machine.registers['CX'], 1)
-        self.assertNotEqual(self.machine.jumpLocation, 20)
+        self.assertNotEqual(self.machine.jumpLocation, 19)
 
     def testLoopNETrue(self):
         self.machine.flags['Z'] = False
@@ -678,22 +678,27 @@ class Test(unittest.TestCase):
         self.machine.lookupTable = {"test": 25, "test2": 20}
         self.functionTable["LOOPNE"](["LOOPNE", "test2"], 0)
         self.assertEqual(self.machine.registers['CX'], 1)
-        self.assertEqual(self.machine.jumpLocation, 20)
+        self.assertEqual(self.machine.jumpLocation, 19)
         self.functionTable["LOOPNE"](["LOOPNE", "test"], 0)
         self.assertEqual(self.machine.registers['CX'], 0)
-        self.assertEqual(self.machine.jumpLocation, 25)
+        self.assertEqual(self.machine.jumpLocation, 24)
         self.functionTable["LOOPNE"](["LOOPNE", "test2"], 0)
         self.assertEqual(self.machine.registers['CX'], 0)
-        self.assertNotEqual(self.machine.jumpLocation, 20)
+        self.assertNotEqual(self.machine.jumpLocation, 19)
 
     def testMulNumber(self):
         self.machine.registers['AX'] = 3
         self.functionTable['MUL'](['MUL', '4'], 0)
         self.assertEqual(self.machine.registers['AX'], 12)
 
-        self.machine.registers['AX'] = 25
-        self.functionTable['MUL'](['MUL', '25'], 0)
-        self.assertEqual(self.machine.registers['AX'], 625)
+        self.machine.registers['AX'] = 4
+        self.machine.registers['BX'] = 6
+        self.functionTable['MUL'](['MUL', 'BX'], 0)
+        self.assertEqual(self.machine.registers['AX'], 24)
+
+        self.machine.registers['AX'] = 6
+        self.functionTable['MUL'](['MUL', '4'], 0)
+        self.assertEqual(self.machine.registers['AX'], 24)
 
         self.machine.registers['AX'] = 30
         self.functionTable['MUL'](['MUL', '25556'], 0)
