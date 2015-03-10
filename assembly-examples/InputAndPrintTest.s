@@ -4,8 +4,8 @@
 
 .SECT .TEXT
 
-	PUSH str
 	PUSH inGreet
+	PUSH str
 	PUSH _PRINTF
 	SYS
 
@@ -24,8 +24,8 @@ getInput:
 doneInput:
 	ADD SP,2
 
-	PUSH str
 	PUSH printBuffer
+	PUSH str
 	PUSH _PRINTF
 	SYS
 
