@@ -856,7 +856,6 @@ class Simulator(object):
         # self.code.set_wrap_mode(Gtk.WrapMode.WORD)
 
     def hoverOverFileButton(self, widget, event):
-        print "Over"
         fn = self.fileIconTable[hash(widget.get_child())]
 
         newPath = [self._PATHDELIM + "images", fn + "Over.png"]
@@ -865,7 +864,6 @@ class Simulator(object):
         widget.get_child().set_from_file(newFileName)
 
     def hoverOffFileButton(self, widget, event):
-        print "Off"
         fn = self.fileIconTable[hash(widget.get_child())]
 
         newPath = [self._PATHDELIM + "images", fn + ".png"]
