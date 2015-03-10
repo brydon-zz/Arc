@@ -856,6 +856,7 @@ class Simulator(object):
         # self.code.set_wrap_mode(Gtk.WrapMode.WORD)
 
     def hoverOverFileButton(self, widget, event):
+        print "Over"
         fn = self.fileIconTable[hash(widget.get_child())]
 
         newPath = [self._PATHDELIM + "images", fn + "Over.png"]
@@ -863,11 +864,8 @@ class Simulator(object):
 
         widget.get_child().set_from_file(newFileName)
 
-    def releaseFileButton(self, widget, event):
-        widget.get_child().set_from_file(self.downFile)
-        self.downFile = ""
-
     def hoverOffFileButton(self, widget, event):
+        print "Off"
         fn = self.fileIconTable[hash(widget.get_child())]
 
         newPath = [self._PATHDELIM + "images", fn + ".png"]
@@ -951,7 +949,7 @@ class Simulator(object):
         self.buttonBox.pack_start(stopEB, False, False, 1)
 
         for x in [newEB, openEB, saveEB, allEB, stepEB, stopEB]:
-            x.connect('button_release_event', self.releaseFileButton)
+            x.connect('button_release_event', self.hoverOffFileButton)
             x.connect('enter-notify-event', self.hoverOverFileButton)
             x.connect('leave-notify-event', self.hoverOffFileButton)
 
