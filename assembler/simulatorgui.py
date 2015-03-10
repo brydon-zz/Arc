@@ -79,6 +79,7 @@ class Simulator(object):
         self.codeStates = TextStates()
         self.timer = time.time()
         self.updateAll = False
+        self.fileIconTable = {};
 
         """Handlers for the actions in the interface."""
 
@@ -855,12 +856,10 @@ class Simulator(object):
         # self.code.set_wrap_mode(Gtk.WrapMode.WORD)
 
     def hoverOverFileButton(self, widget, event):
-        if self.downFile != "":
-            newFileName = self.downFile
-            self.downFile = ""
-        else:
-            newFileName = widget.get_child().props.file.replace(".png", "Over.png")
-            newFileName = newFileName.replace("OverOver.png", "Over.png")
+        fn = self.fileIconTable[hash(widget.get_child())]
+
+        newPath = [self._PATHDELIM + "images", fn + "Over.png"]
+        newFileName = self._PATH + self._PATHDELIM.join(newPath)
 
         widget.get_child().set_from_file(newFileName)
 
@@ -869,11 +868,10 @@ class Simulator(object):
         self.downFile = ""
 
     def hoverOffFileButton(self, widget, event):
-        if self.downFile != "":
-            newFileName = self.downFile.replace("Over.png", ".png")
-            self.downFile = ""
-        else:
-            newFileName = widget.get_child().props.file.replace("Over.png", ".png")
+        fn = self.fileIconTable[hash(widget.get_child())]
+
+        newPath = [self._PATHDELIM + "images", fn + ".png"]
+        newFileName = self._PATH + self._PATHDELIM.join(newPath)
 
         widget.get_child().set_from_file(newFileName)
 
@@ -885,6 +883,8 @@ class Simulator(object):
         newPath = [self._PATHDELIM + "images", "newFileIcon.png"]
         new.set_from_file(self._PATH + self._PATHDELIM.join(newPath))
 
+        self.fileIconTable[hash(new)] = "newFileIcon"
+
         newEB = Gtk.EventBox()
         newEB.add(new)
         newEB.set_tooltip_text("New - Ctrl + N")
@@ -894,6 +894,8 @@ class Simulator(object):
         openImage = Gtk.Image()
         openPath = [self._PATHDELIM + "images", "openIcon.png"]
         openImage.set_from_file(self._PATH + self._PATHDELIM.join(openPath))
+
+        self.fileIconTable[hash(openImage)] = "openIcon"
 
         openEB = Gtk.EventBox()
         openEB.add(openImage)
@@ -905,6 +907,8 @@ class Simulator(object):
         savePath = [self._PATHDELIM + "images", "saveIcon.png"]
         save.set_from_file(self._PATH + self._PATHDELIM.join(savePath))
 
+        self.fileIconTable[hash(save)] = "saveIcon"
+
         saveEB = Gtk.EventBox()
         saveEB.add(save)
         saveEB.set_tooltip_text("Save - Ctrl + S")
@@ -914,6 +918,8 @@ class Simulator(object):
         allIcon = Gtk.Image()
         allPath = [self._PATHDELIM + "images", "allIcon.png"]
         allIcon.set_from_file(self._PATH + self._PATHDELIM.join(allPath))
+
+        self.fileIconTable[hash(allIcon)] = "allIcon"
 
         allEB = Gtk.EventBox()
         allEB.add(allIcon)
@@ -925,6 +931,8 @@ class Simulator(object):
         stepPath = [self._PATHDELIM + "images", "stepIcon.png"]
         step.set_from_file(self._PATH + self._PATHDELIM.join(stepPath))
 
+        self.fileIconTable[hash(step)] = "stepIcon"
+
         stepEB = Gtk.EventBox()
         stepEB.add(step)
         stepEB.set_tooltip_text("Run One Line - Enter")
@@ -934,6 +942,8 @@ class Simulator(object):
         stop = Gtk.Image()
         stopPath = [self._PATHDELIM + "images", "stopIcon.png"]
         stop.set_from_file(self._PATH + self._PATHDELIM.join(stopPath))
+
+        self.fileIconTable[hash(stop)] = "stopIcon"
 
         stopEB = Gtk.EventBox()
         stopEB.add(stop)
@@ -958,44 +968,26 @@ class Simulator(object):
                                 self._PATH + self._PATHDELIM.join(emptyPath))
 
     def pressNewButton(self, widget, event):
-        if self.downFile == "":
-            self.downFile = widget.get_child().props.file
-
         self.clearIcon(widget)
         self.new()
 
     def pressOpenButton(self, widget, event):
-        if self.downFile == "":
-            self.downFile = widget.get_child().props.file
-
         self.clearIcon(widget)
         self.openFileDialog()
 
     def pressStepButton(self, widget, event):
-        if self.downFile == "":
-            self.downFile = widget.get_child().props.file
-
         self.clearIcon(widget)
         self.stepButtonClicked()
 
     def pressAllButton(self, widget, event):
-        if self.downFile == "":
-            self.downFile = widget.get_child().props.file
-
         self.clearIcon(widget)
         self.runAll()
 
     def pressSaveButton(self, widget, event):
-        if self.downFile == "":
-            self.downFile = widget.get_child().props.file
-
         self.clearIcon(widget)
         self.saveFile()
 
     def pressStopButton(self, widget, event):
-        if self.downFile == "":
-            self.downFile = widget.get_child().props.file
-
         self.clearIcon(widget)
 
         if self.machine.isRunning():
