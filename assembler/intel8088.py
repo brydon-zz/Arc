@@ -734,12 +734,11 @@ e.g. hw: .ASCIZ \"Hello World\""
         self.insertIntAtMemLocation(string, addr)
 
     def insertBinAtMemLocation(self, string, addr):
-        print string
         try:
             string = int(string, 2)
         except:
             return -1
-        print string
+
         self.insertIntAtMemLocation(string, addr)
 
     def isHex(self, string):

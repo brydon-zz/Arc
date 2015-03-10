@@ -1871,7 +1871,6 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
                 if self.machine.closeFile(fd):
                     self.machine.setRegister('AX', 0)
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_SSCANF"]:
-                print "IN"
                 ss = self.machine.stackSize()
                 if ss < 4:
                     return "Error on line %d, scanf needs at least 3 arguments\
@@ -1882,10 +1881,10 @@ location). %d were found." % (i, ss - 1)
                 fStr = self.machine.getZeroTerminatedMemStringAt(\
                                             self.machine.peekOnStack(3))
 
-                print "OKAY YA"
                 numArgs = fStr.count("%") - fStr.count("%%")
-
-                print ss, numArgs
+                if numArgs == 0:
+                    return "Erro ron line %d, this format string \
+has no arguments!" % i
 
                 if ss < 3 + numArgs:
                     return "Error on line %d, this format string in the \
@@ -1894,8 +1893,6 @@ You've only provided %d." % (i, numArgs, ss - 2)
 
                 fArgs = [item for sub in re.findall(self.SCANFREGEX, fStr) \
                          for item in sub]
-
-                print "Doin Well"
 
                 while " " in fArgs:
                     fArgs.remove(" ")
@@ -1908,8 +1905,6 @@ You've only provided %d." % (i, numArgs, ss - 2)
                         return x + " is not a legal format string. We only \
 allow one of: " + ",".join(self.LEGAL_FORMAT_STRS) + "."
 
-                print "round bouts here"
-
                 args = dfStr.strip().split()
 
                 while " " in args:
@@ -1918,15 +1913,13 @@ allow one of: " + ",".join(self.LEGAL_FORMAT_STRS) + "."
                 while "" in args:
                     args.remove("")
 
-                print "lets do it"
                 if len(args) != len(fArgs):
                     return "Error on line %d, your supplied string to scanf\
 doesn't contain the right number of arguments! Expected %d from your, \
 format string, received %d in the argument string!" % (fArgs, args)
 
-                print "ya"
                 for i in range(4, numArgs + 4):
-                    print self.machine.peekOnStack(i), fArgs[i - 4], args[i - 4]
+
                     if fArgs[i - 4] in ('%s', '%c'):
                         r = self.machine.insertStringAtMemLocation(args[i - 4], \
                                                   self.machine.peekOnStack(i))
@@ -1942,9 +1935,10 @@ format string, received %d in the argument string!" % (fArgs, args)
                     elif fArgs[i - 4] == '%o':
                         r = self.machine.insertOctAtMemLocation(args[i - 4], \
                                                   self.machine.peekOnStack(i))
+
                     if r == -1:
-                        return "Error, " + str(args[i - 3]) + " doesn't \
-match " + str(fArgs[i - 3])
+                        return "Error, '" + args[i - 4] + "' doesn't \
+match '" + fArgs[i - 4] + "'"
 
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_PRINTF"]:
                 ss = self.machine.stackSize()
@@ -1957,6 +1951,10 @@ match " + str(fArgs[i - 3])
                                             self.machine.peekOnStack(2))
 
                 numArgs = formatStr.count("%") - formatStr.count("%%")
+
+                if numArgs == 0:
+                    return "Error on line %d, this format string (%s) \
+has no arguments!" % (i, formatStr)
 
                 if ss < 2 + numArgs:
                     return "Error on line %d, this format string in the \
