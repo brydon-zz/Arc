@@ -434,8 +434,8 @@ class Simulator(object):
         self.regDL.set_text(regDLText)
         self.regDH.set_text(regDHText)
 
-        self.regDI.set_text(regSIText)
-        self.regSI.set_text(regDIText)
+        self.regDI.set_text(regDIText)
+        self.regSI.set_text(regSIText)
         self.regSP.set_text(regSPText)
         self.regBP.set_text(regBPText)
         self.regPC.set_text(regPCText)
