@@ -712,7 +712,6 @@ e.g. hw: .ASCIZ \"Hello World\""
         while i > 256:
             i -= 256
 
-        print "Putting " + str(i) + " at " + str(addr)
         self.setMemoryAddress(addr, chr(i))
 
     def insertHexAtMemLocation(self, hexStr, addr):
@@ -770,7 +769,7 @@ e.g. hw: .ASCIZ \"Hello World\""
             self.openFiles.append(open(fname, self.FILEMODES[mode]))
         except:
             return -1
-        return len(self.openFiles)
+        return len(self.openFiles) - 1
 
     def createFile(self, fname, mode):
         if os.path.isfile(fname):
@@ -780,6 +779,7 @@ e.g. hw: .ASCIZ \"Hello World\""
     def closeFile(self, fd):
         try:
             self.openFiles[fd].close()
+            self.openFiles.pop()
             return True
         except:
             return False
@@ -801,5 +801,9 @@ e.g. hw: .ASCIZ \"Hello World\""
         except:
             return 0
 
-    def seek(self, fd, buf, nbytes, mode):
-        return
+    def lseek(self, fd, num):
+        try:
+            self.openFiles[fd].seek(num, 1)
+            return
+        except:
+            return -1

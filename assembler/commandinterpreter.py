@@ -1778,12 +1778,12 @@ on the stack is not understood" % (i, self.machine.getStack()[-1])
                 if ss < 3:
                     return "Error on line %d, open expects 2 arguments. \
 %d were found" % (i, ss - 1)
-                self.machine.popFromStack()  # This is just the _OPEN code
-                fnameStart = self.machine.popFromStack()
+
+                fnameStart = self.machine.peekOnStack(2)
 
                 fname = self.machine.getZeroTerminatedMemStringAt(fnameStart)
 
-                mode = self.machine.popFromStack()
+                mode = self.machine.peekOnStack(3)
 
                 if mode not in [0, 1, 2]:
                     return "Error on line %d, the mode for opening is not \
@@ -1792,17 +1792,18 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
                 print "Opening " + fname + " with mode " + str(mode)
                 response = self.machine.openFile(fname, mode)
                 self.machine.setRegister('AX', response)
+
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_CREAT"]:
                 ss = self.machine.stackSize()
                 if ss < 3:
                     return "Error on line %d, Create expects 3 arguments. \
 %d were found" % (i, ss)
-                self.machine.popFromStack()  # This is just the _OPEN code
-                fnameStart = self.machine.popFromStack()
+
+                fnameStart = self.machine.peekOnStack(2)
 
                 fname = self.machine.getZeroTerminatedMemStringAt(fnameStart)
 
-                mode = self.machine.popFromStack()
+                mode = self.machine.peekOnStack(3)
 
                 if mode not in [0, 1, 2]:
                     return "Error on line %d, the mode for Creating is not \
@@ -1817,27 +1818,44 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
                 if ss < 4:
                     return "Error on line %d, read expects 3 arguments. \
 %d were found" % (i, ss - 1)
-                self.machine.popFromStack()  # This is just the _OPEN code
 
-                fd = self.machine.popFromStack()
-                buf = self.machine.popFromStack()
-                nbytes = self.machine.popFromStack()
+                fd = self.machine.peekOnStack(2)
+                buf = self.machine.peekOnStack(3)
+                nbytes = self.machine.peekOnStack(4)
                 if nbytes < 0:
                     return "Error on line %d, cannot read negative number\
  of bytes (%d)" % (i, nbytes)
 
                 response = self.machine.read(fd, buf, nbytes)
                 self.machine.setRegister('AX', response)
+
+            elif int(self.machine.peekOnStack()) == self.SYSCodes["_LSEEK"]:
+                ss = self.machine.stackSize()
+                if ss < 4:
+                    return "Error on line %d, write expects 3 arguments. \
+%d were found" % (i, ss - 1)
+
+                fd = self.machine.peekOnStack(2)
+                num = self.machine.peekOnStack(3)
+
+                if fd == 0:
+                    return "Error on line %d, cannot write to STDOUT" % i
+                elif fd == 1:
+                    return "Error on line %d, cannot write to STDIN" % i
+                elif fd == 2:
+                    return "Error on line %d, cannot write to STDERROR" % i
+
+                response = self.machine.lseek(fd, num)
+
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_WRITE"]:
                 ss = self.machine.stackSize()
                 if ss < 4:
                     return "Error on line %d, write expects 3 arguments. \
 %d were found" % (i, ss - 1)
-                self.machine.popFromStack()  # This is just the _WRITE code
 
-                fd = self.machine.popFromStack()
-                buf = self.machine.popFromStack()
-                nbytes = self.machine.popFromStack()
+                fd = self.machine.peekOnStack(2)
+                buf = self.machine.peekOnStack(3)
+                nbytes = self.machine.peekOnStack(4)
 
                 if nbytes < 0:
                     return "Error on line %d, cannot write negative number\
@@ -1859,17 +1877,21 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
                     return "StdError: " + toWrite
                 else:
                     response = self.machine.write(fd, buf, nbytes)
+                    print "Wrote this many "
+                    print response
                     self.machine.setRegister('AX', response)
+
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_CLOSE"]:
                 ss = self.machine.stackSize()
                 if ss < 2:
                     return "Error on line %d, close expects 1 arguments. \
 %d were found" % (i, ss - 1)
-                self.machine.popFromStack()  # This is just the _CLOSE code
-                fd = self.machine.popFromStack()
+                fd = self.machine.peekOnStack(2)
 
                 if self.machine.closeFile(fd):
                     self.machine.setRegister('AX', 0)
+
+                print self.machine.openFiles
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_SSCANF"]:
                 ss = self.machine.stackSize()
                 if ss < 4:
