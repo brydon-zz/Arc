@@ -37,6 +37,9 @@ The memory data type stores CHARS
 import commandinterpreter
 import time
 import os
+import sys
+
+debug = True
 
 
 class Intel8088(object):
@@ -82,6 +85,16 @@ class Intel8088(object):
         self.commandArgs = as88.getCommandArgs()
         self.do = as88.getFunctionTable()
 
+    def labelToInt(self, lab):
+        if lab in self.BSS:
+            return self.BSS[lab][0]
+        elif lab in self.DATA:
+            return self.DATA[lab][0]
+        elif len(lab) == 1:
+            return ord(lab)
+        else:
+            return None
+
     def loadCode(self, lines):
 
         self.ran = False
@@ -120,7 +133,18 @@ class Intel8088(object):
             line = line.strip()
 
             if "!" in line:
-                line = line[:line.find("!")].strip()  # ignore comments
+                print line
+                sq = 2
+                eq = 1
+                print line.count("\"")
+                if "\"" in line:
+                    sq = line.find("\"")
+                    eq = line.find("\"", sq + 1)
+                    print sq, eq
+                exc = line.find("!")
+                print sq, eq, exc
+                if not (sq < exc < eq):
+                    line = line[:exc].strip()  # ignore comments
 
             lineCount += 1
 
@@ -196,6 +220,7 @@ integer argument."
 Either declarations or .ALIGN's are expected, and declarations need colons.\
 e.g. hw: .ASCIZ \"Hello World\""
                     else:
+                        print line
                         dc = line[line.index(":") + 1:].strip()
                         if dc.startswith(".ASCIZ ") or dc.startswith(".ASCII "):
                             # If we're dealing with a string
@@ -204,7 +229,8 @@ e.g. hw: .ASCIZ \"Hello World\""
                                 # raise error if quotes are messed
                                 errorString += "Fatal error on line " + \
                                                 str(lineCount) + \
-                                                ". Too many quotes.\n"
+                                                ". To many quotes.\n"
+                                print "^^ERRROR\n\n"
                             temp2 = self.replaceEscapedSequences(
                                                     line[line.find("\"") + 1:\
                                                          line.rfind("\"")])
@@ -385,12 +411,14 @@ e.g. hw: .ASCIZ \"Hello World\""
                     (" were " if len(command) - 1 > 1 else " was ") + "given."
 
             if command[0] in self.do.keys():
-                try:
+                # try:
                     response = self.do[command[0]](command,
                                                    self.getRegister('PC'))
-                except:
-                    response = "Fatal error occurred on line " + \
-                                str(self.getRegister('PC'))
+                # except Exception as E:
+                #    response = "Fatal error occurred on line " + \
+                #                str(self.getRegister('PC'))
+                #    if debug:
+                #        print E
             else:
                 self.stopRunning(-1)
                 return "Fatal error. " + command[0] + " not recognised."

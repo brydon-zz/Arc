@@ -43,6 +43,7 @@ import sys
 import os
 import tokenize
 import time
+sys.setrecursionlimit(50)
 
 """"Simulator Class for Intel 8088 Architecture"""
 # TODO: when pasting syntax highlighting is ignored, probs not the best.
@@ -1127,9 +1128,15 @@ class Simulator(object):
                                               self.codeBuffer.get_end_iter(),
                                               False).split("\n")
 
+        print "Loading"
         errorMessage = self.machine.loadCode(self.lines)
+        print "Loaded!. Any Errors?:"
+        print errorMessage != ""
 
         self.outPut(errorMessage)
+
+        if errorMessage != "":
+            return -1
 
     def stepButtonClicked(self):
         """ Defines what happens if the step button is clicked.
@@ -1161,7 +1168,9 @@ class Simulator(object):
 
                     self.codeBuffer.delete(startOfArrow, endOfArrow)
 
+            print "Boutta step"
             self.outPutFromMachine(self.machine.step())
+            print "stepped\n"
             self.updateRegisters()
             self.updateStack()
 
@@ -1171,8 +1180,12 @@ class Simulator(object):
                 self.stepButtonClicked()
 
         else:
-            self.startRunning()
-            self.stepButtonClicked()
+            print "Boutta start running!!"
+            if self.startRunning() == -1:
+                self.stopRunning()
+                return
+            else:
+                self.stepButtonClicked()
 
     def resetTimer(self):
         self.timer = time.time()

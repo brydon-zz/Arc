@@ -20,6 +20,7 @@ It assumes working with the Intel8088 class as the "machine" parent class.
     email to brydon.eastman@gmail.com.
 """
 import re
+import customexceptions
 
 
 class CommandInterpreter(object):
@@ -44,6 +45,8 @@ class CommandInterpreter(object):
     _BPOFFSET = 18
     BPREGEX = re.compile(ur'-*[0-9]+\(BP\)')
     SCANFREGEX = re.compile(ur'(%[dxXnobcs])+( )*')
+    ADDINGSUBBING = re.compile(ur'\({0,1}[a-zA-Z0-9]+[\s]{0,1}(\+|\-)[\s]{0,1}[a-zA-Z0-9]+\){0,1}')
+
     LEGAL_FORMAT_STRS = ['%s', '%x', '%X', '%b', '%o', '%c', '%n', '%d']
 
     def __init__(self, machine):
@@ -2092,7 +2095,17 @@ the polarity (-1 for dec, 1 for inc) """
             """ We gotta match! Doing some neat regex stuff. """
             return self._BPOFFSET
 
-        if command[numArg][0] != "-" and "-" in command[numArg]:
+        print "Matchy matchy!"
+        if self.ADDINGSUBBING.match(command[numArg]):
+            print "Matchy matchy!!!!!"
+            print command[numArg]
+            if command[numArg][0] == "(" and command[numArg][-1] == ")":
+                return self._IMMEDMEMINT
+            else:
+                return self._INT
+
+        if command[numArg] not in ("'-'", '"-"') and \
+            command[numArg][0] != "-" and "-" in command[numArg]:
             temp = [x.replace("(", "( ").replace(")", " )") \
                     for x in command[numArg].split("-")]
 
@@ -2183,6 +2196,8 @@ the polarity (-1 for dec, 1 for inc) """
         elif argumentType == self._HEX:  # B is digit
             return int(arg[:-1], 16)
         elif argumentType == self._INT:
+            if "+" in arg or "-" in arg:
+                return self.convertPMToValue(arg)
             return int(arg)
         elif argumentType == self._LOCALVAR:
             return int(self.machine.getLocalVar(arg))
@@ -2199,7 +2214,12 @@ the polarity (-1 for dec, 1 for inc) """
             addr = int(self.machine.getFromDATA(arg, 0))
             return ord(self.machine.getFromMemoryAddress(addr))
         elif argumentType == self._IMMEDMEMINT:
-            addr = int(arg.lstrip('(').rstrip(')'))
+            print "Addy"
+            plus = "+" in arg
+            if plus or "-" in arg:
+                addr = self.convertPMToValue(arg)
+            else:
+                addr = int(arg.lstrip('(').rstrip(')'))
             return ord(self.machine.getFromMemoryAddress(addr))
         elif argumentType == self._IMMEDMEMHEX:
             addr = int(arg.lstrip('(').rstrip(')')[:-1], 16)
@@ -2265,7 +2285,12 @@ the polarity (-1 for dec, 1 for inc) """
                 if argType == self._IMMEDMEMHEX:
                     addr = int(innerArg[:-1], 16)
                 elif argType == self._IMMEDMEMINT:
-                    addr = int(innerArg)
+                    if "+" in innerArg or "-" in innerArg:
+                        print "TIME TO DO IT"
+                        addr = self.convertPMToValue(innerArg)
+                        print addr
+                    else:
+                        addr = int(innerArg)
                 elif argType == self._IMMEDMEMREG:
                     addr = self.machine.getRegister(innerArg)
                 elif argType == self._IMMEDMEMREG8:
@@ -2274,6 +2299,27 @@ the polarity (-1 for dec, 1 for inc) """
                     addr = self.machine.getFromBSSorDATA(innerArg, 0)
 
                 self.machine.setMemoryAddress(addr, chr(to))
+
+    def convertPMToValue(self, arg):
+        plus = "+" in arg
+        arg = arg.strip("()")
+        if plus:
+            arg = arg.split("+")
+        else:
+            arg = arg.split("-")
+        for i in (0, 1):
+            try:
+                arg[i] = int(arg[i])
+            except:
+                print "Hadda go to the machine!"
+                arg[i] = self.machine.labelToInt(arg[i])
+                if arg[i] == None:
+                    raise customexceptions.CustomErrorException("Label not recognised")
+                    return
+        if plus:
+            return arg[0] + arg[1]
+        else:
+            return arg[0] - arg[1]
 
     def wrongArgsError(self, command, i, args, numArg):
         print "Wrong args error!!!"
