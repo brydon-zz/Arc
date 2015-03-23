@@ -611,6 +611,11 @@ is stored AX and the remainder in DX.
             return self.ERRSTR
 
         bottom = self.getValue(command[1], argumentType)
+
+        if bottom == 0:
+            return "Error on line %d. You cannot divide by zero! Stop \
+doing that!" % i
+
         if argumentType in [self._BSSVAL, self._DATAVAL]:
             bottom = ord(self.machine.getFromMemoryAddress(bottom))
 
