@@ -599,8 +599,9 @@ two packed BCD digits in AL.
         """name:DIV
         title:Unsigned Divide
         args:[reg:mem:immed:reg8]
-        description: Divides one result from the other and stores the \
-        remainder in different places and stuff.
+        description: Divides the argument by AX. If the argument is 1 Byte, \
+then the result is stored in AL and the remainder in AH. Otherwise, the result\
+is stored AX and the remainder in DX.
         flags:,,,,,,,"""
         # TODO: Update that descriptor and flags
         argumentType = self.testArgument(command, 1, i, (self._IMMED,
@@ -616,8 +617,12 @@ two packed BCD digits in AL.
         quotient = self.machine.getRegister('AX') / bottom
         remainder = self.machine.getRegister('AX') - quotient * bottom
 
-        self.machine.setRegister('AX', quotient)
-        self.machine.setRegister('DX', remainder)
+        if argumentType == self._REG8:
+            self.machine.setEightBitRegister('AH', remainder)
+            self.machine.setEightBitRegister('AL', quotient)
+        else:
+            self.machine.setRegister('AX', quotient)
+            self.machine.setRegister('DX', remainder)
 
         # TODO: Flags, overflows, etc.
 
@@ -1760,7 +1765,7 @@ the Direction flag is set (1).
         title:System trap
         args:None
         description: Calls a system trap: evaluates based on the last piece \
-of data on the stack
+of data on the stack.
         flags:,,,,,,,"""
 
         if self.machine.stackSize() == 0:
@@ -1792,7 +1797,6 @@ on the stack is not understood" % (i, self.machine.getStack()[-1])
                     return "Error on line %d, the mode for opening is not \
 recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
 
-                print "Opening " + fname + " with mode " + str(mode)
                 response = self.machine.openFile(fname, mode)
                 self.machine.setRegister('AX', response)
 
@@ -1812,9 +1816,8 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
                     return "Error on line %d, the mode for Creating is not \
 recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
 
-                print "Creating " + fname + " with mode " + str(mode)
                 response = self.machine.openFile(fname, mode)
-                print response
+
                 self.machine.setRegister('AX', response)
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_READ"]:
                 ss = self.machine.stackSize()
@@ -1880,8 +1883,6 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
                     return "StdError: " + toWrite
                 else:
                     response = self.machine.write(fd, buf, nbytes)
-                    print "Wrote this many "
-                    print response
                     self.machine.setRegister('AX', response)
 
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_CLOSE"]:
@@ -1894,7 +1895,6 @@ recognised. Must be either 0 (Read), 1 (Write), 2 (Read/Write)" % i
                 if self.machine.closeFile(fd):
                     self.machine.setRegister('AX', 0)
 
-                print self.machine.openFiles
             elif int(self.machine.peekOnStack()) == self.SYSCodes["_SSCANF"]:
                 ss = self.machine.stackSize()
                 if ss < 4:
@@ -2095,10 +2095,7 @@ the polarity (-1 for dec, 1 for inc) """
             """ We gotta match! Doing some neat regex stuff. """
             return self._BPOFFSET
 
-        print "Matchy matchy!"
         if self.ADDINGSUBBING.match(command[numArg]):
-            print "Matchy matchy!!!!!"
-            print command[numArg]
             if command[numArg][0] == "(" and command[numArg][-1] == ")":
                 return self._IMMEDMEMINT
             else:
@@ -2196,7 +2193,7 @@ the polarity (-1 for dec, 1 for inc) """
         elif argumentType == self._HEX:  # B is digit
             return int(arg[:-1], 16)
         elif argumentType == self._INT:
-            if "+" in arg or "-" in arg:
+            if "+" in arg or "-" in arg and arg[0] != "-":
                 return self.convertPMToValue(arg)
             return int(arg)
         elif argumentType == self._LOCALVAR:
@@ -2214,7 +2211,6 @@ the polarity (-1 for dec, 1 for inc) """
             addr = int(self.machine.getFromDATA(arg, 0))
             return ord(self.machine.getFromMemoryAddress(addr))
         elif argumentType == self._IMMEDMEMINT:
-            print "Addy"
             plus = "+" in arg
             if plus or "-" in arg:
                 addr = self.convertPMToValue(arg)
@@ -2286,9 +2282,7 @@ the polarity (-1 for dec, 1 for inc) """
                     addr = int(innerArg[:-1], 16)
                 elif argType == self._IMMEDMEMINT:
                     if "+" in innerArg or "-" in innerArg:
-                        print "TIME TO DO IT"
                         addr = self.convertPMToValue(innerArg)
-                        print addr
                     else:
                         addr = int(innerArg)
                 elif argType == self._IMMEDMEMREG:
@@ -2311,7 +2305,6 @@ the polarity (-1 for dec, 1 for inc) """
             try:
                 arg[i] = int(arg[i])
             except:
-                print "Hadda go to the machine!"
                 arg[i] = self.machine.labelToInt(arg[i])
                 if arg[i] == None:
                     raise customexceptions.CustomErrorException("Label not recognised")
@@ -2322,7 +2315,6 @@ the polarity (-1 for dec, 1 for inc) """
             return arg[0] - arg[1]
 
     def wrongArgsError(self, command, i, args, numArg):
-        print "Wrong args error!!!"
         argList = []
         if self._REG in args:
             argList.append("16 bit register")

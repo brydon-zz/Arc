@@ -39,7 +39,7 @@ import time
 import os
 import sys
 
-debug = True
+debug = False
 
 
 class Intel8088(object):
@@ -133,16 +133,14 @@ class Intel8088(object):
             line = line.strip()
 
             if "!" in line:
-                print line
                 sq = 2
                 eq = 1
-                print line.count("\"")
                 if "\"" in line:
                     sq = line.find("\"")
                     eq = line.find("\"", sq + 1)
-                    print sq, eq
+
                 exc = line.find("!")
-                print sq, eq, exc
+
                 if not (sq < exc < eq):
                     line = line[:exc].strip()  # ignore comments
 
@@ -220,7 +218,6 @@ integer argument."
 Either declarations or .ALIGN's are expected, and declarations need colons.\
 e.g. hw: .ASCIZ \"Hello World\""
                     else:
-                        print line
                         dc = line[line.index(":") + 1:].strip()
                         if dc.startswith(".ASCIZ ") or dc.startswith(".ASCII "):
                             # If we're dealing with a string
@@ -230,7 +227,6 @@ e.g. hw: .ASCIZ \"Hello World\""
                                 errorString += "Fatal error on line " + \
                                                 str(lineCount) + \
                                                 ". To many quotes.\n"
-                                print "^^ERRROR\n\n"
                             temp2 = self.replaceEscapedSequences(
                                                     line[line.find("\"") + 1:\
                                                          line.rfind("\"")])
@@ -664,7 +660,8 @@ e.g. hw: .ASCIZ \"Hello World\""
             self.addressSpace[self.registers['SP'] + 1] = \
                                         chr(int(hexval[-2:], 16))
         except Exception as E:
-            print E
+            if debug:
+                print E
 
     def popFromStack(self):
         self.registers['SP'] += 2

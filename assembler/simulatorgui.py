@@ -260,7 +260,7 @@ class Simulator(object):
                 endOfLine = self.codeBuffer.get_iter_at_line_offset(lineOffset
                                                                     + srow, 0)
 
-            tokenRep = repr(token).upper().strip("'")
+            tokenRep = repr(token).strip("'")
 
             if tokenize.tok_name[typeOfToken] == "ENDMARKER":
                 self.updateLineCounter()
@@ -501,7 +501,7 @@ class Simulator(object):
                         elif arg == "reg16":
                             self.reg16Arg.set_name("reg16On")
                         elif arg == "reg8":
-                            self.reg16Arg.set_name("reg8On")
+                            self.reg8Arg.set_name("reg8On")
                         elif arg == "mem":
                             self.memArg.set_name("memOn")
                         elif arg == "immed":
@@ -528,7 +528,7 @@ class Simulator(object):
                             elif arg == "reg16":
                                 self.reg16Arg2.set_name("reg16On")
                             elif arg == "reg8":
-                                self.reg16Arg2.set_name("reg8On")
+                                self.reg8Arg2.set_name("reg8On")
                             elif arg == "mem":
                                 self.memArg2.set_name("memOn")
                             elif arg == "immed":
@@ -1128,10 +1128,7 @@ class Simulator(object):
                                               self.codeBuffer.get_end_iter(),
                                               False).split("\n")
 
-        print "Loading"
         errorMessage = self.machine.loadCode(self.lines)
-        print "Loaded!. Any Errors?:"
-        print errorMessage != ""
 
         self.outPut(errorMessage)
 
@@ -1168,9 +1165,7 @@ class Simulator(object):
 
                     self.codeBuffer.delete(startOfArrow, endOfArrow)
 
-            print "Boutta step"
             self.outPutFromMachine(self.machine.step())
-            print "stepped\n"
             self.updateRegisters()
             self.updateStack()
 
@@ -1180,7 +1175,6 @@ class Simulator(object):
                 self.stepButtonClicked()
 
         else:
-            print "Boutta start running!!"
             if self.startRunning() == -1:
                 self.stopRunning()
                 return
