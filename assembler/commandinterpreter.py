@@ -1945,8 +1945,9 @@ allow one of: " + ",".join(self.LEGAL_FORMAT_STRS) + "."
 
                 if len(args) != len(fArgs):
                     return "Error on line %d, your supplied string to scanf\
-doesn't contain the right number of arguments! Expected %d from your, \
-format string, received %d in the argument string!" % (fArgs, args)
+ doesn't contain the right number of arguments! Expected %d from your \
+format string, received %d in the argument string!" % (i, len(fArgs), \
+len(args))
 
                 for i in range(4, numArgs + 4):
 
