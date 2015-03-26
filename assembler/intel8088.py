@@ -407,14 +407,14 @@ e.g. hw: .ASCIZ \"Hello World\""
                     (" were " if len(command) - 1 > 1 else " was ") + "given."
 
             if command[0] in self.do.keys():
-                # try:
+                try:
                     response = self.do[command[0]](command,
                                                    self.getRegister('PC'))
-                # except Exception as E:
-                #    response = "Fatal error occurred on line " + \
-                #                str(self.getRegister('PC'))
-                #    if debug:
-                #        print E
+                except Exception as E:
+                    response = "Fatal error occurred on line " + \
+                                str(self.getRegister('PC'))
+                    if debug:
+                        print E
             else:
                 self.stopRunning(-1)
                 return "Fatal error. " + command[0] + " not recognised."
