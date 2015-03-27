@@ -177,6 +177,7 @@ then has the bytes "hel" written to it.
                       "A": False, "P": False, "D": False, "I": False}
 
         self.lookupTable = {}
+        self.LIST_TYPE = type([])
         self.localVars = {}
         self.lastLine = -1
         self.stack = []
