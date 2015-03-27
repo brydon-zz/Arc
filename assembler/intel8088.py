@@ -207,6 +207,12 @@ then has the bytes "hel" written to it.
             return self.BSS[lab][0]
         elif lab in self.DATA:
             return self.DATA[lab][0]
+        elif lab in self.localVars:
+            return int(self.localVars[lab])
+        elif lab in self.registers:
+            return self.registers[lab]
+        elif lab in self.getEightBitRegisterNames():
+            return self.getEightBitRegister(lab)
         elif len(lab) == 1:
             return ord(lab)
         else:
@@ -498,8 +504,10 @@ e.g. hw: .ASCIZ \"Hello World\""
             if ":" in line:  # colons mean labels, we dealt with those already.
                 line = line[line.find(":") + 1:].strip()  # ignore jump points
 
+            lineReplaced = line.replace("' '", "~bs").replace('" "', "~bs")
+            lineReplaced = lineReplaced.replace(" ", ",").replace("~bs", "' '")
             command = [self.replaceEscapedSequences(x.strip()) for x in \
-                       line.replace(" ", ",").split(",")]
+                       lineReplaced.split(",")]
 
             for x in range(command.count("")):
                 command.remove("")
