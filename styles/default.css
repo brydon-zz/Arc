@@ -1,3 +1,22 @@
+#As88Window #stackExample {
+	font-family: mono;
+	border: 1px solid #000;
+}
+
+#As88Window #exampleArg1, #As88Window #exampleArg2, #As88Window #exampleArg3 {
+	font-family: mono;
+}
+
+#As88Window #exampleHeader {
+	font-weight: bold;
+	border-top:1px solid #000;
+}
+
+#As88Window #exampleCont {
+	background-color:#000;
+	border: 1px solid #000;
+}
+
 #As88Window #helpTree {
     color:#000;
     background-color:#F5F5F5;

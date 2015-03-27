@@ -61,10 +61,12 @@ class Simulator(object):
     _PATHDELIM = os.path.sep
     _CSSFILENAME = "default.css"
     _INTERFACEXMLFILENAME = "defaultInterface.xml"
-    _DOUBLECLICKTIME = 0.2
+    _DOUBLECLICKTIME = 0.2  # the time, in seconds, between clicks that determines a double click
     _MAXSTACKLINES = 29
     _SAVE_STATE_TIME = 0.5
-    # the time, in seconds, between clicks that determines a double click
+    SYSCALLS = ["SYS-SSCANF", "SYS-OPEN", "SYS-READ", "SYS-EXIT", \
+                "SYS-PRINTF", "SYS-GETCHAR", "SYS-CREAT", "SYS-LSEEK", \
+                "SYS-CLOSE", "SYS-WRITE"]
 
     def __init__(self):
         localDir = os.path.dirname(os.path.realpath(__file__))
@@ -453,7 +455,10 @@ class Simulator(object):
         box = self.builder.get_object("displayHelp")
         store = Gtk.ListStore(str)
 
-        for x in self.functions:
+        allFunctions = self.functions + self.SYSCALLS
+        allFunctions.sort()
+
+        for x in allFunctions:
             store.append([x])
 
         tree = Gtk.TreeView(store)
@@ -467,6 +472,8 @@ class Simulator(object):
             """Called whenever the selected item in the TreeView."""
             model, treeiter = selection.get_selected()
             if treeiter is not None:
+                sysCall = model[treeiter][0] in self.SYSCALLS
+
                 doc = self.machine.getFunctionDescriptions(model[treeiter][0])
                 rawHelpText = str(doc).split("\n")
 
@@ -481,71 +488,131 @@ class Simulator(object):
                 self.immedArg.set_name("immedOff")
                 self.varArg.set_name("varOff")
 
-                if "None" in rawHelpText[2]:
+                noneFlag = "None" in rawHelpText[2]
+                if noneFlag:
                     self.noArgsLabel.set_text("No Arguments")
                     self.noArgsLabel.set_visible(True)
                     self.argumentsFrame2.set_visible(False)
                     self.argumentsFrame.set_visible(False)
+
+                if sysCall:
+                    self.flagsFrame.set_visible(False)
+
+                    instructionDescription = "\n" + instructionDescription
+
+                    args = rawHelpText[2].split(":")[1].split(",")
+                    args.reverse()
+                    self.argumentsFrame.set_visible(False)
+                    self.argumentsFrame2.set_visible(False)
+                    code = instructionName[instructionName.find("(") + 1:\
+                                           instructionName.find(")")]
+                    self.noArgsLabel.set_visible(True)
+                    self.noArgsLabel.set_text("Example of the stack when \
+calling SYS:")
+                    self.stackExample.set_visible(True)
+
+                    if noneFlag:
+                        self.exampleHeader.set_visible(False)
+                        self.exampleDesc.set_visible(False)
+                        self.exampleArg1.set_visible(False)
+                        self.exampleArg2.set_visible(False)
+                        self.exampleArg3.set_visible(False)
+                        self.stackExample.set_text(code)
+                    else:
+                        self.exampleHeader.set_visible(True)
+                        self.exampleDesc.set_visible(True)
+                        self.exampleArg1.set_visible(True)
+                        self.exampleArg2.set_visible(False)
+                        self.exampleArg3.set_visible(False)
+                        self.stackExample.set_text("\n".join(args)\
+                                                    + "\n" + code)
+                        exampleArgs = rawHelpText[4].split(":")[1].split(",")
+                        exampleDesc = rawHelpText[5].split(":")[1]
+
+                        args.reverse()
+
+                        self.exampleArg1.set_text(args[0] + " = "\
+                                                   + exampleArgs[0])
+                        if len(args) > 1:
+                            self.exampleArg2.set_visible(True)
+                            self.exampleArg2.set_text(args[1] + " = "\
+                                                   + exampleArgs[1])
+                        if len(args) > 2:
+                            self.exampleArg3.set_visible(True)
+                            self.exampleArg3.set_text(args[2] + " = "\
+                                                   + exampleArgs[2])
+
+                        self.exampleDesc.get_buffer().set_text(exampleDesc)
+
                 else:
-                    self.noArgsLabel.set_visible(False)
-                    self.argumentsFrame2.set_visible(True)
-                    self.argumentsFrame.set_visible(True)
-                    instructionArgs = rawHelpText[2].split(",")
-
-                    args1 = instructionArgs[0].split(":")[1:]
-
-                    for arg in args1:
-                        arg = arg.strip("[]")
-                        if arg == "reg":
-                            self.reg16Arg.set_name("reg16On")
-                        elif arg == "reg16":
-                            self.reg16Arg.set_name("reg16On")
-                        elif arg == "reg8":
-                            self.reg8Arg.set_name("reg8On")
-                        elif arg == "mem":
-                            self.memArg.set_name("memOn")
-                        elif arg == "immed":
-                            self.immedArg.set_name("immedOn")
-                            self.varArg.set_name("varOn")
-                        elif arg == "label":
-                            self.labelArg.set_name("labelOn")
-
-                    if len(instructionArgs) > 1:
+                    self.exampleHeader.set_visible(False)
+                    self.exampleDesc.set_visible(False)
+                    self.exampleArg1.set_visible(False)
+                    self.exampleArg2.set_visible(False)
+                    self.exampleArg3.set_visible(False)
+                    self.stackExample.set_visible(False)
+                    if not noneFlag:
+                        self.noArgsLabel.set_visible(False)
                         self.argumentsFrame2.set_visible(True)
+                        self.argumentsFrame.set_visible(True)
+                        instructionArgs = rawHelpText[2].split(",")
 
-                        args2 = instructionArgs[1].split(":")
-                        self.reg16Arg2.set_name("reg16Off")
-                        self.reg8Arg2.set_name("reg8Off")
-                        self.memArg2.set_name("memOff")
-                        self.labelArg2.set_name("labelOff")
-                        self.immedArg2.set_name("immedOff")
-                        self.varArg2.set_name("varOff")
+                        args1 = instructionArgs[0].split(":")[1:]
 
-                        for arg in args2:
+                        for arg in args1:
                             arg = arg.strip("[]")
                             if arg == "reg":
-                                self.reg16Arg2.set_name("reg16On")
+                                self.reg16Arg.set_name("reg16On")
                             elif arg == "reg16":
-                                self.reg16Arg2.set_name("reg16On")
+                                self.reg16Arg.set_name("reg16On")
                             elif arg == "reg8":
-                                self.reg8Arg2.set_name("reg8On")
+                                self.reg8Arg.set_name("reg8On")
                             elif arg == "mem":
-                                self.memArg2.set_name("memOn")
+                                self.memArg.set_name("memOn")
                             elif arg == "immed":
-                                self.immedArg2.set_name("immedOn")
-                                self.varArg2.set_name("varOn")
+                                self.immedArg.set_name("immedOn")
+                                self.varArg.set_name("varOn")
                             elif arg == "label":
-                                self.labelArg2.set_name("labelOn")
-                    else:
-                        self.argumentsFrame2.set_visible(False)
+                                self.labelArg.set_name("labelOn")
 
-                flags = rawHelpText[4].split(":")[1].split(",")
+                        if len(instructionArgs) > 1:
+                            self.argumentsFrame2.set_visible(True)
 
-                flagsOut = (self.oFlagOut, self.dFlagOut, self.iFlagOut,
-                            self.sFlagOut, self.zFlagOut, self.aFlagOut,
-                            self.pFlagOut, self.cFlagOut)
-                for index, flag in enumerate(flags):
-                    flagsOut[index].set_text(flag)
+                            args2 = instructionArgs[1].split(":")
+                            self.reg16Arg2.set_name("reg16Off")
+                            self.reg8Arg2.set_name("reg8Off")
+                            self.memArg2.set_name("memOff")
+                            self.labelArg2.set_name("labelOff")
+                            self.immedArg2.set_name("immedOff")
+                            self.varArg2.set_name("varOff")
+
+                            for arg in args2:
+                                arg = arg.strip("[]")
+                                if arg == "reg":
+                                    self.reg16Arg2.set_name("reg16On")
+                                elif arg == "reg16":
+                                    self.reg16Arg2.set_name("reg16On")
+                                elif arg == "reg8":
+                                    self.reg8Arg2.set_name("reg8On")
+                                elif arg == "mem":
+                                    self.memArg2.set_name("memOn")
+                                elif arg == "immed":
+                                    self.immedArg2.set_name("immedOn")
+                                    self.varArg2.set_name("varOn")
+                                elif arg == "label":
+                                    self.labelArg2.set_name("labelOn")
+                        else:
+                            self.argumentsFrame2.set_visible(False)
+
+                    self.flagsFrame.set_visible(True)
+                    flags = rawHelpText[4].split(":")[1].split(",")
+
+                    flagsOut = (self.oFlagOut, self.dFlagOut, self.iFlagOut,
+                                self.sFlagOut, self.zFlagOut, self.aFlagOut,
+                                self.pFlagOut, self.cFlagOut)
+
+                    for index, flag in enumerate(flags):
+                                flagsOut[index].set_text(flag)
 
                 self.instructionName.set_text(instructionName)
                 self.instructionTitle.set_text(instructionTitle)
@@ -585,6 +652,15 @@ class Simulator(object):
         self.regPC.set_name("regPC")
         self.builder.get_object("registersLabel").set_name("registersLabel")
         self.builder.get_object("registersEndLabel").set_name("registersEnd")
+
+        self.builder.get_object("stackExample").set_name("stackExample")
+        self.exampleHeader.set_name("exampleHeader")
+        self.exampleCont.set_name("exampleCont")
+        self.exampleGrid.set_name("exampleGrid")
+        self.exampleDesc.set_name("exampleDesc")
+        self.exampleArg1.set_name("exampleArg1")
+        self.exampleArg2.set_name("exampleArg2")
+        self.exampleArg3.set_name("exampleArg3")
 
         self.memory.set_name("memory")
         self.notebook.set_name("notebook")
@@ -715,6 +791,7 @@ class Simulator(object):
         self.aFlagOut = self.builder.get_object("aFlagOut")
         self.pFlagOut = self.builder.get_object("pFlagOut")
         self.cFlagOut = self.builder.get_object("cFlagOut")
+        self.flagsFrame = self.builder.get_object("flagsAffectedFrame")
 
         self.oFlagOutMachine = self.builder.get_object("oFlagOutMachine")
         self.dFlagOutMachine = self.builder.get_object("dFlagOutMachine")
@@ -724,6 +801,15 @@ class Simulator(object):
         self.aFlagOutMachine = self.builder.get_object("aFlagOutMachine")
         self.pFlagOutMachine = self.builder.get_object("pFlagOutMachine")
         self.cFlagOutMachine = self.builder.get_object("cFlagOutMachine")
+
+        self.exampleCont = self.builder.get_object("exampleCont")
+        self.stackExample = self.builder.get_object("stackExample")
+        self.exampleHeader = self.builder.get_object("exampleHeader")
+        self.exampleGrid = self.builder.get_object("exampleGrid")
+        self.exampleArg1 = self.builder.get_object("exampleArg1")
+        self.exampleArg2 = self.builder.get_object("exampleArg2")
+        self.exampleArg3 = self.builder.get_object("exampleArg3")
+        self.exampleDesc = self.builder.get_object("exampleDesc")
 
         self.reg8Arg = self.builder.get_object("reg8")
         self.reg16Arg = self.builder.get_object("reg16")

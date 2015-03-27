@@ -47,6 +47,122 @@ class Intel8088(object):
     TIMETHRESH = 10
     FILEMODES = ['r', 'w', 'rw']
     BITTYPES = ["Byte", "Word", "Long"]
+    SYSDESCRIPTIONS = {"SYS-OPEN":
+"""name:OPEN (5)
+title:Open a file
+args:fileName,mode
+description:Opens the file referenced by\
+ fileName (in the same directory that Arc\
+ is open in!) according to mode. mode can have\
+ three values; 0 (for read), 1 (for write), or\
+ 2 (for read write). It returns the File Descriptor\
+ in register AX (or a -1 in AX if unsuccesful). \
+ This File Descriptor is needed for further file operations\
+ (read, write, close, etc.). Warning! READ and other operations \
+return values to AX indicating success/failure. You might want to\
+ ensure your file descriptor is safe somewhere else! (Memory? Another\
+ register?).
+exampleVals:"test.txt",0
+exampleDesc:Opens the file "test.txt" for reading. """, "SYS-SSCANF":
+"""name:SSCANF (125)
+title:String Scan by Format String
+args:str,fStr,memLocation,Optional-moreMemLocations
+description:Essentially the "undo" of \
+a PRINTF. It takes a string with some variables in\
+ it, separated by spaces if more than one, then a \
+ format string detailing the types of those variables \
+(also separated if necessary), then the memory \
+locations, in order, of where to output the results.
+exampleVals:"5","%d",buffer1
+exampleDesc:This stores the integer value 5 to the memory\
+location labelled by buffer1 (defined in .SECT .BSS, perhaps).
+""", "SYS-READ":
+"""name:READ (3)
+title:File Read
+args:fileDescriptor,buffer,numBytes
+description:Reads numBytes bytes from the file referenced \
+by fileDescriptor and saves them in the memory location referenced\
+ by buffer. Returns the number of bytes read to AX (0 means fail).
+exampleVals:AX,buf1,25
+exampleDesc:In this situation the register AX still \
+holds the file descriptor that OPEN placed in it. 25 bytes \
+(i.e. 25 characters) are read from the file and stored sequentially \
+starting in the location referenced by buf1.
+""", "SYS-EXIT":
+"""name:EXIT (1)
+title:Exit
+args:None
+description:Terminates execution!
+""", "SYS-PRINTF":
+"""name:PRINTF (127)
+title:Print According to a Format String
+args:fStr,str
+description:Prints the string str formatted according to\
+ the format string fStr.
+exampleVals:"%s.","Hello World"
+exampleDesc:Prints "Hello World."
+""", "SYS-GETCHAR":
+"""name:GETCHAR (117)
+title:Get Characters
+args:None
+description:The first call to GETCHAR opens up a dialog box\
+ prompting the user for input. The next call places the first\
+ character of that input in AL. Any subsequent calls place \
+ subsequent characters in AL. Once a newline character ('\\n')\
+ is found the next call to GETCHAR will open a dialog box\
+ and repeat this process.
+""", "SYS-CREAT":
+"""name:CREAT (8)
+title:File Create
+args:fileName,mode
+description:Creates a file named fileName then opens\
+ it for operations according to mode. mode can be one of\
+ three values; 0 (read), 1 (write), 2 (read/write). It \
+ returns the file descriptor to AX or a -1 if unsuccesful.
+exampleVals:"newFile.txt",2
+exampleDesc:This creates a new file called "newFile.txt" and \
+opens it for read/write purposes. AX now holds a file descriptor \
+pointing to this file.
+""", "SYS-LSEEK":
+"""name:LSEEK (19)
+title:File Seek
+args:fileDescriptor,numBytes
+description:Changes the file pointer by numBytes.\
+ I.E. if previously one read the first 3 bytes from the\
+ file, then called LSEEK with numBytes = 2. The next READ \
+call would begin 5 bytes into the file. Returns the number \
+of bytes "seeked" to AX.
+exampleVals:AX,3
+exampleDesc:In this situation the register AX still \
+holds the file descriptor that OPEN placed in it. The \
+file pointer then changes by 3.
+""", "SYS-CLOSE":
+"""name:CLOSE (6)
+title:File Close
+args:fileDescriptor
+description:Closes the file referenced by the \
+fileDescriptor. (These fileDescriptors are returned \
+by the OPEN command!). On a successful close it sets \
+AX to 0.
+exampleVals:AX
+exampleDesc:In this situation the register AX still \
+holds the file descriptor that OPEN placed in it. This \
+file is then closed.
+""", "SYS-WRITE":
+"""name:WRITE (4)
+title:Write to a File
+args:fileDescriptor,buffer,numBytes
+description:Writes numBytes bytes from the memory location \
+buffer to the file referenced by fileDescriptor. Note the \
+fileDescriptor must be the type returned by the OPEN command, \
+not a filename! After writing ensure that you close the file \
+otherwise your changes probably won't persist! Returns the \
+number of bites written to AX.
+exampleVals:AX,"hello world",3
+exampleDesc:In this situation the register AX still \
+holds the file descriptor that OPEN placed in it. This file \
+then has the bytes "hel" written to it.
+"""}
 
     def __init__(self):
         self.restart()
@@ -467,6 +583,9 @@ e.g. hw: .ASCIZ \"Hello World\""
 
     def getFunctionDescriptions(self, function):
         """ Returns the docstrings of the instruction set functions. """
+        if function in self.SYSDESCRIPTIONS.keys():
+            return self.SYSDESCRIPTIONS[function]
+
         return self.do[function].__doc__
 
     def getFunctions(self):
