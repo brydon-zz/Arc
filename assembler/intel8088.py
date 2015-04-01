@@ -176,6 +176,7 @@ then has the bytes "hel" written to it.
         self.flags = {"Z": False, "S": False, "O": False, "C": False,
                       "A": False, "P": False, "D": False, "I": False}
 
+        self.path = "~"
         self.lookupTable = {}
         self.LIST_TYPE = type([])
         self.localVars = {}
