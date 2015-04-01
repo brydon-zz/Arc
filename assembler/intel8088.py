@@ -219,7 +219,6 @@ then has the bytes "hel" written to it.
             return None
 
     def loadCode(self, lines):
-
         self.ran = False
         self.runningAll = False
         self.lines = [l.replace("\t", " ") for l in lines]
@@ -918,10 +917,20 @@ e.g. hw: .ASCIZ \"Hello World\""
         return bp in self.breakPoints
 
     def openFile(self, fname, mode):
-        try:
-            self.openFiles.append(open(fname, self.FILEMODES[mode]))
-        except:
+        fileToAppend = None
+
+        for path in (self.path, '~', '~/Documents'):
+            try:
+                fileName = os.path.expanduser(path + os.path.sep + fname)
+                fileToAppend = open(fileName, self.FILEMODES[mode])
+                break
+            except:
+                1
+
+        if fileToAppend == None:
             return -1
+
+        self.openFiles.append(fileToAppend)
         return len(self.openFiles) - 1
 
     def createFile(self, fname, mode):
@@ -936,6 +945,9 @@ e.g. hw: .ASCIZ \"Hello World\""
             return True
         except:
             return False
+
+    def setPath(self, path):
+        self.path = path
 
     def read(self, fd, buf, nbytes):
         try:

@@ -198,6 +198,8 @@ class Simulator(object):
         if response == Gtk.ResponseType.OK:
             fileName = fileChooser.get_filename()
 
+        self.machine.setPath(os.path.dirname(fileName))
+
         fileChooser.destroy()
 
         if fileName is None:
